@@ -1,47 +1,52 @@
 package net.walterbarnes.sourcebot;
 
 import com.tumblr.jumblr.types.Post;
-import com.tumblr.jumblr.types.TextPost;
+import net.ofd.oflib.map.MapHelper;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Analysis
 {
-	public static void main (String[] args)
+	public static void main(String[] args)
 	{
-		File postsDir = new File ("posts");
-		if (!postsDir.exists ())
-			postsDir.mkdirs ();
+		Tumblr tumblr = new Tumblr(Config.getConsumerKey(), Config.getConsumerSecret(),
+				Config.getToken(), Config.getTokenSecret());
 
-		Tumblr tumblr = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
-				Config.getToken (), Config.getTokenSecret ());
+		HashMap<String, HashMap<String, Integer>> relatedTags = new HashMap<>();
 
-		for (String tag : Config.getTags ())
+		for (String tag : Config.getTags())
 		{
-			File tagDir = new File (postsDir, tag);
-			if (!tagDir.exists ())
-				tagDir.mkdirs ();
-			for (Post post : tumblr.getPostsFromTag (tag, "text", 10000, null))
+			HashMap<String, Integer> tags = new HashMap<>();
+			for (Post post : tumblr.getPostsFromTag(tag, null, 10000, null))
 			{
-				try
+				for (String t : post.getTags())
 				{
-					TextPost textPost = (TextPost) post;
-					BufferedWriter bw = new BufferedWriter (new FileWriter (new File (tagDir, textPost.getId ().toString ())));
-					bw.write ("Blog:" + textPost.getBlogName () + "\n");
-					bw.write ("Title:" + textPost.getTitle () + "\n");
-					bw.write ("Body:" + textPost.getBody () + "\n");
-					bw.close ();
-				}
-				catch (IOException e)
-				{
-					e.printStackTrace ();
+					if (!t.toLowerCase().equals(tag))
+					{
+						if (tags.containsKey(t.toLowerCase()))
+						{
+							tags.put(t.toLowerCase(), tags.get(t.toLowerCase()) + 1);
+						}
+						else
+						{
+							tags.put(t.toLowerCase(), 1);
+						}
+					}
 				}
 			}
+			LinkedHashMap<String, Integer> out = new LinkedHashMap<>();
+			LinkedHashMap<String, Integer> sorted = MapHelper.sortByValues(tags);
+
+			for (int i = 0; i < 5; i++)
+			{
+				out.put(((Map.Entry<String, Integer>) (sorted.entrySet().toArray()[i])).getKey(), ((Map.Entry<String, Integer>) (sorted.entrySet().toArray()[i])).getValue());
+			}
+			relatedTags.put(tag, MapHelper.sortByValues(out));
 		}
+		System.out.println(relatedTags);
 	}
 }
