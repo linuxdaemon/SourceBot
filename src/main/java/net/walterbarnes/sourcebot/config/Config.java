@@ -1,4 +1,4 @@
-package net.walterbarnes.sourcebot;
+package net.walterbarnes.sourcebot.config;
 
 import java.io.*;
 import java.util.HashMap;

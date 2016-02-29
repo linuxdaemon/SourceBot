@@ -1,53 +1,38 @@
 package net.walterbarnes.sourcebot;
 
-import com.tumblr.jumblr.JumblrClient;
-import com.tumblr.jumblr.types.Blog;
 import com.tumblr.jumblr.types.Post;
-import com.tumblr.jumblr.types.User;
+import net.walterbarnes.sourcebot.config.Config;
+import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SourceBot
 {
-
 	public static void main (String[] args)
 	{
-		// Authenticate via OAuth
-		JumblrClient client = new JumblrClient (
-				Config.getConsumerKey (),
-				Config.getConsumerSecret ()
-		);
-		client.setToken (
-				Config.getToken (),
-				Config.getTokenSecret ()
-		);
+		Tumblr client = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
+				Config.getToken (), Config.getTokenSecret ());
 
-		String blogName = Config.getBlogUrl ();
+		try
+		{
+			client.setBlogName (Config.getBlogUrl ());
+		}
+		catch (InvalidBlogNameException e)
+		{
+			e.printStackTrace ();
+		}
 
-		// Make the request
-		User user = client.user ();
-		ArrayList<Blog> blogs = (ArrayList<Blog>) user.getBlogs ();
-		ArrayList<String> blogNames = new ArrayList<> ();
-		for (Blog b : blogs)
-		{
-			blogNames.add (b.getName ());
-		}
-		if (!blogNames.contains (blogName))
-		{
-			System.out.println ("Invalid Blog Url");
-			System.exit (1);
-		}
 		int postCount = 0;
 		while (postCount < 1)
 		{
 			ArrayList<Post> posts = new ArrayList<> ();
 			for (String tag : Config.getTags ())
 			{
-				posts.addAll (getPosts (client, tag));
+				posts.addAll (client.getPostsFromTag (tag, "text", 10000, null));
 			}
 			for (Post post : selectPosts (getTopPosts (posts), 1))
 			{
@@ -116,43 +101,5 @@ public class SourceBot
 		}
 
 		return new ArrayList<> (out.subList (0, 9));
-	}
-
-	private static ArrayList<Post> getPosts (JumblrClient client, String tag)
-	{
-		System.out.println ("getPosts " + tag);
-		ArrayList<Post> posts = new ArrayList<Post> ();
-		Long lastTime = System.currentTimeMillis () / 1000;
-		loop:
-		while (posts.size () < 10000)
-		{
-			ArrayList<Post> p = new ArrayList<> ();
-			HashMap<String, Object> options = new HashMap<> ();
-			options.put ("before", lastTime);
-			//System.out.println("Getting tag posts " + posts.size ());
-			p.addAll (client.tagged (tag, options));
-			if (p.size () == 0 || p.isEmpty ())
-			{
-				break loop;
-			}
-			else
-			{
-				lastTime = p.get (p.size () - 1).getTimestamp ();
-			}
-			for (Post post : p)
-			{
-				for (String tb : Config.getTagBlacklist ())
-				{
-					if (post.getType ().equals ("text") && !post.getTags ().contains (tb) &&
-							!(new ArrayList<String> (Arrays.asList (Config.getBlogBlacklist ())))
-									.contains (post.getBlogName ()))
-					{
-						posts.add (post);
-					}
-				}
-			}
-			//System.out.println(posts.size ());
-		}
-		return posts;
 	}
 }
