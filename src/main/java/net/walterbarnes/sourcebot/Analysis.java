@@ -5,9 +5,7 @@ import net.ofd.oflib.map.MapHelper;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Analysis
 {
@@ -16,37 +14,46 @@ public class Analysis
 		Tumblr tumblr = new Tumblr(Config.getConsumerKey(), Config.getConsumerSecret(),
 				Config.getToken(), Config.getTokenSecret());
 
-		HashMap<String, HashMap<String, Integer>> relatedTags = new HashMap<>();
+		Map<Long, Post> posts = new HashMap<>();
+		Map<Long, List<String>> postData = new HashMap<>();
 
 		for (String tag : Config.getTags())
 		{
-			HashMap<String, Integer> tags = new HashMap<>();
+			loop:
 			for (Post post : tumblr.getPostsFromTag(tag, null, 10000, null))
 			{
-				for (String t : post.getTags())
+				for (String tb : Config.getTagBlacklist())
 				{
-					if (!t.toLowerCase().equals(tag))
+					if (post.getTags().contains(tb) ||
+							Arrays.asList(Config.getBlogBlacklist()).contains(post.getBlogName()))
 					{
-						if (tags.containsKey(t.toLowerCase()))
-						{
-							tags.put(t.toLowerCase(), tags.get(t.toLowerCase()) + 1);
-						}
-						else
-						{
-							tags.put(t.toLowerCase(), 1);
-						}
+						continue loop;
 					}
 				}
+				posts.put(post.getId(), post);
+				if (!postData.containsKey(post.getId()) || postData.get(post.getId()) == null)
+				{
+					postData.put(post.getId(), new ArrayList<String>());
+				}
+				List<String> tagList = postData.get(post.getId());
+				tagList.add(tag);
+				postData.put(post.getId(), tagList);
 			}
-			LinkedHashMap<String, Integer> out = new LinkedHashMap<>();
-			LinkedHashMap<String, Integer> sorted = MapHelper.sortByValues(tags);
-
-			for (int i = 0; i < 5; i++)
-			{
-				out.put(((Map.Entry<String, Integer>) (sorted.entrySet().toArray()[i])).getKey(), ((Map.Entry<String, Integer>) (sorted.entrySet().toArray()[i])).getValue());
-			}
-			relatedTags.put(tag, MapHelper.sortByValues(out));
 		}
-		System.out.println(relatedTags);
+
+		Map<String, Integer> tags = new HashMap<>();
+
+		for (long postID : postData.keySet())
+		{
+			for (String tag : posts.get(postID).getTags())
+			{
+				if (!tags.containsKey(tag))
+				{
+					tags.put(tag, 0);
+				}
+				tags.put(tag, tags.get(tag) + 1);
+			}
+		}
+		System.out.println(MapHelper.sortByValues((HashMap<String, Integer>) tags));
 	}
 }
