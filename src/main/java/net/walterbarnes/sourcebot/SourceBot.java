@@ -1,6 +1,7 @@
 package net.walterbarnes.sourcebot;
 
 import com.tumblr.jumblr.types.Post;
+import net.ofd.oflib.cli.Cli;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
@@ -27,18 +28,19 @@ public class SourceBot
 			e.printStackTrace ();
 		}
 
-		int postCount = 0;
 		long time = System.currentTimeMillis();
-		client.blogDraftPosts(client.getBlogName());
 		while (true)
 		{
 			if (client.blogDraftPosts(client.getBlogName()).size() < 24)
 			{
+				int postCount = 0;
+				System.out.println("Adding posts to queue");
 				while (postCount < 5)
 				{
 					ArrayList<Post> posts = new ArrayList<> ();
 					for (String tag : Config.getTags ())
 					{
+						Cli.print("Getting posts for tag '" + tag + "'");
 						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist())));
 					}
 					for (Post post : selectPosts (getTopPosts (posts), 1))

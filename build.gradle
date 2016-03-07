@@ -4,7 +4,7 @@ apply plugin: 'application'
 
 group 'net.walterbarnes'
 version '1.0'
-mainClassName = group + "sourcebot.SourceBot"
+mainClassName = group + ".sourcebot.SourceBot"
 
 sourceCompatibility = 1.7
 
