@@ -25,7 +25,7 @@ public class Analysis
 			System.out.print(tag + " ");
 			int x = 0;
 			loop:
-			for (Post post : tumblr.getPostsFromTag(tag, null, 10000, null))
+			for (Post post : tumblr.getPostsFromTag(tag, "text", 100, null))
 			{
 				for (String tb : Config.getTagBlacklist())
 				{
@@ -46,9 +46,9 @@ public class Analysis
 
 				for (String t : post.getTags())
 				{
-					if (isTagSimilar(tag, t) && !tags.contains(t))
+					if (isTagSimilar(tag.toLowerCase(), t.toLowerCase()) && !tags.contains(t.toLowerCase()))
 					{
-						tags.add(t);
+						tags.add(t.toLowerCase());
 					}
 				}
 				x++;
@@ -72,12 +72,16 @@ public class Analysis
 		System.out.println(MapHelper.sortByValues((HashMap<String, Integer>) tagMap));
 	}
 
-	private static boolean isTagSimilar(String tag1, String tag2)
+	private static boolean isTagSimilar(String tag, String tag1)
 	{
-		if (tag1.contains(tag2) && tag1.length() <= tag2.length() + 5)
-		{
+		//Tags are case-insensitive, so this code is redundant
+		//if (tag1.toLowerCase().equals(tag2.toLowerCase())) return true;
+		if (tag.contains(tag1) && tag.length() + 1 >= tag1.length() &&
+				tag1.length() >= tag.length() - 1 && !tag.equals(tag1))
 			return true;
-		}
-		return tag2.contains(tag1) && tag2.length() <= tag1.length() + 5;
+		if (tag1.contains(tag) && tag1.length() + 1 >= tag.length() &&
+				tag.length() >= tag1.length() - 1 && !tag1.equals(tag))
+			return true;
+		return false;
 	}
 }
