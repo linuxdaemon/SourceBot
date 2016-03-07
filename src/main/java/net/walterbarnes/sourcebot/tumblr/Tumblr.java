@@ -31,6 +31,11 @@ public class Tumblr extends JumblrClient
 
 	public ArrayList<Post> getPostsFromTag (String tag, String type, int postNum, HashMap<String, Object> opts)
 	{
+		return getPostsFromTag(tag, type, postNum, opts, new ArrayList<String>(), new ArrayList<String>());
+	}
+
+	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts, List<String> blogBlacklist, List<String> tagBlacklist)
+	{
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
 		ArrayList<Post> out = new ArrayList<> ();
@@ -47,10 +52,16 @@ public class Tumblr extends JumblrClient
 			{
 				break;
 			}
+			loop:
 			for (Post post : posts)
 			{
 				if (type == null || post.getType ().equals (type))
 				{
+					if (blogBlacklist.contains(post.getBlogName())) continue loop;
+					for (String t : tagBlacklist)
+					{
+						if (post.getTags().contains(t)) continue loop;
+					}
 					out.add (post);
 					postCount++;
 				}

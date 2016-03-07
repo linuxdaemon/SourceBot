@@ -6,6 +6,7 @@ import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,43 +28,49 @@ public class SourceBot
 		}
 
 		int postCount = 0;
-		while (postCount < 1)
+		long time = System.currentTimeMillis();
+		client.blogDraftPosts(client.getBlogName());
+		while (true)
 		{
-			ArrayList<Post> posts = new ArrayList<> ();
-			for (String tag : Config.getTags ())
+			if (client.blogDraftPosts(client.getBlogName()).size() < 24)
 			{
-				posts.addAll (client.getPostsFromTag (tag, "text", 10000, null));
+				while (postCount < 5)
+				{
+					ArrayList<Post> posts = new ArrayList<> ();
+					for (String tag : Config.getTags ())
+					{
+						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist())));
+					}
+					for (Post post : selectPosts (getTopPosts (posts), 1))
+					{
+						Map<String, Object> params = new HashMap<> ();
+						params.put("state", "draft");
+						params.put ("comment", "Source?");
+						try
+						{
+							post.reblog(client.getBlogName(), params);
+						} catch (NullPointerException e)
+						{
+							e.printStackTrace ();
+						}
+					}
+
+					postCount++;
+				}
 			}
-			for (Post post : selectPosts (getTopPosts (posts), 1))
-			{
-				System.out.println (post.getPostUrl ());
-				System.out.println (post.getNoteCount ());
-			}
-			Map<String, Object> params = new HashMap<> ();
-			params.put ("comment", "Source?");
 			try
 			{
-				//post.reblog(blogName, params);
-			} catch (NullPointerException e)
-			{
-				e.printStackTrace ();
+				Thread.sleep(10000);
 			}
-			postCount++;
-			try
+			catch (InterruptedException e)
 			{
-				System.out.println ("sleeping");
-				Thread.sleep (Config.getPostFreq () * 60 * 1000);
-			} catch (InterruptedException e)
-			{
-				e.printStackTrace ();
-				System.exit (1);
+				e.printStackTrace();
 			}
 		}
 	}
 
 	private static ArrayList<Post> selectPosts (ArrayList<Post> posts, int n)
 	{
-		System.out.println ("selectPosts");
 		ArrayList<Post> out = new ArrayList<> ();
 
 		while (out.size () < n)
@@ -77,7 +84,6 @@ public class SourceBot
 
 	private static ArrayList<Post> getTopPosts (ArrayList<Post> posts)
 	{
-		System.out.println ("getTopPosts");
 		ArrayList<Post> out = (ArrayList<Post>) posts.clone ();
 		int moves = 0;
 		boolean firstRun = true;
@@ -97,9 +103,8 @@ public class SourceBot
 					moves++;
 				}
 			}
-			//System.out.println(moves);
 		}
 
-		return new ArrayList<> (out.subList (0, 9));
+		return new ArrayList<> (out.subList (0, 49));
 	}
 }

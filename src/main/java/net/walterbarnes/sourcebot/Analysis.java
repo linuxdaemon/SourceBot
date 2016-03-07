@@ -1,6 +1,7 @@
 package net.walterbarnes.sourcebot;
 
 import com.tumblr.jumblr.types.Post;
+import com.tumblr.jumblr.types.TextPost;
 import net.ofd.oflib.map.MapHelper;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
@@ -22,10 +23,12 @@ public class Analysis
 		{
 			long startTime = System.currentTimeMillis();
 			String tag = tags.get(i);
-			System.out.print(tag + " ");
+			//System.out.print(tag + " ");
 			int x = 0;
+			HashMap<String, Object> options = new HashMap<> ();
+			options.put("filter","text");
 			loop:
-			for (Post post : tumblr.getPostsFromTag(tag, "text", 100, null))
+			for (Post post : tumblr.getPostsFromTag(tag, "text", 100, options))
 			{
 				for (String tb : Config.getTagBlacklist())
 				{
@@ -53,35 +56,82 @@ public class Analysis
 				}
 				x++;
 			}
-			System.out.println(x + " posts " + ((System.currentTimeMillis() - startTime) / 1000) + " s");
+			//System.out.println(x + " posts " + ((System.currentTimeMillis() - startTime) / 1000) + " s");
 		}
 
-		Map<String, Integer> tagMap = new HashMap<>();
+		Map<String, Integer> wordMap = new HashMap<>();
 
 		for (long postID : postData.keySet())
 		{
-			for (String t : posts.get(postID).getTags())
+			for (String word : ((TextPost)posts.get(postID)).getBody().split("[ \n,]"))
 			{
-				if (!tagMap.containsKey(t))
+				word = stripPunct(word);
+				if (!wordMap.containsKey(word))
 				{
-					tagMap.put(t, 0);
+					wordMap.put(word, 0);
 				}
-				tagMap.put(t, tagMap.get(t) + 1);
+				wordMap.put(word, wordMap.get(word) + 1);
 			}
 		}
-		System.out.println(MapHelper.sortByValues((HashMap<String, Integer>) tagMap));
+		System.out.println(MapHelper.sortByValues((HashMap<String, Integer>) wordMap));
 	}
 
 	private static boolean isTagSimilar(String tag, String tag1)
 	{
-		//Tags are case-insensitive, so this code is redundant
-		//if (tag1.toLowerCase().equals(tag2.toLowerCase())) return true;
-		if (tag.contains(tag1) && tag.length() + 1 >= tag1.length() &&
-				tag1.length() >= tag.length() - 1 && !tag.equals(tag1))
-			return true;
-		if (tag1.contains(tag) && tag1.length() + 1 >= tag.length() &&
-				tag.length() >= tag1.length() - 1 && !tag1.equals(tag))
-			return true;
+		int d = levenshteinDistance(tag, tag1);
 		return false;
+	}
+
+	public static int levenshteinDistance(CharSequence lhs, CharSequence rhs) {
+		int len0 = lhs.length() + 1;
+		int len1 = rhs.length() + 1;
+
+		// the array of distances
+		int[] cost = new int[len0];
+		int[] newcost = new int[len0];
+
+		// initial cost of skipping prefix in String s0
+		for (int i = 0; i < len0; i++) cost[i] = i;
+
+		// dynamically computing the array of distances
+
+		// transformation cost for each letter in s1
+		for (int j = 1; j < len1; j++) {
+			// initial cost of skipping prefix in String s1
+			newcost[0] = j;
+
+			// transformation cost for each letter in s0
+			for(int i = 1; i < len0; i++) {
+				// matching current letters in both strings
+				int match = (lhs.charAt(i - 1) == rhs.charAt(j - 1)) ? 0 : 1;
+
+				// computing cost for each transformation
+				int cost_replace = cost[i - 1] + match;
+				int cost_insert  = cost[i] + 1;
+				int cost_delete  = newcost[i - 1] + 1;
+
+				// keep minimum cost
+				newcost[i] = Math.min(Math.min(cost_insert, cost_delete), cost_replace);
+			}
+
+			// swap cost/newcost arrays
+			int[] swap = cost; cost = newcost; newcost = swap;
+		}
+
+		// the distance is the cost for transforming all letters in both strings
+		return cost[len0 - 1];
+	}
+
+	private static String stripPunct(String s)
+	{
+		ArrayList<String> approvedChar = new ArrayList<>();
+		approvedChar.addAll(Arrays.asList("abcdefghijklmnopqrstuvwxyz".split("")));
+		approvedChar.addAll(Collections.singletonList(" "));
+		String out = "";
+		for (String c : s.split(""))
+		{
+			if (approvedChar.contains(c)) out += c;
+		}
+		return out;
 	}
 }
