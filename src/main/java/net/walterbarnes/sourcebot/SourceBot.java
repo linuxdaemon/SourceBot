@@ -40,7 +40,7 @@ public class SourceBot
 					for (String tag : Config.getTags ())
 					{
 						Cli.print("Getting posts for tag '" + tag + "'");
-						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()), Config.getPostBlacklist()));
+						posts.addAll (client.getPostsFromTag (tag, "text", 10, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()), Config.getPostBlacklist()));
 					}
 					for (Post post : selectPosts (getTopPosts (posts), 1))
 					{
@@ -49,7 +49,7 @@ public class SourceBot
 						params.put ("comment", "Source?");
 						try
 						{
-							post.reblog(client.getBlogName(), params);
+							//post.reblog(client.getBlogName(), params);
 						} catch (NullPointerException e)
 						{
 							e.printStackTrace ();

@@ -42,21 +42,25 @@ public class Config
 			while ((line = cfgReader.readLine ()) != null)
 			{
 				String l = "";
+				loop1:
 				for (Character c : line.toCharArray ())
 				{
 					if (c.equals ('#'))
 					{
 						data.put("comment","#" + line.split("#")[1]);
-						break;
+						break loop1;
 					}
-					l += c;
+					else
+					{
+						l += c;
+					}
 				}
 				if (l.isEmpty () || l.equals (""))
 				{
-					data.put(null,null);
+					data.put("newLine",null);
 					continue;
 				}
-				if (l.matches ("[A-Za-z0-9]+=[^$]+"))
+				else if (l.matches ("[A-Za-z0-9]+=[^$]+"))
 				{
 					data.put (l.split ("=")[0], l.split ("=")[1]);
 				}
@@ -172,9 +176,9 @@ public class Config
 		{
 			return new ArrayList<>();
 		}
-		for (String post : ((String)config.get("postBlacklist")).split(","))
+		for (String postID : ((String)config.get("postBlacklist")).split(","))
 		{
-			out.add(Long.getLong(post));
+			out.add(Long.valueOf(postID));
 		}
 		return out;
 	}
@@ -201,33 +205,34 @@ public class Config
 
 	public void write()
 	{
+		if (config == null)
+		{
+			config = new Config();
+		}
 		try
 		{
 			Thread.sleep(50);
 			cfgWriter = new BufferedWriter(new FileWriter(new File(cfgName)));
+			forloop:
 			for (Map.Entry<String, String> e : data.entrySet())
 			{
-				if (e.getKey().equals("comment"))
-				{
-					cfgWriter.write(e.getValue());
-					continue;
-				}
-				if (e.getKey() == null && e.getValue() == null)
+				if (e.getKey().equals("newLine"))
 				{
 					cfgWriter.write("\n");
-					continue;
+					continue forloop;
 				}
-				cfgWriter.write(String.format("%s=%s%n", e.getKey(), e.getValue()));
+				else if (e.getKey().equals("comment"))
+				{
+					cfgWriter.write(e.getValue() + "\n");
+					continue forloop;
+				}
+				else cfgWriter.write(String.format("%s=%s%n", e.getKey(), e.getValue()));
 			}
 			cfgWriter.flush();
 			Thread.sleep(50);
 			parse();
 		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		catch (InterruptedException e)
+		catch (IOException | InterruptedException e)
 		{
 			e.printStackTrace();
 		}
