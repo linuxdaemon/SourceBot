@@ -40,7 +40,7 @@ public class SourceBot
 					for (String tag : Config.getTags ())
 					{
 						Cli.print("Getting posts for tag '" + tag + "'");
-						posts.addAll (client.getPostsFromTag (tag, "text", 10, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()), Config.getPostBlacklist()));
+						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()), Config.getPostBlacklist()));
 					}
 					for (Post post : selectPosts (getTopPosts (posts), 1))
 					{
