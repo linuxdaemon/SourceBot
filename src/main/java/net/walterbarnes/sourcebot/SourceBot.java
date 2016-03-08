@@ -6,16 +6,14 @@ import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SourceBot
 {
 	public static void main (String[] args)
 	{
+		Config.load();
 		Tumblr client = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
 				Config.getToken (), Config.getTokenSecret ());
 
@@ -33,6 +31,7 @@ public class SourceBot
 		{
 			if (client.blogDraftPosts(client.getBlogName()).size() < 24)
 			{
+				Config.load();
 				int postCount = 0;
 				System.out.println("Adding posts to queue");
 				while (postCount < 5)
@@ -41,7 +40,7 @@ public class SourceBot
 					for (String tag : Config.getTags ())
 					{
 						Cli.print("Getting posts for tag '" + tag + "'");
-						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist())));
+						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()), Config.getPostBlacklist()));
 					}
 					for (Post post : selectPosts (getTopPosts (posts), 1))
 					{
@@ -55,8 +54,10 @@ public class SourceBot
 						{
 							e.printStackTrace ();
 						}
+						List<Long> pbl = Config.getPostBlacklist();
+						pbl.add(post.getId());
+						Config.setPostBlacklist(pbl);
 					}
-
 					postCount++;
 				}
 			}

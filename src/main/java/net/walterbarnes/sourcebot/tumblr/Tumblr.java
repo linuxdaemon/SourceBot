@@ -31,10 +31,10 @@ public class Tumblr extends JumblrClient
 
 	public ArrayList<Post> getPostsFromTag (String tag, String type, int postNum, HashMap<String, Object> opts)
 	{
-		return getPostsFromTag(tag, type, postNum, opts, new ArrayList<String>(), new ArrayList<String>());
+		return getPostsFromTag(tag, type, postNum, opts, new ArrayList<String>(), new ArrayList<String>(), new ArrayList<Long>());
 	}
 
-	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts, List<String> blogBlacklist, List<String> tagBlacklist)
+	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts, List<String> blogBlacklist, List<String> tagBlacklist, List<Long> postBlacklist)
 	{
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
@@ -57,7 +57,7 @@ public class Tumblr extends JumblrClient
 			{
 				if (type == null || post.getType ().equals (type))
 				{
-					if (blogBlacklist.contains(post.getBlogName())) continue loop;
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue loop;
 					for (String t : tagBlacklist)
 					{
 						if (post.getTags().contains(t)) continue loop;

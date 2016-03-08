@@ -1,11 +1,15 @@
 package net.walterbarnes.sourcebot;
 
+import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.TextPost;
 import net.ofd.oflib.map.MapHelper;
 import net.walterbarnes.sourcebot.config.Config;
+import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.util.*;
 
 public class Analysis
@@ -15,6 +19,54 @@ public class Analysis
 		Tumblr tumblr = new Tumblr(Config.getConsumerKey(), Config.getConsumerSecret(),
 				Config.getToken(), Config.getTokenSecret());
 
+		try
+		{
+			tumblr.setBlogName("thelinuxdemon");
+		}
+		catch (InvalidBlogNameException e)
+		{
+			e.printStackTrace();
+		}
+		//System.out.println(tumblr.rawBlogSubmissions(tumblr.getBlogName()).getBody().replace(",", ",\n"));
+		//System.exit(0);
+
+		List<Post> subs;
+		if ((subs = tumblr.blogSubmissions(tumblr.getBlogName())).size() > 0)
+		{
+			Post post = subs.get(0);
+			System.out.println("submission received");
+			//System.out.println(((AnswerPost)post).getAskingName());
+			if (((AnswerPost)post).getAskingName().equals("thelinuxdemon"))
+			{
+				System.out.println(((AnswerPost)post).getAskingName());
+				System.out.println(post.getState());
+				System.out.println(((AnswerPost) post).getQuestion());
+				try
+				{
+					Map<String, Object> detail = new HashMap<>();
+					detail.put("state", "private");
+					detail.put("tags", post.getTags() == null ? "" : StringUtils.join(post.getTags().toArray(new String[0]), ","));
+					detail.put("format", post.getFormat());
+					detail.put("slug", post.getSlug());
+					detail.put("date", post.getDateGMT());
+					detail.put("answer", "test response");
+					detail.put("blog_name", ((AnswerPost)post).getAskingName());
+					tumblr.postEdit(tumblr.getBlogName(), post.getId(), detail);
+					//if (post.getId() == null) {
+					//	post.setId(tumblr.postCreate(tumblr.getBlogName(), detail));
+					//} else {
+					//	tumblr.postEdit(tumblr.getBlogName(), post.getId(), detail);
+					//}
+					System.out.println(post.getState());
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+			}
+			//post.reblog(tumblr.getBlogName(), opts);
+		}
+		System.exit(0);
 		Map<Long, Post> posts = new HashMap<>();
 		Map<Long, List<String>> postData = new HashMap<>();
 		ArrayList<String> tags = new ArrayList<>(Arrays.asList(Config.getTags()));
