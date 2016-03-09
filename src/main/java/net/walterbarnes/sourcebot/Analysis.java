@@ -67,7 +67,7 @@ class Analysis
 		System.exit(0);
 		Map<Long, Post> posts = new HashMap<>();
 		Map<Long, List<String>> postData = new HashMap<>();
-		ArrayList<String> tags = new ArrayList<>(Arrays.asList(Config.getTags()));
+		List<String> tags = Config.getTags();
 
 		for (int i = 0; i < tags.size(); i++)
 		{
