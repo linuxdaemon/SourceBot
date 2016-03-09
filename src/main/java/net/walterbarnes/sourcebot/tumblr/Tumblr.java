@@ -42,10 +42,10 @@ public class Tumblr extends JumblrClient
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
 		ArrayList<Post> out = new ArrayList<> ();
-		System.out.println();
+		System.out.print("Searching tag " + tag + "posts: " + postCount);
 		while (postCount < postNum)
 		{
-			System.out.print("\r" + postCount);
+			System.out.print("\r" + "Searching tag " + tag + "posts: " + postCount);
 			HashMap<String, Object> options = new HashMap<> ();
 			options.put ("before", lastTime);
 			//options.put ("limit", 1);

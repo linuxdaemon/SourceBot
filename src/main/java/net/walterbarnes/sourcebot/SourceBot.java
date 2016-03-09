@@ -130,7 +130,7 @@ class SourceBot
 						ArrayList<Post> posts = new ArrayList<> ();
 						for (String tag : Config.getTags ())
 						{
-							System.out.println("Searching tag " + tag);
+							//System.out.println("Searching tag " + tag);
 							posts.addAll (client.getPostsFromTag (tag, "text",
 									args.length > 0 && args[0].equals("debug") ? 10 : 1000, null,
 									Config.getBlogBlacklist(), Config.getTagBlacklist(),
