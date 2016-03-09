@@ -9,7 +9,7 @@ import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class SourceBot
+class SourceBot
 {
 	public static void main (String[] args)
 	{
@@ -98,6 +98,7 @@ public class SourceBot
 							}
 						}
 					}
+					ask.delete();
 				}
 			}
 			if (!(args.length > 0 && Arrays.asList(args).contains("noPost")) )

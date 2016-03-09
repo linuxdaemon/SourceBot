@@ -2,7 +2,7 @@ package net.walterbarnes.sourcebot.exception;
 
 public class InvalidBlogNameException extends Exception
 {
-	private String blogName;
+	private final String blogName;
 
 	public InvalidBlogNameException (String blogName)
 	{

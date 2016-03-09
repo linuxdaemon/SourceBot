@@ -4,12 +4,12 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Configuration
+class Configuration
 {
-	File file;
+	private File file;
 	private String fileName = null;
 
-	public Configuration() {};
+	public Configuration() {}
 
 	public Configuration(File file)
 	{

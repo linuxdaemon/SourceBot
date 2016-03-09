@@ -42,11 +42,13 @@ public class Tumblr extends JumblrClient
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
 		ArrayList<Post> out = new ArrayList<> ();
+		System.out.println();
 		while (postCount < postNum)
 		{
+			System.out.print("\r" + postCount);
 			HashMap<String, Object> options = new HashMap<> ();
 			options.put ("before", lastTime);
-			options.put("limit", 1);
+			//options.put ("limit", 1);
 			if (opts != null)
 			{
 				options.putAll (opts);
@@ -59,6 +61,7 @@ public class Tumblr extends JumblrClient
 			loop:
 			for (Post post : posts)
 			{
+				lastTime = post.getTimestamp();
 				if (type == null || post.getType ().equals (type))
 				{
 					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
@@ -69,9 +72,9 @@ public class Tumblr extends JumblrClient
 					out.add (post);
 					postCount++;
 				}
-				lastTime = post.getTimestamp ();
 			}
 		}
+		System.out.println();
 		return out;
 	}
 

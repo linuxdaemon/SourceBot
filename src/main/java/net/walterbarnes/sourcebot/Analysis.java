@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.util.*;
 
-public class Analysis
+class Analysis
 {
 	public static void main(String[] args)
 	{
@@ -43,7 +43,7 @@ public class Analysis
 				{
 					Map<String, Object> detail = new HashMap<>();
 					detail.put("state", "private");
-					detail.put("tags", post.getTags() == null ? "" : StringUtils.join(post.getTags().toArray(new String[0]), ","));
+					detail.put("tags", post.getTags() == null ? "" : StringUtils.join(post.getTags().toArray(new String[post.getTags().size()]), ","));
 					detail.put("format", post.getFormat());
 					detail.put("slug", post.getSlug());
 					detail.put("date", post.getDateGMT());
@@ -83,7 +83,7 @@ public class Analysis
 				for (String tb : Config.getTagBlacklist())
 				{
 					if (post.getTags().contains(tb) ||
-							Arrays.asList(Config.getBlogBlacklist()).contains(post.getBlogName()))
+							Config.getBlogBlacklist().contains(post.getBlogName()))
 					{
 						continue loop;
 					}
@@ -132,7 +132,8 @@ public class Analysis
 		return false;
 	}
 
-	public static int levenshteinDistance(CharSequence lhs, CharSequence rhs) {
+	private static int levenshteinDistance(CharSequence lhs, CharSequence rhs)
+	{
 		int len0 = lhs.length() + 1;
 		int len1 = rhs.length() + 1;
 
