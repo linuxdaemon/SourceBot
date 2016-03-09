@@ -42,7 +42,7 @@ public class Tumblr extends JumblrClient
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
 		ArrayList<Post> out = new ArrayList<> ();
-		System.out.print("Searching tag " + tag + "posts: " + postCount);
+		System.out.print("Searching tag " + tag + " posts: " + postCount);
 		while (postCount < postNum)
 		{
 			System.out.print("\r" + "Searching tag " + tag + "posts: " + postCount);
