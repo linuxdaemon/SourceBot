@@ -1,6 +1,7 @@
 package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.JumblrClient;
+import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Blog;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
@@ -8,6 +9,7 @@ import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Tumblr extends JumblrClient
 {
@@ -44,6 +46,7 @@ public class Tumblr extends JumblrClient
 		{
 			HashMap<String, Object> options = new HashMap<> ();
 			options.put ("before", lastTime);
+			options.put("limit", 1);
 			if (opts != null)
 			{
 				options.putAll (opts);
@@ -58,7 +61,7 @@ public class Tumblr extends JumblrClient
 			{
 				if (type == null || post.getType ().equals (type))
 				{
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue loop;
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
 					for (String t : tagBlacklist)
 					{
 						if (post.getTags().contains(t)) continue loop;
@@ -103,5 +106,36 @@ public class Tumblr extends JumblrClient
 	public List<Post> blogDraftPosts()
 	{
 		return blogDraftPosts(blogName);
+	}
+
+	public List<Post> blogSubmissions()
+	{
+		return blogSubmissions(blogName);
+	}
+
+	public List<Post> blogSubmissions(int offset)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("offset", offset);
+		return blogSubmissions(blogName, params);
+	}
+
+	public List<AnswerPost> getAsks()
+	{
+		int offset = 0;
+		List<AnswerPost> asks = new ArrayList<>();
+		List<Post> subs;
+		while ((subs = blogSubmissions(offset)).size() > 0)
+		{
+			for (Post post : subs)
+			{
+				offset++;
+				if (post.getType().equals("answer"))
+				{
+					asks.add((AnswerPost)post);
+				}
+			}
+		}
+		return asks;
 	}
 }

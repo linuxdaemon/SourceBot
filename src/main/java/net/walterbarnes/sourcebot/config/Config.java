@@ -1,10 +1,7 @@
 package net.walterbarnes.sourcebot.config;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Config
 {
@@ -122,6 +119,15 @@ public class Config
 		return (String) config.get ("blogUrl");
 	}
 
+	public static String[] getBlogAdmins()
+	{
+		if (config == null)
+		{
+			config = new Config();
+		}
+		return ((String)config.get("blogAdmins")).split(",");
+	}
+
 	public static int getPostFreq ()
 	{
 		if (config == null)
@@ -140,16 +146,16 @@ public class Config
 		return ((String)config.get ("tags")).split (",");
 	}
 
-	public static String[] getTagBlacklist ()
+	public static List<String> getTagBlacklist ()
 	{
 		if (config == null)
 		{
 			config = new Config ();
 		}
-		return ((String)config.get ("tagBlacklist")).split (",");
+		return new ArrayList<>(Arrays.asList(((String) config.get("tagBlacklist")).split(",")));
 	}
 
-	public static String[] getBlogBlacklist ()
+	public static List<String> getBlogBlacklist ()
 	{
 		if (config == null)
 		{
@@ -157,11 +163,11 @@ public class Config
 		}
 		if (config.get ("blogBlacklist") == null)
 		{
-			return new String[]{};
+			return new ArrayList<>();
 		}
 		else
 		{
-			return ((String)config.get ("blogBlacklist")).split (",");
+			return new ArrayList<>(Arrays.asList(((String) config.get("blogBlacklist")).split (",")));
 		}
 	}
 
@@ -194,6 +200,29 @@ public class Config
 		save();
 	}
 
+	public static void setBlogBlacklist(List<String> blacklist)
+	{
+		String s = "";
+		for (String blog : blacklist)
+		{
+			s += blog + ",";
+		}
+		config.data.put("blogBlacklist", s.substring(0, s.length()-1));
+		save();
+	}
+
+
+	public static void setTagBlacklist(List<String> blacklist)
+	{
+		String s = "";
+		for (String blog : blacklist)
+		{
+			s += blog + ",";
+		}
+		config.data.put("tagBlacklist", s.substring(0, s.length()-1));
+		save();
+	}
+
 	public static void save()
 	{
 		if (config == null)
@@ -213,20 +242,17 @@ public class Config
 		{
 			Thread.sleep(50);
 			cfgWriter = new BufferedWriter(new FileWriter(new File(cfgName)));
-			forloop:
 			for (Map.Entry<String, String> e : data.entrySet())
 			{
 				if (e.getKey().equals("newLine"))
 				{
 					cfgWriter.write("\n");
-					continue forloop;
 				}
 				else if (e.getKey().equals("comment"))
 				{
 					cfgWriter.write(e.getValue() + "\n");
-					continue forloop;
 				}
-				else cfgWriter.write(String.format("%s=%s%n", e.getKey(), e.getValue()));
+				else { cfgWriter.write(String.format("%s=%s%n", e.getKey(), e.getValue())); }
 			}
 			cfgWriter.flush();
 			Thread.sleep(50);
