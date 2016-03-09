@@ -92,13 +92,24 @@ public class Config
 		return Integer.parseInt((String) config.get("postFrequency"));
 	}
 
-	public static String[] getTags()
+	public static List<String> getTags()
 	{
 		if (config == null)
 		{
 			config = new Config();
 		}
-		return ((String) config.get("tags")).split(",");
+		return new ArrayList<>(Arrays.asList(((String) config.get("tags")).split(",")));
+	}
+
+	public static void setTags(List<String> tags)
+	{
+		String s = "";
+		for (String tag : tags)
+		{
+			s += tag + ",";
+		}
+		config.data.put("tags", s.substring(0, s.length() - 1));
+		save();
 	}
 
 	public static List<String> getTagBlacklist()

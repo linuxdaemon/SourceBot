@@ -74,19 +74,37 @@ class SourceBot
 									}
 									break;
 
+								case "tagsearch":
+									if (words.length > 2)
+									{
+										switch (words[2])
+										{
+											case "add":
+												if (words.length > 3)
+												{
+													for (String tag : ask.getQuestion().replace("config tagsearch add ", "").split(","))
+													{
+														List<String> tags = Config.getTags();
+														tags.add(tag.trim());
+														Config.load();
+														Config.setTags(tags);
+													}
+												}
+										}
+									}
+
 								case "tagblacklist":
 									if (words.length > 2)
 									{
 										switch (words[2])
 										{
 											case "add":
-												System.out.println(ask.getQuestion());
 												if (words.length > 3)
 												{
 													for (String tag : ask.getQuestion().replace("config tagblacklist add ", "").split(","))
 													{
 														List<String> bbl = Config.getTagBlacklist();
-														bbl.add(tag);
+														bbl.add(tag.trim());
 														Config.load();
 														Config.setTagBlacklist(bbl);
 													}
