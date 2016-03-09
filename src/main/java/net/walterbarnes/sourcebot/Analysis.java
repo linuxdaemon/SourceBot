@@ -1,9 +1,9 @@
 package net.walterbarnes.sourcebot;
 
+import com.github.OnyxFoxDevelopment.map.MapHelper;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
 import com.tumblr.jumblr.types.TextPost;
-import net.ofd.oflib.map.MapHelper;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
@@ -27,8 +27,6 @@ public class Analysis
 		{
 			e.printStackTrace();
 		}
-		//System.out.println(tumblr.rawBlogSubmissions(tumblr.getBlogName()).getBody().replace(",", ",\n"));
-		//System.exit(0);
 
 		List<Post> subs;
 		if ((subs = tumblr.blogSubmissions(tumblr.getBlogName())).size() > 0)

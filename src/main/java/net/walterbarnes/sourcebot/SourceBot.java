@@ -1,7 +1,6 @@
 package net.walterbarnes.sourcebot;
 
 import com.tumblr.jumblr.types.Post;
-import net.ofd.oflib.cli.Cli;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
@@ -13,6 +12,7 @@ public class SourceBot
 {
 	public static void main (String[] args)
 	{
+		// TODO Allow config from asks from blog admins
 		Config.load();
 		Tumblr client = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
 				Config.getToken (), Config.getTokenSecret ());
@@ -26,10 +26,23 @@ public class SourceBot
 			e.printStackTrace ();
 		}
 
+		if (args.length > 0 && Arrays.asList(args).contains("purgeDrafts"))
+		{
+			List<Post> drafts;
+			while ((drafts = client.blogDraftPosts()).size() > 0)
+			{
+				for (Post post : drafts)
+				{
+					post.delete();
+				}
+			}
+			System.exit(0);
+		}
+
 		long time = System.currentTimeMillis();
 		while (true)
 		{
-			if (client.blogDraftPosts(client.getBlogName()).size() < 24)
+			if (client.blogDraftPosts().size() < 10)
 			{
 				Config.load();
 				int postCount = 0;
@@ -39,8 +52,11 @@ public class SourceBot
 					ArrayList<Post> posts = new ArrayList<> ();
 					for (String tag : Config.getTags ())
 					{
-						Cli.print("Getting posts for tag '" + tag + "'");
-						posts.addAll (client.getPostsFromTag (tag, "text", 1000, null, Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()), Config.getPostBlacklist()));
+						System.out.println("Searching tag " + tag);
+						posts.addAll (client.getPostsFromTag (tag, "text",
+								args.length > 0 && args[0].equals("debug") ? 10 : 1000, null,
+								Arrays.asList(Config.getBlogBlacklist()), Arrays.asList(Config.getTagBlacklist()),
+								Config.getPostBlacklist()));
 					}
 					for (Post post : selectPosts (getTopPosts (posts), 1))
 					{
@@ -49,13 +65,12 @@ public class SourceBot
 						params.put ("comment", "Source?");
 						try
 						{
-							post.reblog(client.getBlogName(), params);
-						} catch (NullPointerException e)
-						{
-							e.printStackTrace ();
-						}
+							if (!(args.length > 0) || !args[0].equals("debug"))
+								post.reblog(client.getBlogName(), params);
+						} catch (NullPointerException ignored) {}
 						List<Long> pbl = Config.getPostBlacklist();
 						pbl.add(post.getId());
+						Config.load();
 						Config.setPostBlacklist(pbl);
 					}
 					postCount++;

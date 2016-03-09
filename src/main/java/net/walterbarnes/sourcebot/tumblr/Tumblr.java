@@ -34,6 +34,7 @@ public class Tumblr extends JumblrClient
 		return getPostsFromTag(tag, type, postNum, opts, new ArrayList<String>(), new ArrayList<String>(), new ArrayList<Long>());
 	}
 
+	// TODO Implement Post Caching
 	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts, List<String> blogBlacklist, List<String> tagBlacklist, List<Long> postBlacklist)
 	{
 		int postCount = 0;
@@ -97,5 +98,10 @@ public class Tumblr extends JumblrClient
 			throw new InvalidBlogNameException (blog);
 		}
 		this.blogName = blog;
+	}
+
+	public List<Post> blogDraftPosts()
+	{
+		return blogDraftPosts(blogName);
 	}
 }
