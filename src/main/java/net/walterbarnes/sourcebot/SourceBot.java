@@ -90,8 +90,10 @@ class SourceBot
 														Config.setTags(tags);
 													}
 												}
+												break;
 										}
 									}
+									break;
 
 								case "tagblacklist":
 									if (words.length > 2)
@@ -154,7 +156,7 @@ class SourceBot
 					}
 					Thread.sleep(10000);
 				}
-				catch (IllegalStateException | InterruptedException e)
+				catch (Exception e)
 				{
 					e.printStackTrace();
 				}
