@@ -43,7 +43,8 @@ class Analysis
 				{
 					Map<String, Object> detail = new HashMap<>();
 					detail.put("state", "private");
-					detail.put("tags", post.getTags() == null ? "" : StringUtils.join(post.getTags().toArray(new String[post.getTags().size()]), ","));
+					detail.put("tags", post.getTags() == null ? "" : StringUtils.join(post.getTags()
+							.toArray(new String[post.getTags().size()]), ","));
 					detail.put("format", post.getFormat());
 					detail.put("slug", post.getSlug());
 					detail.put("date", post.getDateGMT());

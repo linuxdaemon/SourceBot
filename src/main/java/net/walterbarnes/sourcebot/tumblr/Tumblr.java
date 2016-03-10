@@ -33,11 +33,14 @@ public class Tumblr extends JumblrClient
 
 	public ArrayList<Post> getPostsFromTag (String tag, String type, int postNum, HashMap<String, Object> opts)
 	{
-		return getPostsFromTag(tag, type, postNum, opts, new ArrayList<String>(), new ArrayList<String>(), new ArrayList<Long>());
+		return getPostsFromTag(tag, type, postNum, opts, new ArrayList<String>(), new ArrayList<String>(),
+				new ArrayList<Long>());
 	}
 
 	// TODO Implement Post Caching
-	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts, List<String> blogBlacklist, List<String> tagBlacklist, List<Long> postBlacklist)
+	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
+										   List<String> blogBlacklist, List<String> tagBlacklist,
+										   List<Long> postBlacklist)
 	{
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
