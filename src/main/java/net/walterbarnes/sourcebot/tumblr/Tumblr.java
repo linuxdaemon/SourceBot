@@ -118,6 +118,13 @@ public class Tumblr extends JumblrClient
 		return blogDraftPosts(blogName);
 	}
 
+	public List<Post> blogDraftPosts(long before)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("before_id", before);
+		return blogDraftPosts(blogName, params);
+	}
+
 	public List<Post> blogSubmissions()
 	{
 		return blogSubmissions(blogName);
@@ -147,5 +154,21 @@ public class Tumblr extends JumblrClient
 			}
 		}
 		return asks;
+	}
+
+	public List<Post> getDrafts()
+	{
+		long before = 0;
+		List<Post> drafts;
+		ArrayList<Post> out = new ArrayList<>();
+		while ((drafts = blogDraftPosts(before)).size() > 0)
+		{
+			for (Post post : drafts)
+			{
+				out.add(post);
+				before = post.getId();
+			}
+		}
+		return out;
 	}
 }

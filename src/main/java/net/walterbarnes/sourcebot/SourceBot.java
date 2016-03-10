@@ -7,6 +7,7 @@ import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
@@ -39,8 +40,11 @@ public class SourceBot
 				logger.info(String.format("Purging %d Posts from Drafts", drafts.size()));
 				for (Post post : drafts)
 				{
-					logger.fine(String.format("Deleting post with id '%d' from drafts", post.getId()));
-					post.delete();
+					if (!post.getTags().contains("auto"))
+					{
+						logger.fine(String.format("Deleting post with id '%d' from drafts", post.getId()));
+						post.delete();
+					}
 				}
 			}
 			System.exit(0);
@@ -139,6 +143,31 @@ public class SourceBot
 					ask.delete();
 				}
 			}
+
+			if (client.blogDraftPosts().size() > 0)
+			{
+				logger.fine("Getting drafts");
+				List<Post> drafts = client.getDrafts();
+				logger.fine("Pulled " + drafts.size() + " drafts");
+				for (Post post : drafts)
+				{
+					try
+					{
+						if (post.getTags().contains("auto"))
+						{
+							post.setTags(new ArrayList<>(Collections.singletonList("manual")));
+							post.setState("queued");
+							post.save();
+						}
+					}
+					catch (IOException e)
+					{
+						logger.log(Level.SEVERE, e.getMessage(), e);
+					}
+				}
+			}
+
+
 			if (!(args.length > 0 && Arrays.asList(args).contains("noPost")) )
 			{
 				try
