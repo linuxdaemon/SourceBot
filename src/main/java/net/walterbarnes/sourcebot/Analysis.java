@@ -7,17 +7,20 @@ import com.tumblr.jumblr.types.TextPost;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.util.LogHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 
 class Analysis
 {
 	public static void main(String[] args)
 	{
+		Logger logger = LogHelper.getLogger();
 		Tumblr tumblr = new Tumblr(Config.getConsumerKey(), Config.getConsumerSecret(),
-				Config.getToken(), Config.getTokenSecret());
+				Config.getToken(), Config.getTokenSecret(), logger);
 
 		try
 		{

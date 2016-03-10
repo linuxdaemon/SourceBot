@@ -10,14 +10,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class Tumblr extends JumblrClient
 {
+	private final Logger logger;
 	private String blogName;
 
-	public Tumblr (String consumerKey, String consumerSecret, String token, String tokenSecret)
+	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret, Logger logger)
 	{
 		super (consumerKey, consumerSecret);
+		this.logger = logger;
 		setToken (token, tokenSecret);
 	}
 
@@ -45,6 +48,7 @@ public class Tumblr extends JumblrClient
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
 		ArrayList<Post> out = new ArrayList<> ();
+		logger.info("Searching tag " + tag);
 		System.out.print("Searching tag " + tag + " posts: " + postCount);
 		while (postCount < postNum)
 		{

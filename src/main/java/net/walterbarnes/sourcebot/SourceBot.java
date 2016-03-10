@@ -5,17 +5,22 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.util.LogHelper;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-class SourceBot
+public class SourceBot
 {
 	public static void main (String[] args)
 	{
+		LogHelper.init();
+		Logger logger = LogHelper.getLogger();
 		Config.load();
 		Tumblr client = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
-				Config.getToken (), Config.getTokenSecret ());
+				Config.getToken(), Config.getTokenSecret(), logger);
 
 		try
 		{
@@ -31,8 +36,10 @@ class SourceBot
 			List<Post> drafts;
 			while ((drafts = client.blogDraftPosts()).size() > 0)
 			{
+				logger.info(String.format("Purging %d Posts from Drafts", drafts.size()));
 				for (Post post : drafts)
 				{
+					logger.fine(String.format("Deleting post with id '%d' from drafts", post.getId()));
 					post.delete();
 				}
 			}
@@ -43,14 +50,15 @@ class SourceBot
 		{
 			if (client.blogSubmissions().size() > 0)
 			{
+				logger.info("Parsing Submissions");
 				List<AnswerPost> asks = client.getAsks();
 				for (AnswerPost ask : asks)
 				{
+					logger.info("Processing ask");
 					if (Arrays.asList(Config.getBlogAdmins()).contains(ask.getAskingName()))
 					{
 						String[] words;
-						if ((words = ask.getQuestion().split(" ")).length > 0 && words[0].matches("[Cc]onfig")
-								&& words.length > 1)
+						if ((words = ask.getQuestion().split(" ")).length > 1 && words[0].matches("[Cc]onfig"))
 						{
 							switch (words[1])
 							{
@@ -62,9 +70,11 @@ class SourceBot
 											case "add":
 												if (words.length > 3)
 												{
+													logger.info("Adding blogs to blacklist");
 													for (int i = 3; i < words.length; i++)
 													{
 														List<String> bbl = Config.getBlogBlacklist();
+														logger.fine("Adding " + words[i] + " to blacklist");
 														bbl.add(words[i]);
 														Config.load();
 														Config.setBlogBlacklist(bbl);
@@ -83,10 +93,12 @@ class SourceBot
 											case "add":
 												if (words.length > 3)
 												{
+													logger.info("Adding tags to search");
 													for (String tag : ask.getQuestion()
 															.replace("config tagsearch add ", "").split(","))
 													{
 														List<String> tags = Config.getTags();
+														logger.fine("Adding " + tag + " to search list");
 														tags.add(tag.trim());
 														Config.load();
 														Config.setTags(tags);
@@ -105,10 +117,12 @@ class SourceBot
 											case "add":
 												if (words.length > 3)
 												{
+													logger.info("Adding tags to blacklist");
 													for (String tag : ask.getQuestion()
 															.replace("config tagblacklist add ", "").split(","))
 													{
 														List<String> bbl = Config.getTagBlacklist();
+														logger.fine("Adding tag '" + tag + "' to blacklist");
 														bbl.add(tag.trim());
 														Config.load();
 														Config.setTagBlacklist(bbl);
@@ -121,6 +135,7 @@ class SourceBot
 							}
 						}
 					}
+					logger.fine("Deleting ask with id " + ask.getId());
 					ask.delete();
 				}
 			}
@@ -131,7 +146,7 @@ class SourceBot
 					while (client.blogDraftPosts().size() < 20)
 					{
 						Config.load();
-						System.out.println("Adding posts to queue");
+						logger.info("Adding posts to queue");
 						ArrayList<Post> posts = new ArrayList<> ();
 						for (String tag : Config.getTags ())
 						{
@@ -150,7 +165,11 @@ class SourceBot
 							{
 								if (!(args.length > 0) || !args[0].equals("debug"))
 									post.reblog(client.getBlogName(), params);
-							} catch (NullPointerException ignored) {}
+							}
+							catch (NullPointerException e)
+							{
+								logger.log(Level.SEVERE, e.getMessage(), e);
+							}
 							List<Long> pbl = Config.getPostBlacklist();
 							pbl.add(post.getId());
 							Config.load();
@@ -161,7 +180,7 @@ class SourceBot
 				}
 				catch (Exception e)
 				{
-					e.printStackTrace();
+					logger.log(Level.SEVERE, e.getMessage(), e);
 				}
 			}
 		}
