@@ -1,13 +1,25 @@
 package net.walterbarnes.sourcebot.config;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 class Configuration
 {
-	private File file;
+
+	private static final String NEW_LINE;
+
+	static
+	{
+		NEW_LINE = System.getProperty("line.separator");
+	}
+
+	File file;
 	private String fileName = null;
+	private boolean changed = false;
 
 	public Configuration() {}
 
@@ -18,7 +30,7 @@ class Configuration
 		fileName = path;
 		try
 		{
-			//load();
+			load();
 		}
 		catch (Throwable e)
 		{
@@ -29,12 +41,65 @@ class Configuration
 			e.printStackTrace();
 
 			file.renameTo(fileBak);
-			//load();
+			load();
 		}
 	}
 
 	@Override
 	public String toString() { return file.getAbsolutePath(); }
 
+	public void load()
+	{
+		BufferedReader buffer = null;
+		FileReader input = null;
+		try
+		{
+			if (file.getParentFile() != null)
+			{
+				file.getParentFile().mkdirs();
+			}
+
+			if (!file.exists())
+			{
+				if (!file.createNewFile())
+				{ return; }
+			}
+
+			if (file.canRead())
+			{
+				input = new FileReader(file);
+				buffer = new BufferedReader(input);
+
+				String line;
+				while (true)
+				{
+					break;
+				}
+			}
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			if (buffer != null)
+			{
+				try
+				{
+					buffer.close();
+				}
+				catch (IOException ignored) {}
+			}
+			if (input != null)
+			{
+				try
+				{
+					input.close();
+				}
+				catch (IOException ignored) {}
+			}
+		}
+	}
 
 }

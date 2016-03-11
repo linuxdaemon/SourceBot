@@ -3,11 +3,14 @@ package net.walterbarnes.sourcebot;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.config.Config;
+import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 
+import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
@@ -15,11 +18,27 @@ import java.util.logging.Logger;
 
 public class SourceBot
 {
-	public static void main (String[] args)
+	private static Logger logger = LogHelper.getLogger();
+
+	public static void main(String[] args)
 	{
-		LogHelper.init();
-		Logger logger = LogHelper.getLogger();
-		Config.load();
+		CrashReport crashreport;
+		try
+		{
+			LogHelper.init();
+			Config.load();
+			run(args);
+		}
+		catch (Throwable throwable)
+		{
+			crashreport = new CrashReport("Unexpected error", throwable);
+			logger.log(Level.SEVERE, "Unreported exception thrown!", throwable);
+			displayCrashReport(crashreport);
+		}
+	}
+
+	public static void run(String[] args)
+	{
 		Tumblr client = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
 				Config.getToken(), Config.getTokenSecret(), logger);
 
@@ -249,7 +268,30 @@ public class SourceBot
 				}
 			}
 		}
-
 		return new ArrayList<> (posts.subList (0, 49));
+	}
+
+	public static void displayCrashReport(CrashReport crashReport)
+	{
+		File file1 = new File(".", "crash-reports");
+		File file2 = new File(file1, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + ".txt");
+		System.out.println(crashReport.getCompleteReport());
+
+		int retVal;
+		if (crashReport.getFile() != null)
+		{
+			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + crashReport.getFile());
+			retVal = -1;
+		}
+		else if (crashReport.saveToFile(file2))
+		{
+			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + file2.getAbsolutePath());
+			retVal = -1;
+		}
+		else
+		{
+			System.out.println("#@?@# Bot crashed! Crash report could not be saved. #@?@#");
+			retVal = -2;
+		}
 	}
 }
