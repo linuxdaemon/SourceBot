@@ -95,95 +95,95 @@ public class BotThread implements Runnable
 		JsonArray tagWhitelist = whitelist.getAsJsonArray("tags");
 		JsonArray blogWhitelist = whitelist.getAsJsonArray("blogs");
 
-		if (client.blogSubmissions().size() > 0)
+		try
 		{
-			logger.info("Parsing Submissions");
-			List<AnswerPost> asks = client.getAsks();
-			for (AnswerPost ask : asks)
+			if (client.blogSubmissions().size() > 0)
 			{
-				logger.info("Processing ask");
-				if (blogAdmins.contains(ask.getAskingName()))
+				logger.info("Parsing Submissions");
+				List<AnswerPost> asks = client.getAsks();
+				for (AnswerPost ask : asks)
 				{
-					String[] words;
-					if ((words = ask.getQuestion().split(" ")).length > 1 && words[0].matches("[Cc]onfig"))
+					logger.info("Processing ask");
+					if (blogAdmins.contains(ask.getAskingName()))
 					{
-						switch (words[1])
+						String[] words;
+						if ((words = ask.getQuestion().split(" ")).length > 1 && words[0].matches("[Cc]onfig"))
 						{
-							case "blogblacklist":
-								if (words.length > 2)
-								{
-									switch (words[2])
+							switch (words[1])
+							{
+								case "blogblacklist":
+									if (words.length > 2)
 									{
-										case "add":
-											if (words.length > 3)
-											{
-												logger.info("Adding blogs to blacklist");
-												for (int i = 3; i < words.length; i++)
+										switch (words[2])
+										{
+											case "add":
+												if (words.length > 3)
 												{
-													logger.fine("Adding " + words[i] + " to blacklist");
-													blogBlacklist.add(new JsonPrimitive(words[i]));
+													logger.info("Adding blogs to blacklist");
+													for (int i = 3; i < words.length; i++)
+													{
+														logger.fine("Adding " + words[i] + " to blacklist");
+														blogBlacklist.add(new JsonPrimitive(words[i]));
+													}
 												}
-											}
-											logger.fine("Deleting ask with id " + ask.getId());
-											ask.delete();
-											break;
+												logger.fine("Deleting ask with id " + ask.getId());
+												ask.delete();
+												break;
+										}
 									}
-								}
-								break;
+									break;
 
-							case "tagsearch":
-								if (words.length > 2)
-								{
-									switch (words[2])
+								case "tagsearch":
+									if (words.length > 2)
 									{
-										case "add":
-											if (words.length > 3)
-											{
-												logger.info("Adding tags to search");
-												for (String tag : ask.getQuestion()
-														.replace("config tagsearch add ", "").split(","))
+										switch (words[2])
+										{
+											case "add":
+												if (words.length > 3)
 												{
-													logger.fine("Adding " + tag + " to search list");
-													tagWhitelist.add(new JsonPrimitive(tag));
+													logger.info("Adding tags to search");
+													for (String tag : ask.getQuestion()
+															.replace("config tagsearch add ", "").split(","))
+													{
+														logger.fine("Adding " + tag + " to search list");
+														tagWhitelist.add(new JsonPrimitive(tag));
+													}
 												}
-											}
-											logger.fine("Deleting ask with id " + ask.getId());
-											ask.delete();
-											break;
+												logger.fine("Deleting ask with id " + ask.getId());
+												ask.delete();
+												break;
+										}
 									}
-								}
-								break;
+									break;
 
-							case "tagblacklist":
-								if (words.length > 2)
-								{
-									switch (words[2])
+								case "tagblacklist":
+									if (words.length > 2)
 									{
-										case "add":
-											if (words.length > 3)
-											{
-												logger.info("Adding tags to blacklist");
-												for (String tag : ask.getQuestion()
-														.replace("config tagblacklist add ", "").split(","))
+										switch (words[2])
+										{
+											case "add":
+												if (words.length > 3)
 												{
-													logger.fine("Adding tag '" + tag + "' to blacklist");
-													tagBlacklist.add(new JsonPrimitive(tag));
+													logger.info("Adding tags to blacklist");
+													for (String tag : ask.getQuestion()
+															.replace("config tagblacklist add ", "").split(","))
+													{
+														logger.fine("Adding tag '" + tag + "' to blacklist");
+														tagBlacklist.add(new JsonPrimitive(tag));
+													}
 												}
-											}
-											logger.fine("Deleting ask with id " + ask.getId());
-											ask.delete();
-											break;
+												logger.fine("Deleting ask with id " + ask.getId());
+												ask.delete();
+												break;
+										}
 									}
-								}
-								break;
+									break;
+							}
 						}
 					}
 				}
 			}
-		}
 
-		try
-		{
 			while (client.blogDraftPosts().size() < 20)
 			{
 				logger.info("Adding posts to queue");
