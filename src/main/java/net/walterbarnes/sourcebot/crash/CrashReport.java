@@ -4,9 +4,7 @@ import net.walterbarnes.sourcebot.util.LogHelper;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Level;
 
 public class CrashReport
@@ -20,48 +18,15 @@ public class CrashReport
 	 */
 	private final Throwable cause;
 	/**
-	 * Holds the keys and values of all crash report sections.
-	 */
-	private final List crashReportSections = new ArrayList();
-	/**
 	 * File of crash report.
 	 */
 	private File crashReportFile;
-	private boolean field_85059_f = true;
 	private StackTraceElement[] stacktrace = new StackTraceElement[0];
 
 	public CrashReport(String description, Throwable cause)
 	{
 		this.description = description;
 		this.cause = cause;
-	}
-
-	/**
-	 * Creates a crash report for the exception
-	 */
-	public static CrashReport makeCrashReport(Throwable p_85055_0_, String p_85055_1_)
-	{
-		CrashReport crashreport;
-
-		crashreport = new CrashReport(p_85055_1_, p_85055_0_);
-
-		return crashreport;
-	}
-
-	/**
-	 * Returns the description of the Crash Report.
-	 */
-	public String getDescription()
-	{
-		return this.description;
-	}
-
-	/**
-	 * Returns the Throwable object that is the cause for the crash and Crash Report.
-	 */
-	public Throwable getCrashCause()
-	{
-		return this.cause;
 	}
 
 	/**
@@ -173,17 +138,11 @@ public class CrashReport
 		return stringbuilder.toString();
 	}
 
-	/**
-	 * Gets the file this crash report is saved into.
-	 */
 	public File getFile()
 	{
 		return this.crashReportFile;
 	}
 
-	/**
-	 * Saves this CrashReport to the given file and returns a value indicating whether we were successful at doing so.
-	 */
 	public boolean saveToFile(File p_147149_1_)
 	{
 		if (this.crashReportFile != null)

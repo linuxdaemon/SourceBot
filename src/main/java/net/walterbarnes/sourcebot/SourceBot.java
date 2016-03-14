@@ -1,24 +1,32 @@
 package net.walterbarnes.sourcebot;
 
-import com.tumblr.jumblr.types.AnswerPost;
-import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.config.Config;
+import com.google.gson.*;
+import com.google.gson.stream.JsonWriter;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SourceBot
 {
+	private static final String jsonName = "SourceBot.json";
+	private static final String postsName = "posts.json";
 	private static Logger logger = LogHelper.getLogger();
+	private static Gson gson = new Gson();
+	private static Gson gsonBuilder = new GsonBuilder().setPrettyPrinting().create();
+	private static JsonParser parser = new JsonParser();
+	private static JsonObject json, posts;
+	private static File jsonFile;
+	private static File postsFile;
 
 	public static void main(String[] args)
 	{
@@ -26,249 +34,65 @@ public class SourceBot
 		try
 		{
 			LogHelper.init();
-			Config.load();
-			run(args);
+			if (!(jsonFile = new File(jsonName)).exists())
+			{
+				jsonFile.createNewFile();
+			}
+			if (!(postsFile = new File(postsName)).exists())
+			{
+				postsFile.createNewFile();
+				FileWriter fw = new FileWriter(postsFile);
+				JsonWriter pjw = new JsonWriter(fw);
+				pjw.beginObject();
+				pjw.endObject();
+				pjw.close();
+				fw.close();
+			}
+			json = parser.parse(new FileReader(jsonFile)).getAsJsonObject();
+			posts = parser.parse(new FileReader(postsFile)).getAsJsonObject();
+			run();
 		}
 		catch (Throwable throwable)
 		{
 			crashreport = new CrashReport("Unexpected error", throwable);
-			logger.log(Level.SEVERE, "Unreported exception thrown!", throwable);
 			displayCrashReport(crashreport);
 		}
 	}
 
-	public static void run(String[] args)
+	public static void run() throws InvalidBlogNameException
 	{
-		Tumblr client = new Tumblr (Config.getConsumerKey (), Config.getConsumerSecret (),
-				Config.getToken(), Config.getTokenSecret(), logger);
-
-		try
-		{
-			client.setBlogName (Config.getBlogUrl ());
-		}
-		catch (InvalidBlogNameException e)
-		{
-			e.printStackTrace ();
-		}
-
-		if (args.length > 0 && Arrays.asList(args).contains("purgeDrafts"))
-		{
-			List<Post> drafts;
-			while ((drafts = client.blogDraftPosts()).size() > 0)
-			{
-				logger.info(String.format("Purging %d Posts from Drafts", drafts.size()));
-				for (Post post : drafts)
-				{
-					if (!post.getTags().contains("auto"))
-					{
-						logger.fine(String.format("Deleting post with id '%d' from drafts", post.getId()));
-						post.delete();
-					}
-				}
-			}
-			System.exit(0);
-		}
+		JsonObject api = json.getAsJsonObject("api");
+		JsonObject consumer = api.getAsJsonObject("consumer");
+		JsonObject token = api.getAsJsonObject("token");
+		Tumblr client = new Tumblr(consumer.get("key").getAsString(), consumer.get("secret").getAsString(),
+				token.get("key").getAsString(), token.get("secret").getAsString(), logger);
 
 		while (true)
 		{
-			if (client.blogSubmissions().size() > 0)
+			for (JsonElement blog : json.getAsJsonArray("blogs"))
 			{
-				logger.info("Parsing Submissions");
-				List<AnswerPost> asks = client.getAsks();
-				for (AnswerPost ask : asks)
-				{
-					logger.info("Processing ask");
-					if (Arrays.asList(Config.getBlogAdmins()).contains(ask.getAskingName()))
-					{
-						String[] words;
-						if ((words = ask.getQuestion().split(" ")).length > 1 && words[0].matches("[Cc]onfig"))
-						{
-							switch (words[1])
-							{
-								case "blogblacklist":
-									if (words.length > 2)
-									{
-										switch (words[2])
-										{
-											case "add":
-												if (words.length > 3)
-												{
-													logger.info("Adding blogs to blacklist");
-													for (int i = 3; i < words.length; i++)
-													{
-														List<String> bbl = Config.getBlogBlacklist();
-														logger.fine("Adding " + words[i] + " to blacklist");
-														bbl.add(words[i]);
-														Config.load();
-														Config.setBlogBlacklist(bbl);
-													}
-												}
-												break;
-										}
-									}
-									break;
-
-								case "tagsearch":
-									if (words.length > 2)
-									{
-										switch (words[2])
-										{
-											case "add":
-												if (words.length > 3)
-												{
-													logger.info("Adding tags to search");
-													for (String tag : ask.getQuestion()
-															.replace("config tagsearch add ", "").split(","))
-													{
-														List<String> tags = Config.getTags();
-														logger.fine("Adding " + tag + " to search list");
-														tags.add(tag.trim());
-														Config.load();
-														Config.setTags(tags);
-													}
-												}
-												break;
-										}
-									}
-									break;
-
-								case "tagblacklist":
-									if (words.length > 2)
-									{
-										switch (words[2])
-										{
-											case "add":
-												if (words.length > 3)
-												{
-													logger.info("Adding tags to blacklist");
-													for (String tag : ask.getQuestion()
-															.replace("config tagblacklist add ", "").split(","))
-													{
-														List<String> bbl = Config.getTagBlacklist();
-														logger.fine("Adding tag '" + tag + "' to blacklist");
-														bbl.add(tag.trim());
-														Config.load();
-														Config.setTagBlacklist(bbl);
-													}
-												}
-												break;
-										}
-									}
-									break;
-							}
-						}
-					}
-					logger.fine("Deleting ask with id " + ask.getId());
-					ask.delete();
-				}
+				JsonObject j = blog.getAsJsonObject();
+				String url = j.get("url").getAsString();
+				BotThread bt = new BotThread(client.setBlogName(url), j, posts.getAsJsonArray(url));
+				logger.info("Running Thread for " + url);
+				bt.run();
 			}
-
-			if (client.blogDraftPosts().size() > 0)
+			try
 			{
-				logger.fine("Getting drafts");
-				List<Post> drafts = client.getDrafts();
-				logger.fine("Pulled " + drafts.size() + " drafts");
-				for (Post post : drafts)
-				{
-					try
-					{
-						if (post.getTags().contains("auto"))
-						{
-							post.setTags(new ArrayList<>(Collections.singletonList("manual")));
-							post.setState("queued");
-							post.save();
-						}
-					}
-					catch (IOException e)
-					{
-						logger.log(Level.SEVERE, e.getMessage(), e);
-					}
-				}
+				FileWriter pjw = new FileWriter(postsFile);
+				pjw.append(gsonBuilder.toJson(posts));
+				pjw.close();
+
+				FileWriter cjw = new FileWriter(jsonFile);
+				cjw.append(gsonBuilder.toJson(json));
+				cjw.close();
 			}
-
-
-			if (!(args.length > 0 && Arrays.asList(args).contains("noPost")) )
+			catch (IOException e)
 			{
-				try
-				{
-					while (client.blogDraftPosts().size() < 20)
-					{
-						Config.load();
-						logger.info("Adding posts to queue");
-						ArrayList<Post> posts = new ArrayList<> ();
-						for (String tag : Config.getTags ())
-						{
-							//System.out.println("Searching tag " + tag);
-							posts.addAll (client.getPostsFromTag (tag, "text",
-									args.length > 0 && args[0].equals("debug") ? 10 : 1000, null,
-									Config.getBlogBlacklist(), Config.getTagBlacklist(),
-									Config.getPostBlacklist()));
-						}
-						for (Post post : selectPosts (getTopPosts (posts), 1, true))
-						{
-							Map<String, Object> params = new HashMap<> ();
-							params.put("state", "draft");
-							params.put ("comment", "Source?");
-							try
-							{
-								if (!(args.length > 0) || !args[0].equals("debug"))
-									post.reblog(client.getBlogName(), params);
-							}
-							catch (NullPointerException e)
-							{
-								logger.log(Level.SEVERE, e.getMessage(), e);
-							}
-							List<Long> pbl = Config.getPostBlacklist();
-							pbl.add(post.getId());
-							Config.load();
-							Config.setPostBlacklist(pbl);
-						}
-					}
-					Thread.sleep(10000);
-				}
-				catch (Exception e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				System.exit(1);
 			}
 		}
-	}
-
-	private static ArrayList<Post> selectPosts (ArrayList<Post> posts, int n, boolean unique)
-	{
-		ArrayList<Post> out = new ArrayList<> ();
-
-		while (out.size () < n)
-		{
-			Post post = posts.get (ThreadLocalRandom.current ().nextInt (0, posts.size () + 1));
-			out.add (post);
-			if (unique) posts.remove (post);
-		}
-		return out;
-	}
-
-	private static ArrayList<Post> getTopPosts (ArrayList<Post> posts)
-	{
-		int moves = 0;
-		boolean firstRun = true;
-		while (firstRun || moves > 0)
-		{
-			moves = 0;
-			firstRun = false;
-			for (int i = 1; i < posts.size (); i++)
-			{
-				Post a = posts.get (i - 1);
-				Post b = posts.get (i);
-
-				if (a.getNoteCount () < b.getNoteCount ())
-				{
-					posts.set (i - 1, b);
-					posts.set (i, a);
-					moves++;
-				}
-			}
-		}
-		return new ArrayList<> (posts.subList (0, 49));
 	}
 
 	public static void displayCrashReport(CrashReport crashReport)
@@ -277,21 +101,17 @@ public class SourceBot
 		File file2 = new File(file1, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + ".txt");
 		System.out.println(crashReport.getCompleteReport());
 
-		int retVal;
 		if (crashReport.getFile() != null)
 		{
 			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + crashReport.getFile());
-			retVal = -1;
 		}
 		else if (crashReport.saveToFile(file2))
 		{
 			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + file2.getAbsolutePath());
-			retVal = -1;
 		}
 		else
 		{
 			System.out.println("#@?@# Bot crashed! Crash report could not be saved. #@?@#");
-			retVal = -2;
 		}
 	}
 }
