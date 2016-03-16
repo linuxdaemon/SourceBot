@@ -203,9 +203,4 @@ public class BotThread implements Runnable
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 	}
-
-	public JsonObject getJson()
-	{
-		return json;
-	}
 }
