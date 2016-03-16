@@ -1,7 +1,5 @@
 package net.walterbarnes.sourcebot.util;
 
-import net.walterbarnes.sourcebot.SourceBot;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -13,17 +11,19 @@ import java.util.logging.SimpleFormatter;
 
 public class LogHelper
 {
-	private static final String logFileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date()) + "-SourceBot.log";
+	private static final String logFileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date()) +
+			"-SourceBot.log";
 	private static final String logsDir = "logs";
-	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
+	private static Logger logger;
 
 	private static FileHandler fileTxt;
 	private static SimpleFormatter formatterTxt;
 
-	public static void init()
+	public static void init(Class c)
 	{
 		try
 		{
+			logger = Logger.getLogger(c.getName());
 			File dir = new File(logsDir);
 			if (!(dir.exists() && dir.isDirectory()))
 			{

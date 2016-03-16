@@ -20,8 +20,7 @@ public class SourceBot
 {
 	private static final String jsonName = "SourceBot.json";
 	private static final String postsName = "posts.json";
-	private static Logger logger = LogHelper.getLogger();
-	private static Gson gson = new Gson();
+	private static Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private static Gson gsonBuilder = new GsonBuilder().setPrettyPrinting().create();
 	private static JsonParser parser = new JsonParser();
 	private static JsonObject json, posts;
@@ -33,14 +32,26 @@ public class SourceBot
 		CrashReport crashreport;
 		try
 		{
-			LogHelper.init();
+			LogHelper.init(SourceBot.class);
 			if (!(jsonFile = new File(jsonName)).exists())
 			{
-				jsonFile.createNewFile();
+				if (!jsonFile.createNewFile())
+				{
+					throw new RuntimeException("Unable to Create Config File");
+				}
+				FileWriter fw = new FileWriter(jsonFile);
+				JsonWriter pjw = new JsonWriter(fw);
+				pjw.beginObject();
+				pjw.endObject();
+				pjw.close();
+				fw.close();
 			}
 			if (!(postsFile = new File(postsName)).exists())
 			{
-				postsFile.createNewFile();
+				if (!postsFile.createNewFile())
+				{
+					throw new RuntimeException("Unable to Create Post History File");
+				}
 				FileWriter fw = new FileWriter(postsFile);
 				JsonWriter pjw = new JsonWriter(fw);
 				pjw.beginObject();
@@ -79,13 +90,13 @@ public class SourceBot
 			}
 			try
 			{
-				FileWriter pjw = new FileWriter(postsFile);
-				pjw.append(gsonBuilder.toJson(posts));
-				pjw.close();
-
 				FileWriter cjw = new FileWriter(jsonFile);
 				cjw.append(gsonBuilder.toJson(json));
 				cjw.close();
+
+				FileWriter pjw = new FileWriter(postsFile);
+				pjw.append(gsonBuilder.toJson(posts));
+				pjw.close();
 			}
 			catch (IOException e)
 			{

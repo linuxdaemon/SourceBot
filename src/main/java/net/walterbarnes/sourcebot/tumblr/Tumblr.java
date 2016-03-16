@@ -27,6 +27,17 @@ public class Tumblr extends JumblrClient
 		setToken (token, tokenSecret);
 	}
 
+	public static List<JsonElement> deserializeJsonArray(JsonArray array)
+	{
+		List<JsonElement> out = new ArrayList<>();
+
+		for (JsonElement e : array)
+		{
+			out.add(e);
+		}
+		return out;
+	}
+
 	public Logger getLogger()
 	{
 		return logger;
@@ -162,17 +173,6 @@ public class Tumblr extends JumblrClient
 				out.add(post);
 				before = post.getId();
 			}
-		}
-		return out;
-	}
-
-	private List<JsonElement> deserializeJsonArray(JsonArray array)
-	{
-		List<JsonElement> out = new ArrayList<>();
-
-		for (JsonElement e : array)
-		{
-			out.add(e);
 		}
 		return out;
 	}

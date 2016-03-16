@@ -5,14 +5,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.tumblr.jumblr.exceptions.JumblrException;
-import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
@@ -28,13 +25,6 @@ public class BotThread implements Runnable
 	public BotThread(Tumblr client, JsonObject json, JsonArray posts)
 	{
 		this.client = client;
-		this.json = json;
-		this.seenPosts = posts;
-	}
-
-	public BotThread(Tumblr client, String blogName, JsonObject json, JsonArray posts) throws InvalidBlogNameException
-	{
-		this.client = client.setBlogName(blogName);
 		this.json = json;
 		this.seenPosts = posts;
 	}
@@ -79,13 +69,7 @@ public class BotThread implements Runnable
 	@Override
 	public void run()
 	{
-		JsonArray blogAdminsJson = json.getAsJsonArray("admins");
-		List<String> blogAdmins = new ArrayList<>();
-
-		for (JsonElement s : blogAdminsJson)
-		{
-			blogAdmins.add(s.getAsString());
-		}
+		JsonArray blogAdmins = json.getAsJsonArray("admins");
 
 		JsonObject blacklist = json.getAsJsonObject("blacklist");
 		JsonArray tagBlacklist = blacklist.getAsJsonArray("tags");
@@ -97,14 +81,15 @@ public class BotThread implements Runnable
 
 		try
 		{
-			if (client.blogSubmissions().size() > 0)
+			//Disabled pending the move to a database and web front end configuration
+			/*if (client.blogSubmissions().size() > 0)
 			{
 				logger.info("Parsing Submissions");
 				List<AnswerPost> asks = client.getAsks();
 				for (AnswerPost ask : asks)
 				{
 					logger.info("Processing ask");
-					if (blogAdmins.contains(ask.getAskingName()))
+					if (Tumblr.deserializeJsonArray(blogAdmins).contains(new JsonPrimitive(ask.getAskingName())))
 					{
 						String[] words;
 						if ((words = ask.getQuestion().split(" ")).length > 1 && words[0].matches("[Cc]onfig"))
@@ -143,10 +128,10 @@ public class BotThread implements Runnable
 												{
 													logger.info("Adding tags to search");
 													for (String tag : ask.getQuestion()
-															.replace("config tagsearch add ", "").split(","))
+															.replaceFirst("config tagsearch add (tag )?", "").split(",\\s?"))
 													{
-														logger.fine("Adding " + tag + " to search list");
-														tagWhitelist.add(new JsonPrimitive(tag));
+														logger.fine("Adding " + tag.trim() + " to search list");
+														tagWhitelist.add(new JsonPrimitive(tag.trim()));
 													}
 												}
 												logger.fine("Deleting ask with id " + ask.getId());
@@ -182,9 +167,9 @@ public class BotThread implements Runnable
 						}
 					}
 				}
-			}
+			}*/
 
-			while (client.blogDraftPosts().size() < 20)
+			if (client.blogDraftPosts().size() < 20)
 			{
 				logger.info("Adding posts to queue");
 				ArrayList<Post> posts = new ArrayList<>();
@@ -194,7 +179,8 @@ public class BotThread implements Runnable
 							1000, null, blogBlacklist, tagBlacklist,
 							seenPosts));
 				}
-				for (Post post : selectPosts(json.get("posts").getAsString().equals("top") ? getTopPosts(posts) : posts, 1, true))
+				for (Post post : selectPosts(json.get("posts").getAsString().equals("top") ?
+						getTopPosts(posts) : posts, 1, true))
 				{
 					Map<String, Object> params = new HashMap<>();
 					params.put("state", json.get("state").getAsString());
