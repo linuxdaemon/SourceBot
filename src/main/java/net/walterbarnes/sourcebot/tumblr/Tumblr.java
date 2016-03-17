@@ -1,8 +1,5 @@
 package net.walterbarnes.sourcebot.tumblr;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import com.tumblr.jumblr.JumblrClient;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Blog;
@@ -27,30 +24,14 @@ public class Tumblr extends JumblrClient
 		setToken (token, tokenSecret);
 	}
 
-	public static List<JsonElement> deserializeJsonArray(JsonArray array)
-	{
-		List<JsonElement> out = new ArrayList<>();
-
-		for (JsonElement e : array)
-		{
-			out.add(e);
-		}
-		return out;
-	}
-
-	public Logger getLogger()
-	{
-		return logger;
-	}
-
 	// TODO Implement Post Caching
-	public ArrayList<Post> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
-										   JsonArray blogBlacklist, JsonArray tagBlacklist,
-										   JsonArray postBlacklist)
+	public Map<Post, String> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
+											 List<String> blogBlacklist, List<String> tagBlacklist,
+											 List<Long> postBlacklist)
 	{
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis () / 1000;
-		ArrayList<Post> out = new ArrayList<>();
+		Map<Post, String> out = new HashMap<>();
 		logger.info("Searching tag " + tag);
 		System.out.print("Searching tag " + tag + " posts: " + postCount);
 		while (postCount < postNum)
@@ -74,13 +55,13 @@ public class Tumblr extends JumblrClient
 				lastTime = post.getTimestamp();
 				if (type == null || post.getType ().equals (type))
 				{
-					if (deserializeJsonArray(blogBlacklist).contains(new JsonPrimitive(post.getBlogName())) ||
-							deserializeJsonArray(postBlacklist).contains(new JsonPrimitive(post.getId()))) { continue; }
-					for (JsonElement e : tagBlacklist)
+					if (blogBlacklist.contains(post.getBlogName()) ||
+							postBlacklist.contains(post.getId())) { continue; }
+					for (String t : tagBlacklist)
 					{
-						if (post.getTags().contains(e.getAsString())) continue loop;
+						if (post.getTags().contains(t)) continue loop;
 					}
-					out.add (post);
+					out.put(post, tag);
 					postCount++;
 				}
 			}
@@ -130,6 +111,13 @@ public class Tumblr extends JumblrClient
 		return blogDraftPosts(blogName, params);
 	}
 
+	public List<Post> blogPosts(long before)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("offset", before);
+		return blogPosts(blogName, params);
+	}
+
 	public List<Post> blogSubmissions()
 	{
 		return blogSubmissions(blogName);
@@ -172,6 +160,20 @@ public class Tumblr extends JumblrClient
 			{
 				out.add(post);
 				before = post.getId();
+			}
+		}
+		return out;
+	}
+
+	public List<Post> getBlogPosts()
+	{
+		List<Post> posts;
+		ArrayList<Post> out = new ArrayList<>();
+		while ((posts = blogPosts(out.size())).size() > 0)
+		{
+			for (Post post : posts)
+			{
+				out.add(post);
 			}
 		}
 		return out;

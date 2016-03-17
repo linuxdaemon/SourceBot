@@ -1,16 +1,15 @@
 package net.walterbarnes.sourcebot;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
+import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,172 +18,79 @@ public class BotThread implements Runnable
 {
 	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private final Tumblr client;
-	private final JsonObject json;
-	private final JsonArray seenPosts;
+	private final String url;
+	private final Blog blog;
+	private final Connection conn;
 
-	public BotThread(Tumblr client, JsonObject json, JsonArray posts)
+	public BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
 		this.client = client;
-		this.json = json;
-		this.seenPosts = posts;
+		this.url = url;
+		this.conn = conn;
+		this.blog = new Blog(this.url);
+		client.setBlogName(url);
 	}
 
-	private static ArrayList<Post> selectPosts(ArrayList<Post> posts, int n, boolean unique)
+	private static ArrayList<Post> selectPosts(Collection<Post> posts, int n, boolean unique)
 	{
 		ArrayList<Post> out = new ArrayList<>();
+		List<Post> p = new ArrayList<>(posts);
 
 		while (out.size() < n)
 		{
-			Post post = posts.get(ThreadLocalRandom.current().nextInt(0, posts.size() + 1));
+			Post post = p.get(ThreadLocalRandom.current().nextInt(0, p.size() + 1));
 			out.add(post);
-			if (unique) posts.remove(post);
+			if (unique) p.remove(post);
 		}
 		return out;
 	}
 
-	private static ArrayList<Post> getTopPosts(ArrayList<Post> posts)
+	private static ArrayList<Post> getTopPosts(Set<Post> posts)
 	{
 		int moves = 0;
 		boolean firstRun = true;
+		List<Post> p = new ArrayList<>(posts);
 		while (firstRun || moves > 0)
 		{
 			moves = 0;
 			firstRun = false;
-			for (int i = 1; i < posts.size(); i++)
+			for (int i = 1; i < p.size(); i++)
 			{
-				Post a = posts.get(i - 1);
-				Post b = posts.get(i);
+				Post a = p.get(i - 1);
+				Post b = p.get(i);
 
 				if (a.getNoteCount() < b.getNoteCount())
 				{
-					posts.set(i - 1, b);
-					posts.set(i, a);
+					p.set(i - 1, b);
+					p.set(i, a);
 					moves++;
 				}
 			}
 		}
-		return new ArrayList<>(posts.subList(0, 49));
+		return new ArrayList<>(p.subList(0, 49));
 	}
 
 	@Override
 	public void run()
 	{
-		JsonArray blogAdmins = json.getAsJsonArray("admins");
-
-		JsonObject blacklist = json.getAsJsonObject("blacklist");
-		JsonArray tagBlacklist = blacklist.getAsJsonArray("tags");
-		JsonArray blogBlacklist = blacklist.getAsJsonArray("blogs");
-
-		JsonObject whitelist = json.getAsJsonObject("whitelist");
-		JsonArray tagWhitelist = whitelist.getAsJsonArray("tags");
-		JsonArray blogWhitelist = whitelist.getAsJsonArray("blogs");
-
 		try
 		{
-			//Disabled pending the move to a database and web front end configuration
-			/*if (client.blogSubmissions().size() > 0)
-			{
-				logger.info("Parsing Submissions");
-				List<AnswerPost> asks = client.getAsks();
-				for (AnswerPost ask : asks)
-				{
-					logger.info("Processing ask");
-					if (Tumblr.deserializeJsonArray(blogAdmins).contains(new JsonPrimitive(ask.getAskingName())))
-					{
-						String[] words;
-						if ((words = ask.getQuestion().split(" ")).length > 1 && words[0].matches("[Cc]onfig"))
-						{
-							switch (words[1])
-							{
-								case "blogblacklist":
-									if (words.length > 2)
-									{
-										switch (words[2])
-										{
-											case "add":
-												if (words.length > 3)
-												{
-													logger.info("Adding blogs to blacklist");
-													for (int i = 3; i < words.length; i++)
-													{
-														logger.fine("Adding " + words[i] + " to blacklist");
-														blogBlacklist.add(new JsonPrimitive(words[i]));
-													}
-												}
-												logger.fine("Deleting ask with id " + ask.getId());
-												ask.delete();
-												break;
-										}
-									}
-									break;
-
-								case "tagsearch":
-									if (words.length > 2)
-									{
-										switch (words[2])
-										{
-											case "add":
-												if (words.length > 3)
-												{
-													logger.info("Adding tags to search");
-													for (String tag : ask.getQuestion()
-															.replaceFirst("config tagsearch add (tag )?", "").split(",\\s?"))
-													{
-														logger.fine("Adding " + tag.trim() + " to search list");
-														tagWhitelist.add(new JsonPrimitive(tag.trim()));
-													}
-												}
-												logger.fine("Deleting ask with id " + ask.getId());
-												ask.delete();
-												break;
-										}
-									}
-									break;
-
-								case "tagblacklist":
-									if (words.length > 2)
-									{
-										switch (words[2])
-										{
-											case "add":
-												if (words.length > 3)
-												{
-													logger.info("Adding tags to blacklist");
-													for (String tag : ask.getQuestion()
-															.replace("config tagblacklist add ", "").split(","))
-													{
-														logger.fine("Adding tag '" + tag + "' to blacklist");
-														tagBlacklist.add(new JsonPrimitive(tag));
-													}
-												}
-												logger.fine("Deleting ask with id " + ask.getId());
-												ask.delete();
-												break;
-										}
-									}
-									break;
-							}
-						}
-					}
-				}
-			}*/
-
 			if (client.blogDraftPosts().size() < 20)
 			{
 				logger.info("Adding posts to queue");
-				ArrayList<Post> posts = new ArrayList<>();
-				for (JsonElement tag : tagWhitelist)
+				Map<Post, String> posts = new HashMap<>();
+				for (String tag : blog.getTagWhitelist())
 				{
-					posts.addAll(client.getPostsFromTag(tag.getAsString(), json.get("postType").getAsString(),
-							1000, null, blogBlacklist, tagBlacklist,
-							seenPosts));
+					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
+							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts()));
 				}
-				for (Post post : selectPosts(json.get("posts").getAsString().equals("top") ?
-						getTopPosts(posts) : posts, 1, true))
+				for (Post post : selectPosts(blog.getPostSelect().equals("top") ?
+						getTopPosts(posts.keySet()) : posts.keySet(), 1, true))
 				{
 					Map<String, Object> params = new HashMap<>();
-					params.put("state", json.get("state").getAsString());
-					params.put("comment", json.get("comment").getAsString());
+					params.put("state", blog.getPostState());
+					params.put("comment", blog.getPostComment());
+					params.put("tags", blog.getPostTags());
 					try
 					{
 						post.reblog(client.getBlogName(), params);
@@ -193,7 +99,7 @@ public class BotThread implements Runnable
 					{
 						logger.log(Level.SEVERE, e.getMessage(), e);
 					}
-					seenPosts.add(new JsonPrimitive(post.getId()));
+					blog.addPost(post.getId(), posts.get(post), post.getBlogName());
 				}
 			}
 		}
@@ -201,6 +107,219 @@ public class BotThread implements Runnable
 		catch (Exception e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
+		}
+	}
+
+	private class Blog
+	{
+		private PreparedStatement addPosts;
+		private PreparedStatement getConfig;
+		private PreparedStatement getRules;
+		private PreparedStatement getPosts;
+
+		public Blog(String url) throws SQLException
+		{
+			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?;");
+			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?;");
+			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
+			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, tag, blog) VALUES (?, ?, ?, ?)");
+		}
+
+		public boolean addPost(long id, String tag, String blogName) throws SQLException
+		{
+			addPosts.setString(1, url);
+			addPosts.setLong(2, id);
+			addPosts.setString(3, tag);
+			addPosts.setString(4, blogName);
+			return addPosts.execute();
+		}
+
+		public List<Long> getPosts() throws SQLException
+		{
+			getPosts.setString(1, url);
+			List<Long> out = new ArrayList<>();
+			ResultSet rs = getPosts.executeQuery();
+			while (rs.next())
+			{
+				out.add(rs.getLong("post_id"));
+			}
+			return out;
+		}
+
+		public String getPostType()
+		{
+			try
+			{
+				getConfig.setString(1, url);
+				ResultSet rs = getConfig.executeQuery();
+				while (rs.next())
+				{
+					return rs.getString("post_type");
+				}
+			}
+			catch (SQLException e)
+			{
+				return null;
+			}
+			return null;
+		}
+
+		public String getPostSelect()
+		{
+			try
+			{
+				getConfig.setString(1, url);
+				ResultSet rs = getConfig.executeQuery();
+				while (rs.next())
+				{
+					return rs.getString("post_select");
+				}
+			}
+			catch (SQLException e)
+			{
+				return null;
+			}
+			return null;
+		}
+
+		public String getPostState()
+		{
+			try
+			{
+				getConfig.setString(1, url);
+				ResultSet rs = getConfig.executeQuery();
+				while (rs.next())
+				{
+					return rs.getString("post_state");
+				}
+			}
+			catch (SQLException e)
+			{
+				return null;
+			}
+			return null;
+		}
+
+		public String getPostComment()
+		{
+			try
+			{
+				getConfig.setString(1, url);
+				ResultSet rs = getConfig.executeQuery();
+				while (rs.next())
+				{
+					return rs.getString("post_comment");
+				}
+			}
+			catch (SQLException e)
+			{
+				return null;
+			}
+			return null;
+		}
+
+		public String getPostTags()
+		{
+			try
+			{
+				getConfig.setString(1, url);
+				ResultSet rs = getConfig.executeQuery();
+				while (rs.next())
+				{
+					return rs.getString("post_tags");
+				}
+			}
+			catch (SQLException e)
+			{
+				return null;
+			}
+			return null;
+		}
+
+		public int getSampleSize()
+		{
+			try
+			{
+				getConfig.setString(1, url);
+				ResultSet rs = getConfig.executeQuery();
+				while (rs.next())
+				{
+					return rs.getInt("sample_size");
+				}
+			}
+			catch (SQLException e)
+			{
+				return 0;
+			}
+			return 0;
+		}
+
+		public List<String> getAdmins() throws SQLException
+		{
+			List<String> out = new ArrayList<>();
+			getConfig.setString(1, url);
+			ResultSet rs = getConfig.executeQuery();
+			while (rs.next())
+			{
+				Collections.addAll(out, rs.getString("admins").split(","));
+			}
+			return out;
+		}
+
+		public List<String> getBlogBlacklist() throws SQLException
+		{
+			getRules.setString(1, url);
+			getRules.setString(2, "blog");
+			getRules.setString(3, "block");
+			ResultSet rs = getRules.executeQuery();
+			List<String> out = new ArrayList<>();
+			while (rs.next())
+			{
+				out.add(rs.getString("term"));
+			}
+			return out;
+		}
+
+		public List<String> getBlogWhitelist() throws SQLException
+		{
+			getRules.setString(1, url);
+			getRules.setString(2, "blog");
+			getRules.setString(3, "allow");
+			ResultSet rs = getRules.executeQuery();
+			List<String> out = new ArrayList<>();
+			while (rs.next())
+			{
+				out.add(rs.getString("term"));
+			}
+			return out;
+		}
+
+		public List<String> getTagBlacklist() throws SQLException
+		{
+			getRules.setString(1, url);
+			getRules.setString(2, "tag");
+			getRules.setString(3, "block");
+			ResultSet rs = getRules.executeQuery();
+			List<String> out = new ArrayList<>();
+			while (rs.next())
+			{
+				out.add(rs.getString("term"));
+			}
+			return out;
+		}
+
+		public List<String> getTagWhitelist() throws SQLException
+		{
+			getRules.setString(1, url);
+			getRules.setString(2, "tag");
+			getRules.setString(3, "allow");
+			ResultSet rs = getRules.executeQuery();
+			List<String> out = new ArrayList<>();
+			while (rs.next())
+			{
+				out.add(rs.getString("term"));
+			}
+			return out;
 		}
 	}
 }
