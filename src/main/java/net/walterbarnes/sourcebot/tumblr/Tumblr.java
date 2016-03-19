@@ -19,9 +19,9 @@ public class Tumblr extends JumblrClient
 
 	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret, Logger logger)
 	{
-		super (consumerKey, consumerSecret);
+		super(consumerKey, consumerSecret);
 		this.logger = logger;
-		setToken (token, tokenSecret);
+		setToken(token, tokenSecret);
 	}
 
 	// TODO Implement Post Caching
@@ -30,22 +30,22 @@ public class Tumblr extends JumblrClient
 											 List<Long> postBlacklist)
 	{
 		int postCount = 0;
-		long lastTime = System.currentTimeMillis () / 1000;
+		long lastTime = System.currentTimeMillis() / 1000;
 		Map<Post, String> out = new HashMap<>();
 		logger.info("Searching tag " + tag);
 		System.out.print("Searching tag " + tag + " posts: " + postCount);
 		while (postCount < postNum)
 		{
 			System.out.print("\r" + "Searching tag " + tag + " posts: " + postCount);
-			HashMap<String, Object> options = new HashMap<> ();
-			options.put ("before", lastTime);
+			HashMap<String, Object> options = new HashMap<>();
+			options.put("before", lastTime);
 			//options.put ("limit", 1);
 			if (opts != null)
 			{
-				options.putAll (opts);
+				options.putAll(opts);
 			}
-			List<Post> posts = tagged (tag, options);
-			if (posts.size () == 0 || posts.isEmpty ())
+			List<Post> posts = tagged(tag, options);
+			if (posts.size() == 0 || posts.isEmpty())
 			{
 				break;
 			}
@@ -53,7 +53,7 @@ public class Tumblr extends JumblrClient
 			for (Post post : posts)
 			{
 				lastTime = post.getTimestamp();
-				if (type == null || post.getType ().equals (type))
+				if (type == null || post.getType().equals(type))
 				{
 					if (blogBlacklist.contains(post.getBlogName()) ||
 							postBlacklist.contains(post.getId())) { continue; }
@@ -70,12 +70,12 @@ public class Tumblr extends JumblrClient
 		return out;
 	}
 
-	public JumblrClient getClient ()
+	public JumblrClient getClient()
 	{
 		return this;
 	}
 
-	public String getBlogName ()
+	public String getBlogName()
 	{
 		return blogName;
 	}
@@ -84,16 +84,16 @@ public class Tumblr extends JumblrClient
 	{
 		boolean valid = false;
 
-		for (Blog b : user ().getBlogs ())
+		for (Blog b : user().getBlogs())
 		{
-			if (b.getName ().equals (blog))
+			if (b.getName().equals(blog))
 			{
 				valid = true;
 			}
 		}
 		if (!valid)
 		{
-			throw new InvalidBlogNameException (blog);
+			throw new InvalidBlogNameException(blog);
 		}
 		this.blogName = blog;
 		return this;
@@ -142,7 +142,7 @@ public class Tumblr extends JumblrClient
 				offset++;
 				if (post.getType().equals("answer"))
 				{
-					asks.add((AnswerPost)post);
+					asks.add((AnswerPost) post);
 				}
 			}
 		}

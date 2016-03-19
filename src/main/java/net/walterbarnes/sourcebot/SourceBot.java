@@ -28,8 +28,6 @@ public class SourceBot
 	private static Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private static JsonParser parser = new JsonParser();
 	private static JsonObject json;
-	private static File jsonFile;
-	private static Connection conn;
 	private static String[] args;
 
 	public static void main(String[] args)
@@ -40,6 +38,7 @@ public class SourceBot
 		{
 			LogHelper.init(SourceBot.class);
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			File jsonFile;
 			if (!(jsonFile = new File(jsonName)).exists())
 			{
 				if (!jsonFile.createNewFile())
@@ -63,7 +62,7 @@ public class SourceBot
 		}
 	}
 
-	public static void run() throws InvalidBlogNameException, SQLException, FileNotFoundException,
+	private static void run() throws InvalidBlogNameException, SQLException, FileNotFoundException,
 			InstantiationException, IllegalAccessException
 	{
 		JsonObject api = json.getAsJsonObject("api");
@@ -72,7 +71,7 @@ public class SourceBot
 		JsonObject db = json.getAsJsonObject("db");
 		Tumblr client = new Tumblr(consumer.get("key").getAsString(), consumer.get("secret").getAsString(),
 				token.get("key").getAsString(), token.get("secret").getAsString(), logger);
-		conn = DriverManager.getConnection("jdbc:mysql://" + db.get("host").getAsString() + "/" +
+		Connection conn = DriverManager.getConnection("jdbc:mysql://" + db.get("host").getAsString() + "/" +
 				db.get("db_name").getAsString(), db.get("user").getAsString(), db.get("pass").getAsString());
 
 		if (args.length == 2)
@@ -120,7 +119,7 @@ public class SourceBot
 		}
 	}
 
-	public static void displayCrashReport(CrashReport crashReport)
+	private static void displayCrashReport(CrashReport crashReport)
 	{
 		File file1 = new File(".", "crash-reports");
 		File file2 = new File(file1, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss"))
