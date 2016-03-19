@@ -93,7 +93,7 @@ public class BotThread implements Runnable
 					params.put("tags", blog.getPostTags());
 					try
 					{
-						post.reblog(client.getBlogName(), params);
+						Post rb = post.reblog(client.getBlogName(), params);
 					}
 					catch (NullPointerException e)
 					{
@@ -112,20 +112,22 @@ public class BotThread implements Runnable
 
 	private class Blog
 	{
+		private final String url;
 		private PreparedStatement addPosts;
 		private PreparedStatement getConfig;
 		private PreparedStatement getRules;
 		private PreparedStatement getPosts;
 
-		public Blog(String url) throws SQLException
+		Blog(String url) throws SQLException
 		{
+			this.url = url;
 			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?;");
 			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?;");
 			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
 			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, tag, blog) VALUES (?, ?, ?, ?)");
 		}
 
-		public boolean addPost(long id, String tag, String blogName) throws SQLException
+		boolean addPost(long id, String tag, String blogName) throws SQLException
 		{
 			addPosts.setString(1, url);
 			addPosts.setLong(2, id);
@@ -134,7 +136,7 @@ public class BotThread implements Runnable
 			return addPosts.execute();
 		}
 
-		public List<Long> getPosts() throws SQLException
+		List<Long> getPosts() throws SQLException
 		{
 			getPosts.setString(1, url);
 			List<Long> out = new ArrayList<>();
@@ -146,7 +148,7 @@ public class BotThread implements Runnable
 			return out;
 		}
 
-		public String getPostType()
+		String getPostType()
 		{
 			try
 			{
@@ -164,7 +166,7 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		public String getPostSelect()
+		String getPostSelect()
 		{
 			try
 			{
@@ -182,7 +184,7 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		public String getPostState()
+		String getPostState()
 		{
 			try
 			{
@@ -200,7 +202,7 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		public String getPostComment()
+		String getPostComment()
 		{
 			try
 			{
@@ -218,7 +220,7 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		public String getPostTags()
+		String getPostTags()
 		{
 			try
 			{
@@ -236,13 +238,13 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		public int getSampleSize()
+		int getSampleSize()
 		{
 			try
 			{
 				getConfig.setString(1, url);
 				ResultSet rs = getConfig.executeQuery();
-				while (rs.next())
+				if (rs.next())
 				{
 					return rs.getInt("sample_size");
 				}
@@ -254,19 +256,7 @@ public class BotThread implements Runnable
 			return 0;
 		}
 
-		public List<String> getAdmins() throws SQLException
-		{
-			List<String> out = new ArrayList<>();
-			getConfig.setString(1, url);
-			ResultSet rs = getConfig.executeQuery();
-			while (rs.next())
-			{
-				Collections.addAll(out, rs.getString("admins").split(","));
-			}
-			return out;
-		}
-
-		public List<String> getBlogBlacklist() throws SQLException
+		List<String> getBlogBlacklist() throws SQLException
 		{
 			getRules.setString(1, url);
 			getRules.setString(2, "blog");
@@ -294,7 +284,7 @@ public class BotThread implements Runnable
 			return out;
 		}
 
-		public List<String> getTagBlacklist() throws SQLException
+		List<String> getTagBlacklist() throws SQLException
 		{
 			getRules.setString(1, url);
 			getRules.setString(2, "tag");
@@ -308,7 +298,7 @@ public class BotThread implements Runnable
 			return out;
 		}
 
-		public List<String> getTagWhitelist() throws SQLException
+		List<String> getTagWhitelist() throws SQLException
 		{
 			getRules.setString(1, url);
 			getRules.setString(2, "tag");
