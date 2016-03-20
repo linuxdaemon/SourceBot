@@ -164,7 +164,7 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				if (System.currentTimeMillis() - configQTime > 300000)
+				if (System.currentTimeMillis() - configQTime > 60000)
 				{
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
@@ -186,7 +186,7 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				if (System.currentTimeMillis() - configQTime > 300000)
+				if (System.currentTimeMillis() - configQTime > 60000)
 				{
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
@@ -208,7 +208,7 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				if (System.currentTimeMillis() - configQTime > 300000)
+				if (System.currentTimeMillis() - configQTime > 60000)
 				{
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
@@ -230,7 +230,7 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				if (System.currentTimeMillis() - configQTime > 300000)
+				if (System.currentTimeMillis() - configQTime > 60000)
 				{
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
@@ -252,7 +252,7 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				if (System.currentTimeMillis() - configQTime > 300000)
+				if (System.currentTimeMillis() - configQTime > 60000)
 				{
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
@@ -274,7 +274,7 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				if (System.currentTimeMillis() - configQTime > 300000)
+				if (System.currentTimeMillis() - configQTime > 60000)
 				{
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
@@ -294,7 +294,7 @@ public class BotThread implements Runnable
 
 		List<String> getBlogBlacklist() throws SQLException
 		{
-			if (System.currentTimeMillis() - bbQTime > 300000)
+			if (System.currentTimeMillis() - bbQTime > 60000)
 			{
 				getRules.setString(2, "blog");
 				getRules.setString(3, "block");
@@ -311,7 +311,7 @@ public class BotThread implements Runnable
 
 		public List<String> getBlogWhitelist() throws SQLException
 		{
-			if (System.currentTimeMillis() - bwQTime > 300000)
+			if (System.currentTimeMillis() - bwQTime > 60000)
 			{
 				getRules.setString(2, "blog");
 				getRules.setString(3, "allow");
@@ -328,7 +328,7 @@ public class BotThread implements Runnable
 
 		List<String> getTagBlacklist() throws SQLException
 		{
-			if (System.currentTimeMillis() - tbQTime > 300000)
+			if (System.currentTimeMillis() - tbQTime > 60000)
 			{
 				getRules.setString(2, "tag");
 				getRules.setString(3, "block");
@@ -345,7 +345,7 @@ public class BotThread implements Runnable
 
 		List<String> getTagWhitelist() throws SQLException
 		{
-			if (System.currentTimeMillis() - twQTime > 300000)
+			if (System.currentTimeMillis() - twQTime > 60000)
 			{
 				getRules.setString(2, "tag");
 				getRules.setString(3, "allow");

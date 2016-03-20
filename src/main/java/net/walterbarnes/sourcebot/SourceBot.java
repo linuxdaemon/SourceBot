@@ -108,7 +108,7 @@ public class SourceBot
 		{
 			try
 			{
-				if ((System.currentTimeMillis() - queryTime) > (5 * 60 * 1000))
+				if ((System.currentTimeMillis() - queryTime) > 60000)
 				{
 					rs = getBlogs.executeQuery();
 					queryTime = System.currentTimeMillis();
