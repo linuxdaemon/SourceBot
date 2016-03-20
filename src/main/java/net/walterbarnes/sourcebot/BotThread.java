@@ -87,8 +87,14 @@ public class BotThread implements Runnable
 				{
 					Map<String, Object> params = new HashMap<>();
 					params.put("state", blog.getPostState());
-					params.put("comment", blog.getPostComment());
-					params.put("tags", blog.getPostTags());
+					if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
+					{
+						params.put("comment", blog.getPostComment());
+					}
+					if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
+					{
+						params.put("tags", blog.getPostTags());
+					}
 					try
 					{
 						Post rb = post.reblog(client.getBlogName(), params);
@@ -172,7 +178,14 @@ public class BotThread implements Runnable
 				configRs.beforeFirst();
 				while (configRs.next())
 				{
-					return configRs.getString("post_type");
+					if (configRs.getString("post_type").isEmpty() || configRs.getString("post_type").equals("null"))
+					{
+						return null;
+					}
+					else
+					{
+						return configRs.getString("post_type");
+					}
 				}
 			}
 			catch (SQLException e)
