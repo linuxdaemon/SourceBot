@@ -18,16 +18,14 @@ public class BotThread implements Runnable
 {
 	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private final Tumblr client;
-	private final String url;
 	private final Blog blog;
 	private final Connection conn;
 
-	public BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
+	BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
 		this.client = client;
-		this.url = url;
 		this.conn = conn;
-		this.blog = new Blog(this.url);
+		this.blog = new Blog(url);
 		client.setBlogName(url);
 	}
 
@@ -112,24 +110,39 @@ public class BotThread implements Runnable
 
 	private class Blog
 	{
-		private final String url;
 		private PreparedStatement addPosts;
+
 		private PreparedStatement getConfig;
+		private ResultSet configRs;
+		private long configQTime = 0;
+
 		private PreparedStatement getRules;
+
+		private long tbQTime = 0;
+		private List<String> tbList;
+		private long twQTime = 0;
+		private List<String> twList;
+		private long bbQTime = 0;
+		private List<String> bbList;
+		private long bwQTime = 0;
+		private List<String> bwList;
+
 		private PreparedStatement getPosts;
 
 		Blog(String url) throws SQLException
 		{
-			this.url = url;
 			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?;");
+			getConfig.setString(1, url);
 			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?;");
+			getRules.setString(1, url);
 			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
+			getPosts.setString(1, url);
 			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, tag, blog) VALUES (?, ?, ?, ?)");
+			addPosts.setString(1, url);
 		}
 
 		boolean addPost(long id, String tag, String blogName) throws SQLException
 		{
-			addPosts.setString(1, url);
 			addPosts.setLong(2, id);
 			addPosts.setString(3, tag);
 			addPosts.setString(4, blogName);
@@ -138,7 +151,6 @@ public class BotThread implements Runnable
 
 		List<Long> getPosts() throws SQLException
 		{
-			getPosts.setString(1, url);
 			List<Long> out = new ArrayList<>();
 			ResultSet rs = getPosts.executeQuery();
 			while (rs.next())
@@ -152,11 +164,15 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				getConfig.setString(1, url);
-				ResultSet rs = getConfig.executeQuery();
-				while (rs.next())
+				if (System.currentTimeMillis() - configQTime > 300000)
 				{
-					return rs.getString("post_type");
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.first();
+				while (configRs.next())
+				{
+					return configRs.getString("post_type");
 				}
 			}
 			catch (SQLException e)
@@ -170,11 +186,15 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				getConfig.setString(1, url);
-				ResultSet rs = getConfig.executeQuery();
-				while (rs.next())
+				if (System.currentTimeMillis() - configQTime > 300000)
 				{
-					return rs.getString("post_select");
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.first();
+				while (configRs.next())
+				{
+					return configRs.getString("post_select");
 				}
 			}
 			catch (SQLException e)
@@ -188,11 +208,15 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				getConfig.setString(1, url);
-				ResultSet rs = getConfig.executeQuery();
-				while (rs.next())
+				if (System.currentTimeMillis() - configQTime > 300000)
 				{
-					return rs.getString("post_state");
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.first();
+				while (configRs.next())
+				{
+					return configRs.getString("post_state");
 				}
 			}
 			catch (SQLException e)
@@ -206,11 +230,15 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				getConfig.setString(1, url);
-				ResultSet rs = getConfig.executeQuery();
-				while (rs.next())
+				if (System.currentTimeMillis() - configQTime > 300000)
 				{
-					return rs.getString("post_comment");
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.first();
+				while (configRs.next())
+				{
+					return configRs.getString("post_comment");
 				}
 			}
 			catch (SQLException e)
@@ -224,11 +252,15 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				getConfig.setString(1, url);
-				ResultSet rs = getConfig.executeQuery();
-				while (rs.next())
+				if (System.currentTimeMillis() - configQTime > 300000)
 				{
-					return rs.getString("post_tags");
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.first();
+				while (configRs.next())
+				{
+					return configRs.getString("post_tags");
 				}
 			}
 			catch (SQLException e)
@@ -242,11 +274,15 @@ public class BotThread implements Runnable
 		{
 			try
 			{
-				getConfig.setString(1, url);
-				ResultSet rs = getConfig.executeQuery();
-				if (rs.next())
+				if (System.currentTimeMillis() - configQTime > 300000)
 				{
-					return rs.getInt("sample_size");
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.first();
+				while (configRs.next())
+				{
+					return configRs.getInt("sample_size");
 				}
 			}
 			catch (SQLException e)
@@ -258,58 +294,70 @@ public class BotThread implements Runnable
 
 		List<String> getBlogBlacklist() throws SQLException
 		{
-			getRules.setString(1, url);
-			getRules.setString(2, "blog");
-			getRules.setString(3, "block");
-			ResultSet rs = getRules.executeQuery();
-			List<String> out = new ArrayList<>();
-			while (rs.next())
+			if (System.currentTimeMillis() - bbQTime > 300000)
 			{
-				out.add(rs.getString("term"));
+				getRules.setString(2, "blog");
+				getRules.setString(3, "block");
+				ResultSet rs = getRules.executeQuery();
+				List<String> out = new ArrayList<>();
+				while (rs.next())
+				{
+					out.add(rs.getString("term"));
+				}
+				return (bbList = out);
 			}
-			return out;
+			return bbList;
 		}
 
 		public List<String> getBlogWhitelist() throws SQLException
 		{
-			getRules.setString(1, url);
-			getRules.setString(2, "blog");
-			getRules.setString(3, "allow");
-			ResultSet rs = getRules.executeQuery();
-			List<String> out = new ArrayList<>();
-			while (rs.next())
+			if (System.currentTimeMillis() - bwQTime > 300000)
 			{
-				out.add(rs.getString("term"));
+				getRules.setString(2, "blog");
+				getRules.setString(3, "allow");
+				ResultSet rs = getRules.executeQuery();
+				List<String> out = new ArrayList<>();
+				while (rs.next())
+				{
+					out.add(rs.getString("term"));
+				}
+				return (bwList = out);
 			}
-			return out;
+			return bwList;
 		}
 
 		List<String> getTagBlacklist() throws SQLException
 		{
-			getRules.setString(1, url);
-			getRules.setString(2, "tag");
-			getRules.setString(3, "block");
-			ResultSet rs = getRules.executeQuery();
-			List<String> out = new ArrayList<>();
-			while (rs.next())
+			if (System.currentTimeMillis() - tbQTime > 300000)
 			{
-				out.add(rs.getString("term"));
+				getRules.setString(2, "tag");
+				getRules.setString(3, "block");
+				ResultSet rs = getRules.executeQuery();
+				List<String> out = new ArrayList<>();
+				while (rs.next())
+				{
+					out.add(rs.getString("term"));
+				}
+				return (tbList = out);
 			}
-			return out;
+			return tbList;
 		}
 
 		List<String> getTagWhitelist() throws SQLException
 		{
-			getRules.setString(1, url);
-			getRules.setString(2, "tag");
-			getRules.setString(3, "allow");
-			ResultSet rs = getRules.executeQuery();
-			List<String> out = new ArrayList<>();
-			while (rs.next())
+			if (System.currentTimeMillis() - twQTime > 300000)
 			{
-				out.add(rs.getString("term"));
+				getRules.setString(2, "tag");
+				getRules.setString(3, "allow");
+				ResultSet rs = getRules.executeQuery();
+				List<String> out = new ArrayList<>();
+				while (rs.next())
+				{
+					out.add(rs.getString("term"));
+				}
+				return (twList = out);
 			}
-			return out;
+			return twList;
 		}
 	}
 }

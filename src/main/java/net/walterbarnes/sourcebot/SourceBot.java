@@ -18,7 +18,9 @@ import java.io.FileWriter;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,21 +100,34 @@ public class SourceBot
 				System.exit(0);
 			}
 		}
-		PreparedStatement getBlogs = conn.prepareStatement("SELECT DISTINCT url FROM blogs ORDER BY id;");
+		PreparedStatement getBlogs = conn.prepareStatement("SELECT DISTINCT url,active FROM blogs ORDER BY id;");
+		ResultSet rs = getBlogs.executeQuery();
+		long queryTime = System.currentTimeMillis();
+		Map<String, BotThread> threads = new HashMap<>();
 		while (true)
 		{
 			try
 			{
-				ResultSet rs = getBlogs.executeQuery();
+				if ((System.currentTimeMillis() - queryTime) > (5 * 60 * 1000))
+				{
+					rs = getBlogs.executeQuery();
+					queryTime = System.currentTimeMillis();
+				}
 				while (rs.next())
 				{
 					String url = rs.getString("url");
-					BotThread bt = new BotThread(client, url, conn);
-					logger.info("Running Thread for " + url);
-					bt.run();
+					boolean active = rs.getBoolean("active");
+					if (active)
+					{
+						if (!threads.containsKey(url)) threads.put(url, new BotThread(client, url, conn));
+						logger.info("Running Thread for " + url);
+						threads.get(url).run();
+					}
 				}
+				Thread.sleep(1000);
+				rs.first();
 			}
-			catch (OAuthConnectionException e)
+			catch (OAuthConnectionException | InterruptedException e)
 			{
 				logger.log(Level.SEVERE, e.getMessage(), e);
 			}
