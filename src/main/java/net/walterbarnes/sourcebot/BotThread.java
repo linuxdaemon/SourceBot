@@ -169,7 +169,7 @@ public class BotThread implements Runnable
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
 				}
-				configRs.first();
+				configRs.beforeFirst();
 				while (configRs.next())
 				{
 					return configRs.getString("post_type");
@@ -191,7 +191,7 @@ public class BotThread implements Runnable
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
 				}
-				configRs.first();
+				configRs.beforeFirst();
 				while (configRs.next())
 				{
 					return configRs.getString("post_select");
@@ -213,7 +213,7 @@ public class BotThread implements Runnable
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
 				}
-				configRs.first();
+				configRs.beforeFirst();
 				while (configRs.next())
 				{
 					return configRs.getString("post_state");
@@ -235,7 +235,7 @@ public class BotThread implements Runnable
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
 				}
-				configRs.first();
+				configRs.beforeFirst();
 				while (configRs.next())
 				{
 					return configRs.getString("post_comment");
@@ -257,7 +257,7 @@ public class BotThread implements Runnable
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
 				}
-				configRs.first();
+				configRs.beforeFirst();
 				while (configRs.next())
 				{
 					return configRs.getString("post_tags");
@@ -279,7 +279,7 @@ public class BotThread implements Runnable
 					configRs = getConfig.executeQuery();
 					configQTime = System.currentTimeMillis();
 				}
-				configRs.first();
+				configRs.beforeFirst();
 				while (configRs.next())
 				{
 					return configRs.getInt("sample_size");

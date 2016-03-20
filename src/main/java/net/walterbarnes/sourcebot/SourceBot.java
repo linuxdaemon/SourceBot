@@ -113,6 +113,7 @@ public class SourceBot
 					rs = getBlogs.executeQuery();
 					queryTime = System.currentTimeMillis();
 				}
+				rs.beforeFirst();
 				while (rs.next())
 				{
 					String url = rs.getString("url");
@@ -125,7 +126,6 @@ public class SourceBot
 					}
 				}
 				Thread.sleep(1000);
-				rs.first();
 			}
 			catch (OAuthConnectionException | InterruptedException e)
 			{
