@@ -6,6 +6,9 @@ import com.tumblr.jumblr.types.Blog;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,8 +30,11 @@ public class Tumblr extends JumblrClient
 	// TODO Implement Post Caching
 	public Map<Post, String> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
 											 List<String> blogBlacklist, List<String> tagBlacklist,
-											 List<Long> postBlacklist)
+											 List<Long> postBlacklist, Connection conn) throws SQLException
 	{
+		PreparedStatement getPost = conn.prepareStatement("SELECT * FROM post_cache WHERE tag = ? AND time > NOW() - INTERVAL 1 DAY;");
+		getPost.setString(1, tag);
+		//PreparedStatement addPost = conn.prepareStatement("INSERT INTO post_cache");
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis() / 1000;
 		Map<Post, String> out = new HashMap<>();
@@ -44,7 +50,7 @@ public class Tumblr extends JumblrClient
 			{
 				options.putAll(opts);
 			}
-			List<Post> posts = null;
+			List<Post> posts;
 			if (tag.contains(","))
 			{
 				posts = tagged(tag.split(",//s?")[0], options);
@@ -61,7 +67,7 @@ public class Tumblr extends JumblrClient
 			for (Post post : posts)
 			{
 				lastTime = post.getTimestamp();
-				if (type == null || post.getType().equals(type))
+				if (type == null || post.getType().getValue().equals(type))
 				{
 					if (tag.contains(","))
 					{
@@ -89,11 +95,6 @@ public class Tumblr extends JumblrClient
 		}
 		System.out.println();
 		return out;
-	}
-
-	public JumblrClient getClient()
-	{
-		return this;
 	}
 
 	public String getBlogName()
@@ -161,7 +162,7 @@ public class Tumblr extends JumblrClient
 			for (Post post : subs)
 			{
 				offset++;
-				if (post.getType().equals("answer"))
+				if (post.getType().getValue().equals("answer"))
 				{
 					asks.add((AnswerPost) post);
 				}

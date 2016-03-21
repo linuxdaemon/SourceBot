@@ -105,7 +105,7 @@ public class BotThread implements Runnable
 				for (String tag : blog.getTagWhitelist())
 				{
 					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
-							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts()));
+							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), conn));
 				}
 				for (Post post : selectPosts(blog.getPostSelect().equals("top") ?
 						getTopPosts(posts.keySet()) : sortTimestamp(posts.keySet()), 1, true))
@@ -120,16 +120,8 @@ public class BotThread implements Runnable
 					{
 						params.put("tags", blog.getPostTags());
 					}
-					Post rb = null;
-					try
-					{
-						rb = post.reblog(client.getBlogName(), params);
-					}
-					catch (NullPointerException e)
-					{
-						logger.log(Level.SEVERE, e.getMessage(), e);
-					}
-					blog.addPost(post.getId(), posts.get(post), post.getBlogName());
+					Post rb = post.reblog(client.getBlogName(), params);
+					blog.addPost(post.getId(), rb.getId(), posts.get(post), post.getBlogName());
 				}
 			}
 		}
@@ -169,15 +161,16 @@ public class BotThread implements Runnable
 			getRules.setString(1, url);
 			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
 			getPosts.setString(1, url);
-			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, tag, blog) VALUES (?, ?, ?, ?)");
+			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?)");
 			addPosts.setString(1, url);
 		}
 
-		boolean addPost(long id, String tag, String blogName) throws SQLException
+		boolean addPost(long id, long rbId, String tag, String blogName) throws SQLException
 		{
 			addPosts.setLong(2, id);
-			addPosts.setString(3, tag);
-			addPosts.setString(4, blogName);
+			addPosts.setLong(3, rbId);
+			addPosts.setString(4, tag);
+			addPosts.setString(5, blogName);
 			return addPosts.execute();
 		}
 
