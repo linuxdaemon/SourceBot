@@ -16,7 +16,7 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile 'com.tumblr:jumblr:0.0.12-SNAPSHOT'
-    compile 'com.github.OnyxFoxDevelopment:OFlib:1.0'
+    //compile 'com.github.OnyxFoxDevelopment:OFlib:1.0'
     compile 'mysql:mysql-connector-java:5.1.38'
 }
 
