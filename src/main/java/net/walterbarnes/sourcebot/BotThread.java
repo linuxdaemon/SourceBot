@@ -27,7 +27,6 @@ public class BotThread implements Runnable
 		this.client = client;
 		this.conn = conn;
 		this.blog = new Blog(url);
-		client.setBlogName(url);
 	}
 
 	private static ArrayList<Post> selectPosts(Collection<Post> posts, int n, boolean unique)
@@ -99,14 +98,14 @@ public class BotThread implements Runnable
 	{
 		try
 		{
-			if (client.blogDraftPosts().size() < 20)
+			if (client.blogDraftPosts(url).size() < 20)
 			{
 				logger.info("Adding posts to queue");
 				Map<Post, String> posts = new HashMap<>();
 				for (String tag : blog.getTagWhitelist())
 				{
 					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
-							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), blog.getCheckBlog(), conn));
+							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), blog, conn));
 				}
 				ArrayList<Post> p = selectPosts(blog.getPostSelect().equals("top") ?
 						getTopPosts(posts.keySet()) : sortTimestamp(posts.keySet()), 1, true);
@@ -140,9 +139,10 @@ public class BotThread implements Runnable
 		}
 	}
 
-	private class Blog
+	public class Blog
 	{
 		private PreparedStatement addPosts;
+		private PreparedStatement addStats;
 
 		private PreparedStatement getConfig;
 		private ResultSet configRs;
@@ -171,6 +171,17 @@ public class BotThread implements Runnable
 			getPosts.setString(1, url);
 			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?)");
 			addPosts.setString(1, url);
+			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?);");
+			addStats.setString(1, url);
+		}
+
+		public boolean addStat(String tag, int time, int searched, int selected) throws SQLException
+		{
+			addStats.setString(2, tag);
+			addStats.setInt(3, time);
+			addStats.setInt(4, searched);
+			addStats.setInt(5, selected);
+			return addStats.execute();
 		}
 
 		boolean addPost(long id, long rbId, String tag, String blogName) throws SQLException

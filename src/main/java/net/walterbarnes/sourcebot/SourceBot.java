@@ -80,8 +80,8 @@ public class SourceBot
 		{
 			if (args[0].equals("getPostIds"))
 			{
-				client.setBlogName(args[1]);
-				List<Post> posts = client.getBlogPosts();
+				//client.setBlogName(args[1]);
+				List<Post> posts = client.getBlogPosts(args[1]);
 				for (Post post : posts)
 				{
 					System.out.print(post.getId() + " ");

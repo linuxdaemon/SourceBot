@@ -2,9 +2,8 @@ package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.JumblrClient;
 import com.tumblr.jumblr.types.AnswerPost;
-import com.tumblr.jumblr.types.Blog;
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.BotThread;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,7 +16,6 @@ import java.util.logging.Logger;
 public class Tumblr extends JumblrClient
 {
 	private final Logger logger;
-	private String blogName;
 
 	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret, Logger logger)
 	{
@@ -29,7 +27,7 @@ public class Tumblr extends JumblrClient
 	// TODO Implement Post Caching
 	public Map<Post, String> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
 											 List<String> blogBlacklist, List<String> tagBlacklist,
-											 List<Long> postBlacklist, boolean checkBlog, Connection conn) throws SQLException
+											 List<Long> postBlacklist, BotThread.Blog blog, Connection conn) throws SQLException
 	{
 		//PreparedStatement getPost = conn.prepareStatement("SELECT * FROM post_cache WHERE tag = ? AND time > NOW() - INTERVAL 1 DAY;");
 		//getPost.setString(1, tag);
@@ -96,7 +94,9 @@ public class Tumblr extends JumblrClient
 				}
 			}
 		}
-		logger.info("Search tag " + tag + " selected " + out.size() + " posts out of " + searched + " searched, took " + (System.currentTimeMillis() - start) + " ms");
+		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag, out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), System.currentTimeMillis() - start));
+		blog.addStat(tag, (int) (System.currentTimeMillis() - start), searched, out.size());
+		//logger.info("Search tag " + tag + " selected " + out.size() + " posts out of " + searched + " searched, took " + (System.currentTimeMillis() - start) + " ms");
 		return out;
 	}
 
@@ -105,67 +105,33 @@ public class Tumblr extends JumblrClient
 		return blogPosts(blogName).size() >= 5;
 	}
 
-	public String getBlogName()
-	{
-		return blogName;
-	}
-
-	public Tumblr setBlogName(String blog) throws InvalidBlogNameException
-	{
-		boolean valid = false;
-
-		for (Blog b : user().getBlogs())
-		{
-			if (b.getName().equals(blog))
-			{
-				valid = true;
-			}
-		}
-		if (!valid)
-		{
-			throw new InvalidBlogNameException(blog);
-		}
-		this.blogName = blog;
-		return this;
-	}
-
-	public List<Post> blogDraftPosts()
-	{
-		return blogDraftPosts(blogName);
-	}
-
-	public List<Post> blogDraftPosts(long before)
+	public List<Post> blogDraftPosts(String blogName, long before)
 	{
 		Map<String, Object> params = new HashMap<>();
 		params.put("before_id", before);
 		return blogDraftPosts(blogName, params);
 	}
 
-	public List<Post> blogPosts(long before)
+	public List<Post> blogPosts(String blogName, long before)
 	{
 		Map<String, Object> params = new HashMap<>();
 		params.put("offset", before);
 		return blogPosts(blogName, params);
 	}
 
-	public List<Post> blogSubmissions()
-	{
-		return blogSubmissions(blogName);
-	}
-
-	public List<Post> blogSubmissions(int offset)
+	public List<Post> blogSubmissions(String blogName, int offset)
 	{
 		Map<String, Object> params = new HashMap<>();
 		params.put("offset", offset);
 		return blogSubmissions(blogName, params);
 	}
 
-	public List<AnswerPost> getAsks()
+	public List<AnswerPost> getAsks(String blogName)
 	{
 		int offset = 0;
 		List<AnswerPost> asks = new ArrayList<>();
 		List<Post> subs;
-		while ((subs = blogSubmissions(offset)).size() > 0)
+		while ((subs = blogSubmissions(blogName, offset)).size() > 0)
 		{
 			for (Post post : subs)
 			{
@@ -179,12 +145,12 @@ public class Tumblr extends JumblrClient
 		return asks;
 	}
 
-	public List<Post> getDrafts()
+	public List<Post> getDrafts(String blogName)
 	{
 		long before = 0;
 		List<Post> drafts;
 		ArrayList<Post> out = new ArrayList<>();
-		while ((drafts = blogDraftPosts(before)).size() > 0)
+		while ((drafts = blogDraftPosts(blogName, before)).size() > 0)
 		{
 			for (Post post : drafts)
 			{
@@ -195,11 +161,11 @@ public class Tumblr extends JumblrClient
 		return out;
 	}
 
-	public List<Post> getBlogPosts()
+	public List<Post> getBlogPosts(String blogName)
 	{
 		List<Post> posts;
 		ArrayList<Post> out = new ArrayList<>();
-		while ((posts = blogPosts(out.size())).size() > 0)
+		while ((posts = blogPosts(blogName, out.size())).size() > 0)
 		{
 			for (Post post : posts)
 			{
