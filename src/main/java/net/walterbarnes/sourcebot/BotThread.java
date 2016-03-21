@@ -29,21 +29,37 @@ public class BotThread implements Runnable
 		this.blog = new Blog(url);
 	}
 
-	private static ArrayList<Post> selectPosts(Collection<Post> posts, int n, boolean unique)
+	/**
+	 * Selects pseudo-random elements from a collection
+	 *
+	 * @param c      Collection to select from
+	 * @param n      Number of elements to select
+	 * @param unique Whether the selection should be unique
+	 * @param <E>    Type of element in ollection
+	 * @return Random element(s) from collection
+	 */
+	private static <E> List<E> randomElement(Collection<E> c, int n, boolean unique)
 	{
-		ArrayList<Post> out = new ArrayList<>();
-		List<Post> p = new ArrayList<>(posts);
+		List<E> out = new ArrayList<>();
+		List<E> p = new ArrayList<>(c);
 
 		while (out.size() < n)
 		{
-			Post post = p.get(ThreadLocalRandom.current().nextInt(0, p.size() + 1));
+			E post = p.get(ThreadLocalRandom.current().nextInt(0, p.size() + 1));
 			out.add(post);
 			if (unique) p.remove(post);
 		}
 		return out;
 	}
 
-	private static ArrayList<Post> getTopPosts(Set<Post> posts)
+	/**
+	 * Selects the top posts from a set by their note count
+	 *
+	 * @param posts Set to sort
+	 * @param n     Number of top posts to select
+	 * @return Top n posts from set
+	 */
+	private static ArrayList<Post> getTopPosts(Set<Post> posts, int n)
 	{
 		int moves = 0;
 		boolean firstRun = true;
@@ -65,9 +81,14 @@ public class BotThread implements Runnable
 				}
 			}
 		}
-		return new ArrayList<>(p.subList(0, 49));
+		return new ArrayList<>(p.subList(0, n - 1));
 	}
 
+	/**
+	 * Sorts a set of Tumblr Posts by their timestamp
+	 * @param posts Set to sort
+	 * @return Sorted List of posts
+	 */
 	private static ArrayList<Post> sortTimestamp(Set<Post> posts)
 	{
 		int moves = 0;
@@ -108,8 +129,8 @@ public class BotThread implements Runnable
 					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
 							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), blog, conn));
 				}
-				ArrayList<Post> p = selectPosts(blog.getPostSelect().equals("top") ?
-						getTopPosts(posts.keySet()) : sortTimestamp(posts.keySet()), 1, true);
+				List<Post> p = randomElement(blog.getPostSelect().equals("top") ?
+						getTopPosts(posts.keySet(), 50) : sortTimestamp(posts.keySet()), 1, true);
 				boolean posted = false;
 				while (!posted)
 				{

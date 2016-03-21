@@ -24,27 +24,20 @@ public class Tumblr extends JumblrClient
 		setToken(token, tokenSecret);
 	}
 
-	// TODO Implement Post Caching
 	public Map<Post, String> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
 											 List<String> blogBlacklist, List<String> tagBlacklist,
 											 List<Long> postBlacklist, BotThread.Blog blog, Connection conn) throws SQLException
 	{
-		//PreparedStatement getPost = conn.prepareStatement("SELECT * FROM post_cache WHERE tag = ? AND time > NOW() - INTERVAL 1 DAY;");
-		//getPost.setString(1, tag);
-		//PreparedStatement addPost = conn.prepareStatement("INSERT INTO post_cache");
 		int postCount = 0;
 		int searched = 0;
 		long lastTime = System.currentTimeMillis() / 1000;
 		long start = System.currentTimeMillis();
 		Map<Post, String> out = new HashMap<>();
 		logger.info("Searching tag " + tag);
-		//System.out.print("Searching tag " + tag + " posts: " + postCount);
 		while (postCount < postNum)
 		{
-			//System.out.print("\r" + "Searching tag " + tag + " posts: " + postCount);
 			HashMap<String, Object> options = new HashMap<>();
 			options.put("before", lastTime);
-			//options.put ("limit", 1);
 			if (opts != null)
 			{
 				options.putAll(opts);
@@ -88,7 +81,6 @@ public class Tumblr extends JumblrClient
 					}
 					if (blogBlacklist.contains(post.getBlogName()) ||
 							postBlacklist.contains(post.getId())) { continue; }
-					//if (checkBlog) if(!isActiveBlog(post.getBlogName())) {continue;}
 					out.put(post, tag);
 					postCount++;
 				}
@@ -96,15 +88,16 @@ public class Tumblr extends JumblrClient
 		}
 		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag, out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), System.currentTimeMillis() - start));
 		blog.addStat(tag, (int) (System.currentTimeMillis() - start), searched, out.size());
-		//logger.info("Search tag " + tag + " selected " + out.size() + " posts out of " + searched + " searched, took " + (System.currentTimeMillis() - start) + " ms");
 		return out;
 	}
 
-	private boolean isActiveBlog(String blogName)
-	{
-		return blogPosts(blogName).size() >= 5;
-	}
-
+	/**
+	 * Retrives a blogs drafts
+	 *
+	 * @param blogName Blog to retrieve posts from
+	 * @param before   Retrieve posts before this id
+	 * @return A List of posts from the blogs drafts
+	 */
 	public List<Post> blogDraftPosts(String blogName, long before)
 	{
 		Map<String, Object> params = new HashMap<>();

@@ -136,6 +136,11 @@ public class SourceBot
 		}
 	}
 
+	/**
+	 * Displays a crash report and saves it to a file
+	 *
+	 * @param crashReport Report to display
+	 */
 	private static void displayCrashReport(CrashReport crashReport)
 	{
 		File file1 = new File(".", "crash-reports");
