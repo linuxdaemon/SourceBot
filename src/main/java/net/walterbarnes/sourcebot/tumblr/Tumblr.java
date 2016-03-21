@@ -35,6 +35,7 @@ public class Tumblr extends JumblrClient
 		//getPost.setString(1, tag);
 		//PreparedStatement addPost = conn.prepareStatement("INSERT INTO post_cache");
 		int postCount = 0;
+		int searched = 0;
 		long lastTime = System.currentTimeMillis() / 1000;
 		long start = System.currentTimeMillis();
 		Map<Post, String> out = new HashMap<>();
@@ -66,6 +67,7 @@ public class Tumblr extends JumblrClient
 			loop:
 			for (Post post : posts)
 			{
+				searched++;
 				lastTime = post.getTimestamp();
 				if (type == null || post.getType().getValue().equals(type))
 				{
@@ -94,7 +96,7 @@ public class Tumblr extends JumblrClient
 				}
 			}
 		}
-		logger.info("Search tag " + tag + " found " + out.size() + " posts took " + (System.currentTimeMillis() - start) + " ms");
+		logger.info("Search tag " + tag + " selected " + out.size() + " posts out of " + searched + " searched, took " + (System.currentTimeMillis() - start) + " ms");
 		return out;
 	}
 
