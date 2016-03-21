@@ -44,7 +44,15 @@ public class Tumblr extends JumblrClient
 			{
 				options.putAll(opts);
 			}
-			List<Post> posts = tagged(tag, options);
+			List<Post> posts = null;
+			if (tag.contains(","))
+			{
+				posts = tagged(tag.split(",//s?")[0], options);
+			}
+			else
+			{
+				posts = tagged(tag, options);
+			}
 			if (posts.size() == 0 || posts.isEmpty())
 			{
 				break;
@@ -60,6 +68,16 @@ public class Tumblr extends JumblrClient
 					for (String t : tagBlacklist)
 					{
 						if (post.getTags().contains(t)) continue loop;
+					}
+					if (tag.contains(","))
+					{
+						for (String s : tag.split(",//s?"))
+						{
+							if (!post.getTags().contains(s))
+							{
+								continue loop;
+							}
+						}
 					}
 					out.put(post, tag);
 					postCount++;
