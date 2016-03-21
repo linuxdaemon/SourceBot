@@ -63,12 +63,6 @@ public class Tumblr extends JumblrClient
 				lastTime = post.getTimestamp();
 				if (type == null || post.getType().equals(type))
 				{
-					if (blogBlacklist.contains(post.getBlogName()) ||
-							postBlacklist.contains(post.getId())) { continue; }
-					for (String t : tagBlacklist)
-					{
-						if (post.getTags().contains(t)) continue loop;
-					}
 					if (tag.contains(","))
 					{
 						for (String s : tag.split(",//s?"))
@@ -79,6 +73,15 @@ public class Tumblr extends JumblrClient
 							}
 						}
 					}
+					else
+					{
+						for (String t : tagBlacklist)
+						{
+							if (post.getTags().contains(t)) continue loop;
+						}
+					}
+					if (blogBlacklist.contains(post.getBlogName()) ||
+							postBlacklist.contains(post.getId())) { continue; }
 					out.put(post, tag);
 					postCount++;
 				}
