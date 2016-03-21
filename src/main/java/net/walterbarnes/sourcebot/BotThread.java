@@ -68,6 +68,31 @@ public class BotThread implements Runnable
 		return new ArrayList<>(p.subList(0, 49));
 	}
 
+	private static ArrayList<Post> sortTimestamp(Set<Post> posts)
+	{
+		int moves = 0;
+		boolean firstRun = true;
+		List<Post> p = new ArrayList<>(posts);
+		while (firstRun || moves > 0)
+		{
+			moves = 0;
+			firstRun = false;
+			for (int i = 1; i < p.size(); i++)
+			{
+				Post a = p.get(i - 1);
+				Post b = p.get(i);
+
+				if (a.getTimestamp() < b.getTimestamp())
+				{
+					p.set(i - 1, b);
+					p.set(i, a);
+					moves++;
+				}
+			}
+		}
+		return new ArrayList<>(p.subList(0, 49));
+	}
+
 	@Override
 	public void run()
 	{
@@ -83,7 +108,7 @@ public class BotThread implements Runnable
 							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts()));
 				}
 				for (Post post : selectPosts(blog.getPostSelect().equals("top") ?
-						getTopPosts(posts.keySet()) : posts.keySet(), 1, true))
+						getTopPosts(posts.keySet()) : sortTimestamp(posts.keySet()), 1, true))
 				{
 					Map<String, Object> params = new HashMap<>();
 					params.put("state", blog.getPostState());
@@ -95,9 +120,10 @@ public class BotThread implements Runnable
 					{
 						params.put("tags", blog.getPostTags());
 					}
+					Post rb = null;
 					try
 					{
-						Post rb = post.reblog(client.getBlogName(), params);
+						rb = post.reblog(client.getBlogName(), params);
 					}
 					catch (NullPointerException e)
 					{
@@ -176,7 +202,7 @@ public class BotThread implements Runnable
 					configQTime = System.currentTimeMillis();
 				}
 				configRs.beforeFirst();
-				while (configRs.next())
+				if (configRs.next())
 				{
 					if (configRs.getString("post_type").isEmpty() || configRs.getString("post_type").equals("null"))
 					{
@@ -205,7 +231,7 @@ public class BotThread implements Runnable
 					configQTime = System.currentTimeMillis();
 				}
 				configRs.beforeFirst();
-				while (configRs.next())
+				if (configRs.next())
 				{
 					return configRs.getString("post_select");
 				}
@@ -227,7 +253,7 @@ public class BotThread implements Runnable
 					configQTime = System.currentTimeMillis();
 				}
 				configRs.beforeFirst();
-				while (configRs.next())
+				if (configRs.next())
 				{
 					return configRs.getString("post_state");
 				}
@@ -249,7 +275,7 @@ public class BotThread implements Runnable
 					configQTime = System.currentTimeMillis();
 				}
 				configRs.beforeFirst();
-				while (configRs.next())
+				if (configRs.next())
 				{
 					return configRs.getString("post_comment");
 				}
@@ -271,7 +297,7 @@ public class BotThread implements Runnable
 					configQTime = System.currentTimeMillis();
 				}
 				configRs.beforeFirst();
-				while (configRs.next())
+				if (configRs.next())
 				{
 					return configRs.getString("post_tags");
 				}
@@ -293,7 +319,7 @@ public class BotThread implements Runnable
 					configQTime = System.currentTimeMillis();
 				}
 				configRs.beforeFirst();
-				while (configRs.next())
+				if (configRs.next())
 				{
 					return configRs.getInt("sample_size");
 				}
