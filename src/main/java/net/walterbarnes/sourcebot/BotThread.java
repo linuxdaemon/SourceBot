@@ -98,7 +98,8 @@ public class BotThread implements Runnable
 	{
 		try
 		{
-			if (client.blogDraftPosts(url).size() < 20)
+			if ((blog.getPostState().equals("draft") && client.getDrafts(url).size() < blog.getPostBuffer()) ||
+					(blog.getPostState().equals("queue") && client.getQueuedPosts(url).size() < blog.getPostBuffer()))
 			{
 				logger.info("Adding posts to queue");
 				Map<Post, String> posts = new HashMap<>();
@@ -362,6 +363,29 @@ public class BotThread implements Runnable
 				if (configRs.next())
 				{
 					return configRs.getInt("sample_size");
+				}
+			}
+			catch (SQLException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				return 0;
+			}
+			return 0;
+		}
+
+		int getPostBuffer()
+		{
+			try
+			{
+				if (System.currentTimeMillis() - configQTime > 60000)
+				{
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.beforeFirst();
+				if (configRs.next())
+				{
+					return configRs.getInt("post_buffer");
 				}
 			}
 			catch (SQLException e)

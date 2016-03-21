@@ -112,6 +112,13 @@ public class Tumblr extends JumblrClient
 		return blogDraftPosts(blogName, params);
 	}
 
+	public List<Post> blogQueuedPosts(String blogName, long offset)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("offset", offset);
+		return blogDraftPosts(blogName, params);
+	}
+
 	public List<Post> blogPosts(String blogName, long before)
 	{
 		Map<String, Object> params = new HashMap<>();
@@ -143,6 +150,22 @@ public class Tumblr extends JumblrClient
 			}
 		}
 		return asks;
+	}
+
+	public List<Post> getQueuedPosts(String blogName)
+	{
+		long offset = 0;
+		List<Post> queue;
+		ArrayList<Post> out = new ArrayList<>();
+		while ((queue = blogQueuedPosts(blogName, offset)).size() > 0)
+		{
+			for (Post post : queue)
+			{
+				out.add(post);
+				offset++;
+			}
+		}
+		return out;
 	}
 
 	public List<Post> getDrafts(String blogName)
