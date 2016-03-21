@@ -7,7 +7,6 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,19 +29,20 @@ public class Tumblr extends JumblrClient
 	// TODO Implement Post Caching
 	public Map<Post, String> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
 											 List<String> blogBlacklist, List<String> tagBlacklist,
-											 List<Long> postBlacklist, Connection conn) throws SQLException
+											 List<Long> postBlacklist, boolean checkBlog, Connection conn) throws SQLException
 	{
-		PreparedStatement getPost = conn.prepareStatement("SELECT * FROM post_cache WHERE tag = ? AND time > NOW() - INTERVAL 1 DAY;");
-		getPost.setString(1, tag);
+		//PreparedStatement getPost = conn.prepareStatement("SELECT * FROM post_cache WHERE tag = ? AND time > NOW() - INTERVAL 1 DAY;");
+		//getPost.setString(1, tag);
 		//PreparedStatement addPost = conn.prepareStatement("INSERT INTO post_cache");
 		int postCount = 0;
 		long lastTime = System.currentTimeMillis() / 1000;
+		long start = System.currentTimeMillis();
 		Map<Post, String> out = new HashMap<>();
 		logger.info("Searching tag " + tag);
-		System.out.print("Searching tag " + tag + " posts: " + postCount);
+		//System.out.print("Searching tag " + tag + " posts: " + postCount);
 		while (postCount < postNum)
 		{
-			System.out.print("\r" + "Searching tag " + tag + " posts: " + postCount);
+			//System.out.print("\r" + "Searching tag " + tag + " posts: " + postCount);
 			HashMap<String, Object> options = new HashMap<>();
 			options.put("before", lastTime);
 			//options.put ("limit", 1);
@@ -53,7 +53,7 @@ public class Tumblr extends JumblrClient
 			List<Post> posts;
 			if (tag.contains(","))
 			{
-				posts = tagged(tag.split(",//s?")[0], options);
+				posts = tagged(tag.split(",\\s?")[0], options);
 			}
 			else
 			{
@@ -71,7 +71,7 @@ public class Tumblr extends JumblrClient
 				{
 					if (tag.contains(","))
 					{
-						for (String s : tag.split(",//s?"))
+						for (String s : tag.split(",\\s?"))
 						{
 							if (!post.getTags().contains(s))
 							{
@@ -88,13 +88,19 @@ public class Tumblr extends JumblrClient
 					}
 					if (blogBlacklist.contains(post.getBlogName()) ||
 							postBlacklist.contains(post.getId())) { continue; }
+					//if (checkBlog) if(!isActiveBlog(post.getBlogName())) {continue;}
 					out.put(post, tag);
 					postCount++;
 				}
 			}
 		}
-		System.out.println();
+		logger.info("Search tag " + tag + " found " + out.size() + " posts took " + (System.currentTimeMillis() - start) + " ms");
 		return out;
+	}
+
+	private boolean isActiveBlog(String blogName)
+	{
+		return blogPosts(blogName).size() >= 5;
 	}
 
 	public String getBlogName()

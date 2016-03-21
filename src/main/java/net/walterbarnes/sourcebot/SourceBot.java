@@ -122,7 +122,9 @@ public class SourceBot
 					{
 						if (!threads.containsKey(url)) threads.put(url, new BotThread(client, url, conn));
 						logger.info("Running Thread for " + url);
+						long start = System.currentTimeMillis();
 						threads.get(url).run();
+						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
 					}
 				}
 				Thread.sleep(1000);

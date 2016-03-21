@@ -1,6 +1,5 @@
 package net.walterbarnes.sourcebot;
 
-import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
@@ -20,9 +19,11 @@ public class BotThread implements Runnable
 	private final Tumblr client;
 	private final Blog blog;
 	private final Connection conn;
+	private final String url;
 
 	BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
+		this.url = url;
 		this.client = client;
 		this.conn = conn;
 		this.blog = new Blog(url);
@@ -105,27 +106,34 @@ public class BotThread implements Runnable
 				for (String tag : blog.getTagWhitelist())
 				{
 					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
-							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), conn));
+							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), blog.getCheckBlog(), conn));
 				}
-				for (Post post : selectPosts(blog.getPostSelect().equals("top") ?
-						getTopPosts(posts.keySet()) : sortTimestamp(posts.keySet()), 1, true))
+				ArrayList<Post> p = selectPosts(blog.getPostSelect().equals("top") ?
+						getTopPosts(posts.keySet()) : sortTimestamp(posts.keySet()), 1, true);
+				boolean posted = false;
+				while (!posted)
 				{
-					Map<String, Object> params = new HashMap<>();
-					params.put("state", blog.getPostState());
-					if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
+					for (Post post : p)
 					{
-						params.put("comment", blog.getPostComment());
+						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
+						Map<String, Object> params = new HashMap<>();
+						params.put("state", blog.getPostState());
+						if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
+						{
+							params.put("comment", blog.getPostComment());
+						}
+						if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
+						{
+							params.put("tags", blog.getPostTags());
+						}
+						Post rb = post.reblog(url, params);
+						posted = true;
+						blog.addPost(post.getId(), rb.getId(), posts.get(post), post.getBlogName());
 					}
-					if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
-					{
-						params.put("tags", blog.getPostTags());
-					}
-					Post rb = post.reblog(client.getBlogName(), params);
-					blog.addPost(post.getId(), rb.getId(), posts.get(post), post.getBlogName());
 				}
 			}
 		}
-		catch (JumblrException ignored) {}
+		//catch (JumblrException ignored) {}
 		catch (Exception e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
@@ -209,9 +217,33 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
+		}
+
+		boolean getCheckBlog()
+		{
+			try
+			{
+				if (System.currentTimeMillis() - configQTime > 60000)
+				{
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.beforeFirst();
+				if (configRs.next())
+				{
+					return configRs.getBoolean("blog_check_active");
+				}
+			}
+			catch (SQLException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				return false;
+			}
+			return false;
 		}
 
 		String getPostSelect()
@@ -231,6 +263,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -253,6 +286,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -275,6 +309,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -297,6 +332,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -319,6 +355,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				return 0;
 			}
 			return 0;
