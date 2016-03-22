@@ -22,8 +22,6 @@ import com.google.gson.*;
 import com.google.gson.stream.JsonWriter;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Blog;
-import com.tumblr.jumblr.types.Post;
-import com.tumblr.jumblr.types.TextPost;
 import net.walterbarnes.sourcebot.cli.Cli;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
@@ -355,40 +353,22 @@ public class SourceBot
 		JsonObject api = json.getAsJsonObject("api");
 		JsonObject consumer = api.getAsJsonObject("consumer");
 		JsonObject token = api.getAsJsonObject("token");
+
 		JsonObject db = json.getAsJsonObject("db");
+
 		Tumblr client = new Tumblr(consumer.get("key").getAsString(), consumer.get("secret").getAsString(),
 				token.get("key").getAsString(), token.get("secret").getAsString(), logger);
+
 		Connection conn = DriverManager.getConnection("jdbc:mysql://" + db.get("host").getAsString() + "/" +
 				db.get("db_name").getAsString(), db.get("user").getAsString(), db.get("pass").getAsString());
 
-		if (args.length == 2)
-		{
-			if (args[0].equals("getPostIds"))
-			{
-				//client.setBlogName(args[1]);
-				List<Post> posts = client.getBlogPosts(args[1]);
-				for (Post post : posts)
-				{
-					System.out.print(post.getId() + " ");
-				}
-				System.out.println();
-				System.exit(0);
-			}
-			else
-			{
-				JsonObject postJson = parser.parse(new FileReader(args[0])).getAsJsonObject();
-				TextPost tp = client.newPost(args[1], TextPost.class);
-				tp.setTitle(postJson.get("title").getAsString());
-				tp.setBody(postJson.get("body").getAsString());
-				tp.setState("draft");
-				tp.save();
-				System.exit(0);
-			}
-		}
 		PreparedStatement getBlogs = conn.prepareStatement("SELECT DISTINCT url,active FROM blogs ORDER BY id;");
 		ResultSet rs = getBlogs.executeQuery();
+
 		long queryTime = System.currentTimeMillis();
+
 		Map<String, BotThread> threads = new HashMap<>();
+
 		//noinspection InfiniteLoopStatement
 		while (true)
 		{
@@ -399,6 +379,7 @@ public class SourceBot
 					rs = getBlogs.executeQuery();
 					queryTime = System.currentTimeMillis();
 				}
+
 				rs.beforeFirst();
 				while (rs.next())
 				{
