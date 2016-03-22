@@ -170,6 +170,7 @@ public class BotThread implements Runnable
 						{
 							posted = false;
 							logger.log(Level.SEVERE, e.getMessage(), e);
+							Thread.sleep(100);
 						}
 					}
 					blog.addPost(post.getId(), rb != null ? rb.getId() : 0, posts.get(post), post.getBlogName());
