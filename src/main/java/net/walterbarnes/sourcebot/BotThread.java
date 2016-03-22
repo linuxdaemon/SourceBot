@@ -45,7 +45,7 @@ public class BotThread implements Runnable
 
 		while (out.size() < n)
 		{
-			E post = p.get(ThreadLocalRandom.current().nextInt(0, p.size() + 1));
+			E post = p.get(ThreadLocalRandom.current().nextInt(0, p.size()));
 			out.add(post);
 			if (unique) p.remove(post);
 		}
@@ -87,9 +87,10 @@ public class BotThread implements Runnable
 	/**
 	 * Sorts a set of Tumblr Posts by their timestamp
 	 * @param posts Set to sort
+	 * @param n Number of posts to return
 	 * @return Sorted List of posts
 	 */
-	private static ArrayList<Post> sortTimestamp(Set<Post> posts)
+	private static ArrayList<Post> sortTimestamp(Set<Post> posts, int n)
 	{
 		int moves = 0;
 		boolean firstRun = true;
@@ -111,7 +112,7 @@ public class BotThread implements Runnable
 				}
 			}
 		}
-		return new ArrayList<>(p.subList(0, 49));
+		return new ArrayList<>(p.subList(0, n - 1));
 	}
 
 	@Override
@@ -124,13 +125,14 @@ public class BotThread implements Runnable
 			{
 				logger.info("Adding posts to queue");
 				Map<Post, String> posts = new HashMap<>();
-				for (String tag : blog.getTagWhitelist())
+				List<String> tags = blog.getTagWhitelist();
+				for (String tag : tags)
 				{
 					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
 							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), blog, conn));
 				}
-				List<Post> p = randomElement(blog.getPostSelect().equals("top") ?
-						getTopPosts(posts.keySet(), 50) : sortTimestamp(posts.keySet()), 1, true);
+				List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
+						sortTimestamp(posts.keySet(), 50), 1, true);
 				boolean posted = false;
 				while (!posted)
 				{
@@ -154,7 +156,6 @@ public class BotThread implements Runnable
 				}
 			}
 		}
-		//catch (JumblrException ignored) {}
 		catch (Exception e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
