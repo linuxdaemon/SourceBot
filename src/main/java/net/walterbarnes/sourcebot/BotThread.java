@@ -1,8 +1,10 @@
 package net.walterbarnes.sourcebot;
 
+import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -134,25 +136,43 @@ public class BotThread implements Runnable
 				List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
 						sortTimestamp(posts.keySet(), 50), 1, true);
 				boolean posted = false;
-				while (!posted)
+				for (Post post : p)
 				{
-					for (Post post : p)
+					if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
+					Map<String, Object> params = new HashMap<>();
+					params.put("state", blog.getPostState());
+					if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
 					{
-						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
-						Map<String, Object> params = new HashMap<>();
-						params.put("state", blog.getPostState());
-						if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
-						{
-							params.put("comment", blog.getPostComment());
-						}
-						if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
-						{
-							params.put("tags", blog.getPostTags());
-						}
-						Post rb = post.reblog(url, params);
-						posted = true;
-						blog.addPost(post.getId(), rb.getId(), posts.get(post), post.getBlogName());
+						params.put("comment", blog.getPostComment());
 					}
+					List<String> rbTags = new ArrayList<>();
+					if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
+					{
+						Collections.addAll(rbTags, blog.getPostTags().split(",\\s?"));
+					}
+					if (blog.getPreserveTags())
+					{
+						for (String s : post.getTags())
+						{
+							rbTags.add(s);
+						}
+					}
+					params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
+					Post rb = null;
+					while (!posted)
+					{
+						try
+						{
+							rb = post.reblog(url, params);
+							if (rb != null) posted = true;
+						}
+						catch (JumblrException e)
+						{
+							posted = false;
+							logger.log(Level.SEVERE, e.getMessage(), e);
+						}
+					}
+					blog.addPost(post.getId(), rb != null ? rb.getId() : 0, posts.get(post), post.getBlogName());
 				}
 			}
 		}
@@ -270,6 +290,29 @@ public class BotThread implements Runnable
 				if (configRs.next())
 				{
 					return configRs.getBoolean("blog_check_active");
+				}
+			}
+			catch (SQLException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				return false;
+			}
+			return false;
+		}
+
+		boolean getPreserveTags()
+		{
+			try
+			{
+				if (System.currentTimeMillis() - configQTime > 60000)
+				{
+					configRs = getConfig.executeQuery();
+					configQTime = System.currentTimeMillis();
+				}
+				configRs.beforeFirst();
+				if (configRs.next())
+				{
+					return configRs.getBoolean("preserve_tags");
 				}
 			}
 			catch (SQLException e)

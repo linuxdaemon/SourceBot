@@ -203,7 +203,7 @@ public class SourceBot
 			logger.info("Checking Existence of Required Tables...");
 			PreparedStatement blogsCheck = conn.prepareStatement("SHOW TABLES LIKE 'blogs';");
 			PreparedStatement blogsCreate = conn.prepareStatement("CREATE TABLE `blogs` (" +
-					"`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ," +
+					"`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY," +
 					"`url` TEXT NOT NULL," +
 					"`blog_check_active` BOOL NOT NULL DEFAULT TRUE," +
 					"`sample_size` INT NOT NULL DEFAULT '1000'," +
@@ -218,7 +218,7 @@ public class SourceBot
 
 			PreparedStatement rulesCheck = conn.prepareStatement("SHOW TABLES LIKE 'search_rules'");
 			PreparedStatement rulesCreate = conn.prepareStatement("CREATE TABLE `search_rules` (" +
-					"`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ," +
+					"`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY," +
 					"`url` TEXT NOT NULL," +
 					"`type` TEXT NOT NULL," +
 					"`action` TEXT NOT NULL," +
@@ -227,7 +227,7 @@ public class SourceBot
 
 			PreparedStatement postsCheck = conn.prepareStatement("SHOW TABLES LIKE 'seen_posts'");
 			PreparedStatement postsCreate = conn.prepareStatement("CREATE TABLE `seen_posts` (" +
-					"`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ," +
+					"`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY," +
 					"`url` TEXT NOT NULL," +
 					"`post_id` BIGINT NOT NULL," +
 					"`tag` TEXT NOT NULL," +
