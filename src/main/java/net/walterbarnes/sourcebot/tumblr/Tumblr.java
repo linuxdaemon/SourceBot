@@ -1,6 +1,7 @@
 package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.JumblrClient;
+import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Tumblr extends JumblrClient
@@ -43,13 +45,21 @@ public class Tumblr extends JumblrClient
 				options.putAll(opts);
 			}
 			List<Post> posts;
-			if (tag.contains(","))
+			try
 			{
-				posts = tagged(tag.split(",\\s?")[0], options);
+				if (tag.contains(","))
+				{
+					posts = tagged(tag.split(",\\s?")[0], options);
+				}
+				else
+				{
+					posts = tagged(tag, options);
+				}
 			}
-			else
+			catch (JumblrException e)
 			{
-				posts = tagged(tag, options);
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				continue;
 			}
 			if (posts.size() == 0 || posts.isEmpty())
 			{
