@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+@SuppressWarnings ("FieldCanBeLocal")
 public class LogHelper
 {
 	private static final String logFileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date()) +
@@ -27,6 +28,7 @@ public class LogHelper
 			File dir = new File(logsDir);
 			if (!(dir.exists() && dir.isDirectory()))
 			{
+				//noinspection ResultOfMethodCallIgnored
 				dir.mkdirs();
 			}
 			fileTxt = new FileHandler("logs/" + logFileName);

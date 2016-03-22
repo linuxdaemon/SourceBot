@@ -1,5 +1,6 @@
 package net.walterbarnes.sourcebot.exception;
 
+@SuppressWarnings ("unused")
 public class InvalidBlogNameException extends Exception
 {
 	private final String blogName;

@@ -37,7 +37,7 @@ public class BotThread implements Runnable
 	 * @param c      Collection to select from
 	 * @param n      Number of elements to select
 	 * @param unique Whether the selection should be unique
-	 * @param <E>    Type of element in ollection
+	 * @param <E>    Type of element in collection
 	 * @return Random element(s) from collection
 	 */
 	private static <E> List<E> randomElement(Collection<E> c, int n, boolean unique)
@@ -88,8 +88,9 @@ public class BotThread implements Runnable
 
 	/**
 	 * Sorts a set of Tumblr Posts by their timestamp
+	 *
 	 * @param posts Set to sort
-	 * @param n Number of posts to return
+	 * @param n     Number of posts to return
 	 * @return Sorted List of posts
 	 */
 	private static ArrayList<Post> sortTimestamp(Set<Post> posts, int n)
@@ -126,54 +127,68 @@ public class BotThread implements Runnable
 					(blog.getPostState().equals("queue") && client.getQueuedPosts(url).size() < blog.getPostBuffer()))
 			{
 				logger.info("Adding posts to queue");
+
 				Map<Post, String> posts = new HashMap<>();
+
 				List<String> tags = blog.getTagWhitelist();
-				for (String tag : tags)
+
+				for (String tag : tags) posts.putAll(client.getPostsFromTag(tag, null, blog));
+
+				boolean hasPosted = false;
+
+				while (!hasPosted)
 				{
-					posts.putAll(client.getPostsFromTag(tag, blog.getPostType(), blog.getSampleSize(), null,
-							blog.getBlogBlacklist(), blog.getTagBlacklist(), blog.getPosts(), blog, conn));
-				}
-				List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
-						sortTimestamp(posts.keySet(), 50), 1, true);
-				boolean posted = false;
-				for (Post post : p)
-				{
-					if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
-					Map<String, Object> params = new HashMap<>();
-					params.put("state", blog.getPostState());
-					if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
+					List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
+							sortTimestamp(posts.keySet(), 50), 1, true);
+
+					for (Post post : p)
 					{
-						params.put("comment", blog.getPostComment());
-					}
-					List<String> rbTags = new ArrayList<>();
-					if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
-					{
-						Collections.addAll(rbTags, blog.getPostTags().split(",\\s?"));
-					}
-					if (blog.getPreserveTags())
-					{
-						for (String s : post.getTags())
+						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
+
+						Map<String, Object> params = new HashMap<>();
+
+						params.put("state", blog.getPostState());
+
+						if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
 						{
-							rbTags.add(s);
+							params.put("comment", blog.getPostComment());
 						}
-					}
-					params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
-					Post rb = null;
-					while (!posted)
-					{
-						try
+
+						List<String> rbTags = new ArrayList<>();
+
+						if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
 						{
-							rb = post.reblog(url, params);
-							if (rb != null) posted = true;
+							Collections.addAll(rbTags, blog.getPostTags().split(",\\s?"));
 						}
-						catch (JumblrException e)
+
+						if (blog.getPreserveTags())
 						{
-							posted = false;
-							logger.log(Level.SEVERE, e.getMessage(), e);
-							Thread.sleep(1000);
+							for (String s : post.getTags())
+							{
+								rbTags.add(s);
+							}
 						}
+
+						params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
+
+						Post rb = null;
+						boolean rbd = false;
+						while (!rbd)
+						{
+							try
+							{
+								rb = post.reblog(url, params);
+								if (rb != null) rbd = hasPosted = true;
+							}
+							catch (JumblrException e)
+							{
+								rbd = hasPosted = false;
+								logger.log(Level.SEVERE, e.getMessage(), e);
+								Thread.sleep(1000);
+							}
+						}
+						blog.addPost(post.getId(), rb.getId(), posts.get(post), post.getBlogName());
 					}
-					blog.addPost(post.getId(), rb != null ? rb.getId() : 0, posts.get(post), post.getBlogName());
 				}
 			}
 		}
@@ -237,7 +252,7 @@ public class BotThread implements Runnable
 			return addPosts.execute();
 		}
 
-		List<Long> getPosts() throws SQLException
+		public List<Long> getPosts() throws SQLException
 		{
 			List<Long> out = new ArrayList<>();
 			ResultSet rs = getPosts.executeQuery();
@@ -248,7 +263,7 @@ public class BotThread implements Runnable
 			return out;
 		}
 
-		String getPostType()
+		public String getPostType()
 		{
 			try
 			{
@@ -416,7 +431,7 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		int getSampleSize()
+		public int getSampleSize()
 		{
 			try
 			{
@@ -462,7 +477,7 @@ public class BotThread implements Runnable
 			return 0;
 		}
 
-		List<String> getBlogBlacklist() throws SQLException
+		public List<String> getBlogBlacklist() throws SQLException
 		{
 			if (System.currentTimeMillis() - bbQTime > 60000)
 			{
@@ -479,6 +494,7 @@ public class BotThread implements Runnable
 			return bbList;
 		}
 
+		@SuppressWarnings ("unused")
 		public List<String> getBlogWhitelist() throws SQLException
 		{
 			if (System.currentTimeMillis() - bwQTime > 60000)
@@ -496,7 +512,7 @@ public class BotThread implements Runnable
 			return bwList;
 		}
 
-		List<String> getTagBlacklist() throws SQLException
+		public List<String> getTagBlacklist() throws SQLException
 		{
 			if (System.currentTimeMillis() - tbQTime > 60000)
 			{

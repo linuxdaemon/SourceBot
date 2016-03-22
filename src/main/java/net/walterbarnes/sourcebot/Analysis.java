@@ -120,12 +120,7 @@ class Analysis
 //		System.out.println(MapHelper.sortByValues((HashMap<String, Integer>) wordMap));
 	}
 
-	private static boolean isTagSimilar(String tag, String tag1)
-	{
-		int d = levenshteinDistance(tag, tag1);
-		return false;
-	}
-
+	@SuppressWarnings ("unused")
 	private static int levenshteinDistance(CharSequence lhs, CharSequence rhs)
 	{
 		int len0 = lhs.length() + 1;
@@ -167,6 +162,7 @@ class Analysis
 		return cost[len0 - 1];
 	}
 
+	@SuppressWarnings ("unused")
 	private static String stripPunct(String s)
 	{
 		ArrayList<String> approvedChar = new ArrayList<>();

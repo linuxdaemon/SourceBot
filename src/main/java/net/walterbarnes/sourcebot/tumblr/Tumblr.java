@@ -6,7 +6,6 @@ import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@SuppressWarnings ({"WeakerAccess", "unused"})
 public class Tumblr extends JumblrClient
 {
 	private final Logger logger;
@@ -26,15 +26,24 @@ public class Tumblr extends JumblrClient
 		setToken(token, tokenSecret);
 	}
 
-	public Map<Post, String> getPostsFromTag(String tag, String type, int postNum, HashMap<String, Object> opts,
-											 List<String> blogBlacklist, List<String> tagBlacklist,
-											 List<Long> postBlacklist, BotThread.Blog blog, Connection conn) throws SQLException
+	public Map<Post, String> getPostsFromTag(String tag, HashMap<String, Object> opts,
+											 BotThread.Blog blog) throws SQLException
 	{
+		List<String> blogBlacklist = blog.getBlogBlacklist();
+		List<String> tagBlacklist = blog.getTagBlacklist();
+		List<Long> postBlacklist = blog.getPosts();
+
+		int postNum = blog.getSampleSize();
+		String type = blog.getPostType();
+
 		int postCount = 0;
 		int searched = 0;
+
 		long lastTime = System.currentTimeMillis() / 1000;
 		long start = System.currentTimeMillis();
+
 		Map<Post, String> out = new HashMap<>();
+
 		logger.info("Searching tag " + tag);
 		while (postCount < postNum)
 		{

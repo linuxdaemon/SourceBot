@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 
+@SuppressWarnings ("WeakerAccess")
 public class CrashReport
 {
 	/**
@@ -39,11 +40,9 @@ public class CrashReport
 			stringBuilder.append("-- Head --\n");
 			stringBuilder.append("Stacktrace:\n");
 			StackTraceElement[] astacktraceelement = this.stacktrace;
-			int i = astacktraceelement.length;
 
-			for (int j = 0; j < i; ++j)
+			for (StackTraceElement stacktraceelement : astacktraceelement)
 			{
-				StackTraceElement stacktraceelement = astacktraceelement[j];
 				stringBuilder.append("\t").append("at ").append(stacktraceelement.toString());
 				stringBuilder.append("\n");
 			}
@@ -153,6 +152,7 @@ public class CrashReport
 		{
 			if (p_147149_1_.getParentFile() != null)
 			{
+				//noinspection ResultOfMethodCallIgnored
 				p_147149_1_.getParentFile().mkdirs();
 			}
 

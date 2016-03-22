@@ -156,10 +156,9 @@ public class SourceBot
 				if (fr != null) try { fr.close(); }catch (IOException ignored) {}
 			}
 		}
-		else {/*System.exit(0);*/}
 	}
 
-	public static void initDb(String dbHost, String dbUser, String dbPass, String dbName)
+	private static void initDb(String dbHost, String dbUser, String dbPass, String dbName)
 	{
 		try
 		{
@@ -372,6 +371,7 @@ public class SourceBot
 		ResultSet rs = getBlogs.executeQuery();
 		long queryTime = System.currentTimeMillis();
 		Map<String, BotThread> threads = new HashMap<>();
+		//noinspection InfiniteLoopStatement
 		while (true)
 		{
 			try
