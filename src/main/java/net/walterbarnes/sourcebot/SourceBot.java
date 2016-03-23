@@ -168,8 +168,8 @@ public class SourceBot
 			}
 			finally
 			{
-				if (fw != null) try { fw.close(); }catch (IOException ignored) {}
-				if (fr != null) try { fr.close(); }catch (IOException ignored) {}
+				if (fw != null) try { fw.close(); } catch (IOException ignored) {}
+				if (fr != null) try { fr.close(); } catch (IOException ignored) {}
 			}
 		}
 	}

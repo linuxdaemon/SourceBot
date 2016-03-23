@@ -3,8 +3,34 @@ apply plugin: 'maven'
 apply plugin: 'application'
 
 group 'net.walterbarnes'
-version '1.0'
 mainClassName = group + ".sourcebot.SourceBot"
+version '0.1'
+
+/*
+ * Copyright (c) 2016.
+ * This file is part of SourceBot.
+ *
+ * SourceBot is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * SourceBot is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// If TeamCity is running this build, lets set the version info
+if (hasProperty("teamcity")) {
+    version = teamcity["build.number"]
+
+    // Fix for main branch being built
+    version = version.replaceAll("/", "-")
+}
 
 sourceCompatibility = 1.7
 
@@ -14,7 +40,7 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile 'junit:junit:4.11'
     compile 'com.tumblr:jumblr:0.0.12-SNAPSHOT'
     //compile 'com.github.OnyxFoxDevelopment:OFlib:1.0'
     compile 'mysql:mysql-connector-java:5.1.38'
@@ -22,10 +48,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes('Main-Class': mainClassName,
-                'Class-Path': ""
+        attributes('Main-Class': mainClassName
         )
     }
-    baseName = rootProject.name
-    version = version
 }
