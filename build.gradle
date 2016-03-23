@@ -51,4 +51,6 @@ jar {
         attributes('Main-Class': mainClassName
         )
     }
+    baseName = rootProject.name
+    version = version
 }
