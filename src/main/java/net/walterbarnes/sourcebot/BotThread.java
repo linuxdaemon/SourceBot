@@ -61,13 +61,13 @@ public class BotThread implements Runnable
 	private static <E> List<E> randomElement(Collection<E> c, int n, boolean unique)
 	{
 		List<E> out = new ArrayList<>();
-		List<E> p = new ArrayList<>(c);
+		List<E> l = new ArrayList<>(c);
 
 		while (out.size() < n)
 		{
-			E post = p.get(ThreadLocalRandom.current().nextInt(0, p.size()));
-			out.add(post);
-			if (unique) p.remove(post);
+			E e = l.get(ThreadLocalRandom.current().nextInt(0, l.size()));
+			out.add(e);
+			if (unique) l.remove(e);
 		}
 		return out;
 	}

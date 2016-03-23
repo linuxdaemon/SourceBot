@@ -88,10 +88,12 @@ public class Tumblr extends JumblrClient
 				logger.log(Level.SEVERE, e.getMessage(), e);
 				continue;
 			}
+
 			if (posts.size() == 0 || posts.isEmpty())
 			{
 				break;
 			}
+
 			loop:
 			for (Post post : posts)
 			{
@@ -116,15 +118,19 @@ public class Tumblr extends JumblrClient
 							if (post.getTags().contains(t)) continue loop;
 						}
 					}
+
 					if (blogBlacklist.contains(post.getBlogName()) ||
 							postBlacklist.contains(post.getId())) { continue; }
+
 					out.put(post, tag);
 					postCount++;
 				}
 			}
 		}
-		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag, out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), System.currentTimeMillis() - start));
-		blog.addStat(tag, (int) (System.currentTimeMillis() - start), searched, out.size());
+		long end = System.currentTimeMillis() - start;
+		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag,
+				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
+		blog.addStat(tag, (int) end, searched, out.size());
 		return out;
 	}
 

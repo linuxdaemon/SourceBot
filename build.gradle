@@ -25,12 +25,11 @@ version '0.1'
  */
 
 // If TeamCity is running this build, lets set the version info
+def buildNum = '0'
 if (hasProperty("teamcity")) {
-    version = teamcity["build.number"]
-
-    // Fix for main branch being built
-    version = version.replaceAll("/", "-")
+    buildNum = teamcity["build.number"]
 }
+version = version + "." + buildNum
 
 sourceCompatibility = 1.7
 

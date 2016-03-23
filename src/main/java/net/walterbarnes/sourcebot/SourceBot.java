@@ -329,8 +329,10 @@ public class SourceBot
 			firstBlog.setString(7, Cli.promptList("[Config] Reblogged Post State: ", opts));
 			opts.clear();
 			firstBlog.setInt(8, Cli.promptInt("[Config] Number of Posts to Keep in Queue/Drafts[20]: ", 20));
-			firstBlog.setString(9, Cli.prompt("[Config] Comment to Add to All Reblogged Posts[]: ", Pattern.compile(".*")).trim());
-			firstBlog.setString(10, Cli.prompt("[Config] Tag to Add to All Reblogged Posts[]: ", Pattern.compile("[^,]*")).trim());
+			firstBlog.setString(9, Cli.prompt("[Config] Comment to Add to All Reblogged Posts[]: ",
+					Pattern.compile(".*")).trim());
+			firstBlog.setString(10, Cli.prompt("[Config] Tag to Add to All Reblogged Posts[]: ",
+					Pattern.compile("[^,]*")).trim());
 			firstBlog.setBoolean(11, false);
 			firstBlog.execute();
 			logger.info("Created.");
