@@ -40,6 +40,8 @@ public class BotThread implements Runnable
 	private final Blog blog;
 	private final Connection conn;
 	private final String url;
+	private long cacheTime = 0;
+	private Map<String, List<Post>> cache = new HashMap<>();
 
 	BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
@@ -151,11 +153,71 @@ public class BotThread implements Runnable
 				List<String> tags = blog.getTagWhitelist();
 				List<String> blogs = blog.getBlogWhitelist();
 
-				for (String tag : tags) posts.putAll(client.getPostsFromTag(tag, null, blog));
-				for (String b : blogs) posts.putAll(client.getPostsFromBlog(b, null, blog));
+				for (String tag : tags)
+				{
+					logger.info("Getting posts from tag: " + tag);
+					int startSize = posts.size();
+					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000))
+					{
+						logger.info("Invalidating expired cache");
+						Map<Post, String> p = client.getPostsFromTag(tag, null, blog);
+						posts.putAll(p);
+						if (!cache.containsKey("tag:" + tag))
+						{
+							List<Post> list = new ArrayList<>();
+							cache.put("tag:" + tag, list);
+						}
+						for (Post pst : p.keySet())
+						{
+							cache.get(p.get(pst)).add(pst);
+						}
+					}
+					else
+					{
+						logger.info("Using cached posts");
+						for (Post p : cache.get("tag:" + tag))
+						{
+							posts.put(p, "tag:" + tag);
+						}
+					}
+					System.out.println(posts.size() - startSize);
+				}
 
+				for (String b : blogs)
+				{
+					logger.info("Getting posts from blog: " + b);
+					int startSize = posts.size();
+					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000))
+					{
+						logger.info("Invalidating expired cache");
+						Map<Post, String> p = client.getPostsFromBlog(b, null, blog);
+						posts.putAll(p);
+						if (!cache.containsKey("blog:" + b))
+						{
+							List<Post> list = new ArrayList<>();
+							cache.put("blog:" + b, list);
+						}
+						for (Post pst : p.keySet())
+						{
+							cache.get(p.get(pst)).add(pst);
+						}
+					}
+					else
+					{
+						logger.info("Using cached posts");
+						for (Post p : cache.get("blog:" + b))
+						{
+							posts.put(p, "blog:" + b);
+						}
+					}
+					System.out.println(posts.size() - startSize);
+				}
+
+				//for (String b : blogs) posts.putAll(client.getPostsFromBlog(b, null, blog));
+				cacheTime = System.currentTimeMillis();
 				boolean hasPosted = false;
 
+				loop:
 				while (!hasPosted)
 				{
 					List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
@@ -163,6 +225,11 @@ public class BotThread implements Runnable
 
 					for (Post post : p)
 					{
+						if (blog.getPosts().contains(post.getId()))
+						{
+							hasPosted = false;
+							continue;
+						}
 						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
 
 						Map<String, Object> params = new HashMap<>();
@@ -183,6 +250,7 @@ public class BotThread implements Runnable
 
 						Post rb = null;
 						boolean rbd = false;
+						int failCount = 0;
 						while (!rbd)
 						{
 							try
@@ -192,7 +260,9 @@ public class BotThread implements Runnable
 							}
 							catch (JumblrException e)
 							{
+								if (failCount > 10) break loop;
 								rbd = hasPosted = false;
+								failCount++;
 								logger.log(Level.SEVERE, e.getMessage(), e);
 								Thread.sleep(1000);
 							}

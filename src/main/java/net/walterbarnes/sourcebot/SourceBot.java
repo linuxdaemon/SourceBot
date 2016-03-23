@@ -403,7 +403,7 @@ public class SourceBot
 						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
 					}
 				}
-				Thread.sleep(1000);
+				Thread.sleep(5000);
 			}
 			catch (OAuthConnectionException | InterruptedException e)
 			{

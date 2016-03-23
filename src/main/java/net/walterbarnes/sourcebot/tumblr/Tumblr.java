@@ -103,10 +103,7 @@ public class Tumblr extends JumblrClient
 						}
 					}
 
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId()))
-					{
-						continue;
-					}
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
 
 					out.put(post, String.format("tag:%s", tag));
 					postCount++;
@@ -134,7 +131,6 @@ public class Tumblr extends JumblrClient
 		int postCount = 0;
 		int searched = 0;
 
-		long lastTime = System.currentTimeMillis() / 1000;
 		long start = System.currentTimeMillis();
 
 		Map<Post, String> out = new HashMap<>();
