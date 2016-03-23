@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 
 public class SourceBot
 {
+	private static final File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 	private static final String jsonName = "SourceBot.json";
 	private static Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private static JsonParser parser = new JsonParser();
@@ -54,7 +55,11 @@ public class SourceBot
 		try
 		{
 			LogHelper.init(SourceBot.class);
-			File jsonFile = new File(jsonName);
+
+			if (!confDir.exists())
+			{ confDir.mkdirs(); }
+			File jsonFile = new File(confDir, jsonName);
+			logger.info(jsonFile.getAbsolutePath());
 
 			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
 			{
@@ -120,7 +125,7 @@ public class SourceBot
 			FileReader fr = null;
 			try
 			{
-				if (!(jsonFile = new File(jsonName)).exists())
+				if (!(jsonFile = new File(confDir, jsonName)).exists())
 				{
 					if (!jsonFile.createNewFile())
 					{
