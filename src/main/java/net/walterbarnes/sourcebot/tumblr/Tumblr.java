@@ -66,22 +66,18 @@ public class Tumblr extends JumblrClient
 		while (postCount < postNum)
 		{
 			HashMap<String, Object> options = new HashMap<>();
+
 			options.put("before", lastTime);
-			if (opts != null)
-			{
-				options.putAll(opts);
-			}
+
+			if (opts != null) options.putAll(opts);
+
 			List<Post> posts;
 			try
 			{
 				if (tag.contains(","))
-				{
 					posts = tagged(tag.split(",\\s?")[0], options);
-				}
 				else
-				{
 					posts = tagged(tag, options);
-				}
 			}
 			catch (JumblrException e)
 			{
@@ -89,10 +85,7 @@ public class Tumblr extends JumblrClient
 				continue;
 			}
 
-			if (posts.size() == 0 || posts.isEmpty())
-			{
-				break;
-			}
+			if (posts.size() == 0 || posts.isEmpty()) break;
 
 			loop:
 			for (Post post : posts)
@@ -105,22 +98,15 @@ public class Tumblr extends JumblrClient
 					{
 						for (String s : tag.split(",\\s?"))
 						{
-							if (!post.getTags().contains(s))
-							{
-								continue loop;
-							}
-						}
-					}
-					else
-					{
-						for (String t : tagBlacklist)
-						{
-							if (post.getTags().contains(t)) continue loop;
+							if (!post.getTags().contains(s)) { continue loop; }
+							else { for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop; }
 						}
 					}
 
-					if (blogBlacklist.contains(post.getBlogName()) ||
-							postBlacklist.contains(post.getId())) { continue; }
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId()))
+					{
+						continue;
+					}
 
 					out.put(post, tag);
 					postCount++;
@@ -128,8 +114,10 @@ public class Tumblr extends JumblrClient
 			}
 		}
 		long end = System.currentTimeMillis() - start;
+
 		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
+
 		blog.addStat(tag, (int) end, searched, out.size());
 		return out;
 	}
@@ -179,10 +167,7 @@ public class Tumblr extends JumblrClient
 			for (Post post : subs)
 			{
 				offset++;
-				if (post.getType().getValue().equals("answer"))
-				{
-					asks.add((AnswerPost) post);
-				}
+				if (post.getType().getValue().equals("answer")) asks.add((AnswerPost) post);
 			}
 		}
 		return asks;
@@ -194,13 +179,11 @@ public class Tumblr extends JumblrClient
 		List<Post> queue;
 		ArrayList<Post> out = new ArrayList<>();
 		while ((queue = blogQueuedPosts(blogName, offset)).size() > 0)
-		{
 			for (Post post : queue)
 			{
 				out.add(post);
 				offset++;
 			}
-		}
 		return out;
 	}
 
@@ -210,13 +193,11 @@ public class Tumblr extends JumblrClient
 		List<Post> drafts;
 		ArrayList<Post> out = new ArrayList<>();
 		while ((drafts = blogDraftPosts(blogName, before)).size() > 0)
-		{
 			for (Post post : drafts)
 			{
 				out.add(post);
 				before = post.getId();
 			}
-		}
 		return out;
 	}
 
@@ -225,12 +206,10 @@ public class Tumblr extends JumblrClient
 		List<Post> posts;
 		ArrayList<Post> out = new ArrayList<>();
 		while ((posts = blogPosts(blogName, out.size())).size() > 0)
-		{
 			for (Post post : posts)
 			{
 				out.add(post);
 			}
-		}
 		return out;
 	}
 }

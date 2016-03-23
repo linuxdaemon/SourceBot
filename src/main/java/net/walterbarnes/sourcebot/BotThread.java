@@ -168,24 +168,14 @@ public class BotThread implements Runnable
 						params.put("state", blog.getPostState());
 
 						if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
-						{
 							params.put("comment", blog.getPostComment());
-						}
 
 						List<String> rbTags = new ArrayList<>();
 
 						if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
-						{
 							Collections.addAll(rbTags, blog.getPostTags().split(",\\s?"));
-						}
 
-						if (blog.getPreserveTags())
-						{
-							for (String s : post.getTags())
-							{
-								rbTags.add(s);
-							}
-						}
+						if (blog.getPreserveTags()) for (String s : post.getTags()) rbTags.add(s);
 
 						params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
 
@@ -210,10 +200,7 @@ public class BotThread implements Runnable
 				}
 			}
 		}
-		catch (Exception e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-		}
+		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
 	}
 
 	public class Blog
@@ -229,10 +216,13 @@ public class BotThread implements Runnable
 
 		private long tbQTime = 0;
 		private List<String> tbList;
+
 		private long twQTime = 0;
 		private List<String> twList;
+
 		private long bbQTime = 0;
 		private List<String> bbList;
+
 		private long bwQTime = 0;
 		private List<String> bwList;
 
@@ -242,12 +232,16 @@ public class BotThread implements Runnable
 		{
 			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?;");
 			getConfig.setString(1, url);
+
 			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?;");
 			getRules.setString(1, url);
+
 			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
 			getPosts.setString(1, url);
+
 			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?)");
 			addPosts.setString(1, url);
+
 			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?);");
 			addStats.setString(1, url);
 		}
@@ -274,10 +268,7 @@ public class BotThread implements Runnable
 		{
 			List<Long> out = new ArrayList<>();
 			ResultSet rs = getPosts.executeQuery();
-			while (rs.next())
-			{
-				out.add(rs.getLong("post_id"));
-			}
+			while (rs.next()) out.add(rs.getLong("post_id"));
 			return out;
 		}
 
@@ -293,14 +284,8 @@ public class BotThread implements Runnable
 				configRs.beforeFirst();
 				if (configRs.next())
 				{
-					if (configRs.getString("post_type").isEmpty() || configRs.getString("post_type").equals("null"))
-					{
-						return null;
-					}
-					else
-					{
-						return configRs.getString("post_type");
-					}
+					return configRs.getString("post_type").isEmpty() || configRs.getString("post_type").equals("null") ?
+							null : configRs.getString("post_type");
 				}
 			}
 			catch (SQLException e)
@@ -322,9 +307,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getBoolean("blog_check_active");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -345,9 +328,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getBoolean("preserve_tags");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -368,9 +349,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getString("post_select");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -391,9 +370,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getString("post_state");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -414,9 +391,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getString("post_comment");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -437,9 +412,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getString("post_tags");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -460,9 +433,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getInt("sample_size");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -483,9 +454,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{
 					return configRs.getInt("post_buffer");
-				}
 			}
 			catch (SQLException e)
 			{
@@ -504,9 +473,7 @@ public class BotThread implements Runnable
 				ResultSet rs = getRules.executeQuery();
 				List<String> out = new ArrayList<>();
 				while (rs.next())
-				{
 					out.add(rs.getString("term"));
-				}
 				return (bbList = out);
 			}
 			return bbList;
@@ -522,9 +489,7 @@ public class BotThread implements Runnable
 				ResultSet rs = getRules.executeQuery();
 				List<String> out = new ArrayList<>();
 				while (rs.next())
-				{
 					out.add(rs.getString("term"));
-				}
 				return (bwList = out);
 			}
 			return bwList;
@@ -539,9 +504,7 @@ public class BotThread implements Runnable
 				ResultSet rs = getRules.executeQuery();
 				List<String> out = new ArrayList<>();
 				while (rs.next())
-				{
 					out.add(rs.getString("term"));
-				}
 				return (tbList = out);
 			}
 			return tbList;
@@ -556,9 +519,7 @@ public class BotThread implements Runnable
 				ResultSet rs = getRules.executeQuery();
 				List<String> out = new ArrayList<>();
 				while (rs.next())
-				{
 					out.add(rs.getString("term"));
-				}
 				return (twList = out);
 			}
 			return twList;
