@@ -28,6 +28,7 @@ version '0.1'
 def buildNum = '0'
 if (hasProperty("teamcity")) {
     buildNum = teamcity["build.number"]
+    println "##teamcity[buildNumber '" + version + "." + buildNum + "']"
 }
 version = version + "." + buildNum
 
@@ -41,7 +42,6 @@ repositories {
 dependencies {
     testCompile 'junit:junit:4.11'
     compile 'com.tumblr:jumblr:0.0.12-SNAPSHOT'
-    //compile 'com.github.OnyxFoxDevelopment:OFlib:1.0'
     compile 'mysql:mysql-connector-java:5.1.38'
 }
 
