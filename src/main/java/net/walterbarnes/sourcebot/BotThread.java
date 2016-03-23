@@ -149,8 +149,10 @@ public class BotThread implements Runnable
 				Map<Post, String> posts = new HashMap<>();
 
 				List<String> tags = blog.getTagWhitelist();
+				List<String> blogs = blog.getBlogWhitelist();
 
 				for (String tag : tags) posts.putAll(client.getPostsFromTag(tag, null, blog));
+				for (String b : blogs) posts.putAll(client.getPostsFromBlog(b, null, blog));
 
 				boolean hasPosted = false;
 
@@ -195,7 +197,8 @@ public class BotThread implements Runnable
 								Thread.sleep(1000);
 							}
 						}
-						blog.addPost(post.getId(), rb.getId(), posts.get(post), post.getBlogName());
+						String val = posts.get(post);
+						blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 					}
 				}
 			}
@@ -239,28 +242,30 @@ public class BotThread implements Runnable
 			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
 			getPosts.setString(1, url);
 
-			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?)");
+			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, search_type, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?, ?)");
 			addPosts.setString(1, url);
 
-			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?);");
+			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, search_type, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?, ?);");
 			addStats.setString(1, url);
 		}
 
-		public boolean addStat(String tag, int time, int searched, int selected) throws SQLException
+		public boolean addStat(String type, String tag, int time, int searched, int selected) throws SQLException
 		{
-			addStats.setString(2, tag);
-			addStats.setInt(3, time);
-			addStats.setInt(4, searched);
-			addStats.setInt(5, selected);
+			addStats.setString(2, type);
+			addStats.setString(3, tag);
+			addStats.setInt(4, time);
+			addStats.setInt(5, searched);
+			addStats.setInt(6, selected);
 			return addStats.execute();
 		}
 
-		boolean addPost(long id, long rbId, String tag, String blogName) throws SQLException
+		boolean addPost(String type, long id, long rbId, String tag, String blogName) throws SQLException
 		{
-			addPosts.setLong(2, id);
-			addPosts.setLong(3, rbId);
-			addPosts.setString(4, tag);
-			addPosts.setString(5, blogName);
+			addPosts.setString(2, type);
+			addPosts.setLong(3, id);
+			addPosts.setLong(4, rbId);
+			addPosts.setString(5, tag);
+			addPosts.setString(6, blogName);
 			return addPosts.execute();
 		}
 

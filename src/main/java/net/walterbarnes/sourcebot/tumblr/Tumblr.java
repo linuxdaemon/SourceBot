@@ -108,7 +108,7 @@ public class Tumblr extends JumblrClient
 						continue;
 					}
 
-					out.put(post, tag);
+					out.put(post, String.format("tag:%s", tag));
 					postCount++;
 				}
 			}
@@ -118,7 +118,71 @@ public class Tumblr extends JumblrClient
 		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
-		blog.addStat(tag, (int) end, searched, out.size());
+		blog.addStat("tag", tag, (int) end, searched, out.size());
+		return out;
+	}
+
+	public Map<Post, String> getPostsFromBlog(String b, Map<String, Object> params, BotThread.Blog blog) throws SQLException
+	{
+		List<String> blogBlacklist = blog.getBlogBlacklist();
+		List<String> tagBlacklist = blog.getTagBlacklist();
+		List<Long> postBlacklist = blog.getPosts();
+
+		int postNum = blog.getSampleSize();
+		String type = blog.getPostType();
+
+		int postCount = 0;
+		int searched = 0;
+
+		long lastTime = System.currentTimeMillis() / 1000;
+		long start = System.currentTimeMillis();
+
+		Map<Post, String> out = new HashMap<>();
+
+		logger.info("Searching blog " + b);
+
+		while (postCount < postNum)
+		{
+			HashMap<String, Object> options = new HashMap<>();
+
+			options.put("offset", postCount);
+
+			if (params != null) options.putAll(params);
+
+			List<Post> posts;
+			try
+			{
+				posts = blogPosts(b, options);
+			}
+			catch (JumblrException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				continue;
+			}
+
+			if (posts.size() == 0 || posts.isEmpty()) break;
+
+			loop:
+			for (Post post : posts)
+			{
+				searched++;
+				if (type == null || post.getType().getValue().equals(type))
+				{
+					for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop;
+
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+
+					out.put(post, String.format("blog:%s", b));
+					postCount++;
+				}
+			}
+		}
+		long end = System.currentTimeMillis() - start;
+
+		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", b,
+				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
+
+		blog.addStat("blog", b, (int) end, searched, out.size());
 		return out;
 	}
 
