@@ -54,9 +54,12 @@ public class SourceBot
 		try
 		{
 			LogHelper.init(SourceBot.class);
-			if (Arrays.asList(args).contains("install"))
+			File jsonFile = new File(jsonName);
+
+			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
 			{
-				File jsonFile = new File(jsonName);
+				if (!jsonFile.createNewFile())
+				{ throw new RuntimeException("Unable to Create Configuration File"); }
 				FileReader fr = new FileReader(jsonFile);
 				json = parser.parse(new FileReader(jsonFile)).getAsJsonObject();
 				fr.close();
@@ -66,7 +69,6 @@ public class SourceBot
 						db.get("db_name").getAsString());
 				System.exit(0);
 			}
-			File jsonFile = new File(jsonName);
 			FileReader fr = new FileReader(jsonFile);
 			json = parser.parse(new FileReader(jsonFile)).getAsJsonObject();
 			fr.close();
