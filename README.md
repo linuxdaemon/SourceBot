@@ -126,7 +126,7 @@ One of the requirements for this bot is a Tumblr API connection, which requires 
 ## Installing
 To install the bot, you first need a [mysql database](#setup-database) and a [Tumblr API key](#tumblr-api)
 
-1. Download the newest SourceBot release here
+1. Download the newest SourceBot release [here](https://github.com/linuxdemon1/SourceBot/releases)
 2. Unzip the archive in to a directory
 3. Now we need to run the install script
     * Windows
