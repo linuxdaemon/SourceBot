@@ -5,6 +5,7 @@ through a configured list of tags for posts, and provide them to the
 user, either through the drafts or queue.
 
 [Set up required before installing the bot](#setup)
+
 [Installing the bot](#installing)
 
 ## Setup
@@ -19,6 +20,7 @@ The Bot requires a MySQL database for configuration and caching purposes
 
 #### MySQL Installation
 [Windows](https://dev.mysql.com/doc/refman/5.7/en/windows-installation.html)
+
 [Linux](https://dev.mysql.com/doc/refman/5.7/en/linux-installation.html)
 
 #### Creating the Database
@@ -46,11 +48,11 @@ security reasons, we don't want to use the root user
 2. Now we need to give the user access to the database, to do that, run `GRANT ALL PRIVILEGES ON <database name> TO '<username>'@'<ip-address>';` ex: `GRANT ALL PRIVILEGES ON sourcebot.* TO 'sourcebot'@'localhost';`
 3. Ensure the privileges have been updated by running `FLUSH PRIVILEGES;`
 
-Now you either create the tables manually, or they will be created for you when you [install the program](#installing)
+Now you either create the tables manually, or they will be created for 
+you when you [install the program](#installing)
 
 #### Tables
-* `blogs` Used for storing configuration for each registered blog
-    ##### Columns
+* `blogs` Used for storing configuration for each registered blog. Columns:
     * `id int NOT NULL AUTO_INCREMENT PRIMARY KEY`
     * `url text NOT NULL`
     * `blog_check_active boolean NOT NULL DEFAULT TRUE`
@@ -64,16 +66,14 @@ Now you either create the tables manually, or they will be created for you when 
     * `preserve_tags boolean NOT NULL DEFAULT FALSE`
     * `active boolean NOT NULL DEFAULT FALSE`
     
-* `search_rules` Used for storing all the search rules, allowed/blocked blogs/tags
-    ##### Columns
+* `search_rules` Used for storing all the search rules, allowed/blocked blogs/tags. Columns:
     * `id int NOT NULL AUTO_INCREMENT PRIMARY KEY`
     * `url text NOT NULL`
     * `type text NOT NULL`
     * `action text NOT NULL`
     * `term text NOT NULL`
     
-* `seen_posts` A table to store all the post the bot has reblogged, on a per blog basis, so it will not repeatedly reblog posts
-    ##### Columns
+* `seen_posts` A table to store all the post the bot has reblogged, on a per blog basis, so it will not repeatedly reblog posts. Columns:
     * `id int NOT NULL AUTO_INCREMENT PRIMARY KEY`
     * `url TEXT NOT NULL`
     * `post_id bigint NOT NULL`
@@ -81,8 +81,7 @@ Now you either create the tables manually, or they will be created for you when 
     * `blog text NOT NULL`
     * `rb_id bigint NOT NULL`
     
-* `tag_stats` A table for storing information on tag searches, for the purposes of statistical measurement. This table may be made optioninal in the future, but it required as of v0.1
-    ##### Columns
+* `tag_stats` A table for storing information on tag searches, for the purposes of statistical measurement. This table may be made optioninal in the future, but it required as of v0.1. Columns:
     * `id int NOT NULL AUTO_INCREMENT PRIMARY KEY`
     * `url text NOT NULL`
     * `tag text NOT NULL`
@@ -122,7 +121,7 @@ One of the requirements for this bot is a Tumblr API connection, which requires 
  User user = client.user();
  </pre></code>
  
- 8. You will need to keep this window open during [installion](#installing) or copy the consumer key, consumer secret, token, and token secret to a file
+ You will need to keep this window open during [installation](#installing) or copy the consumer key, consumer secret, token, and token secret to a file
     
 ## Installing
 To install the bot, you first need a [mysql database](#setup-database) and a [Tumblr API key](#tumblr-api)
