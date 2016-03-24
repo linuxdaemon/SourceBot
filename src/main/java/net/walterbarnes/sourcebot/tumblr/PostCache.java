@@ -20,6 +20,7 @@ package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.types.Post;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -56,11 +57,12 @@ public class PostCache implements Iterable
 
 	public void validate()
 	{
-		for (Post p : posts.keySet())
+		ArrayList<Post> set = new ArrayList<>(posts.keySet());
+		for (int i = 0; i < set.size(); i++)
 		{
-			if (System.currentTimeMillis() - posts.get(p) > cacheLife)
+			if (System.currentTimeMillis() - posts.get(set.get(i)) > cacheLife)
 			{
-				posts.remove(p);
+				posts.remove(set.get(i));
 			}
 		}
 	}
