@@ -157,7 +157,7 @@ public class BotThread implements Runnable
 				{
 					logger.info("Getting posts from tag: " + tag);
 					int startSize = posts.size();
-					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000))
+					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000) || !cache.containsKey("tag:" + tag))
 					{
 						logger.info("Invalidating expired cache");
 						Map<Post, String> p = client.getPostsFromTag(tag, null, blog);
@@ -167,6 +167,7 @@ public class BotThread implements Runnable
 							List<Post> list = new ArrayList<>();
 							cache.put("tag:" + tag, list);
 						}
+						cache.get("tag:" + tag).clear();
 						for (Post pst : p.keySet())
 						{
 							cache.get(p.get(pst)).add(pst);
@@ -257,6 +258,7 @@ public class BotThread implements Runnable
 							{
 								rb = post.reblog(url, params);
 								if (rb != null) rbd = hasPosted = true;
+								else { failCount++; }
 							}
 							catch (JumblrException e)
 							{
