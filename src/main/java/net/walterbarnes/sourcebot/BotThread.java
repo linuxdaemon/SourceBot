@@ -21,6 +21,9 @@ package net.walterbarnes.sourcebot;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.tumblr.BlogTerm;
+import net.walterbarnes.sourcebot.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.tumblr.TagTerm;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,8 +43,7 @@ public class BotThread implements Runnable
 	private final Blog blog;
 	private final Connection conn;
 	private final String url;
-	private long cacheTime = 0;
-	private Map<String, List<Post>> cache = new HashMap<>();
+	private Map<String, SearchTerm> terms = new HashMap<>();
 
 	BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
@@ -153,74 +155,94 @@ public class BotThread implements Runnable
 				List<String> tags = blog.getTagWhitelist();
 				List<String> blogs = blog.getBlogWhitelist();
 
+//				for (String tag : tags)
+//				{
+//					logger.info("Getting posts for tag: " + tag);
+//					int startSize = posts.size();
+//					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000) || !cache.containsKey("tag:" + tag))
+//					{
+//						logger.info("Invalidating expired cache");
+//						Map<Post, String> p = client.getPostsFromTag(tag, null, blog);
+//						posts.putAll(p);
+//						if (!cache.containsKey("tag:" + tag))
+//						{
+//							List<Post> list = new ArrayList<>();
+//							cache.put("tag:" + tag, list);
+//						}
+//						cache.get("tag:" + tag).clear();
+//						for (Post pst : p.keySet())
+//						{
+//							cache.get(p.get(pst)).add(pst);
+//						}
+//					}
+//					else
+//					{
+//						logger.info("Using cached posts");
+//						for (Post p : cache.get("tag:" + tag))
+//						{
+//							posts.put(p, "tag:" + tag);
+//						}
+//					}
+//					System.out.println(posts.size() - startSize);
+//				}
+
 				for (String tag : tags)
 				{
 					logger.info("Getting posts from tag: " + tag);
-					int startSize = posts.size();
-					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000) || !cache.containsKey("tag:" + tag))
+					if (!terms.containsKey("tag:" + tag))
 					{
-						logger.info("Invalidating expired cache");
-						Map<Post, String> p = client.getPostsFromTag(tag, null, blog);
-						posts.putAll(p);
-						if (!cache.containsKey("tag:" + tag))
-						{
-							List<Post> list = new ArrayList<>();
-							cache.put("tag:" + tag, list);
-						}
-						cache.get("tag:" + tag).clear();
-						for (Post pst : p.keySet())
-						{
-							cache.get(p.get(pst)).add(pst);
-						}
+						terms.put("tag:" + tag, new TagTerm(tag, client, logger));
 					}
-					else
-					{
-						logger.info("Using cached posts");
-						for (Post p : cache.get("tag:" + tag))
-						{
-							posts.put(p, "tag:" + tag);
-						}
-					}
-					System.out.println(posts.size() - startSize);
+					posts.putAll(terms.get("tag:" + tag).getPosts(null, blog));
 				}
 
 				for (String b : blogs)
 				{
-					logger.info("Getting posts from blog: " + b);
-					int startSize = posts.size();
-					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000))
+					logger.info("Getting posts from tag: " + b);
+					if (!terms.containsKey("blog:" + b))
 					{
-						logger.info("Invalidating expired cache");
-						Map<Post, String> p = client.getPostsFromBlog(b, null, blog);
-						posts.putAll(p);
-						if (!cache.containsKey("blog:" + b))
-						{
-							List<Post> list = new ArrayList<>();
-							cache.put("blog:" + b, list);
-						}
-						for (Post pst : p.keySet())
-						{
-							cache.get(p.get(pst)).add(pst);
-						}
+						terms.put("blog:" + b, new BlogTerm(b, client, logger));
 					}
-					else
-					{
-						logger.info("Using cached posts");
-						for (Post p : cache.get("blog:" + b))
-						{
-							posts.put(p, "blog:" + b);
-						}
-					}
-					System.out.println(posts.size() - startSize);
+					posts.putAll(terms.get("blog:" + b).getPosts(null, blog));
 				}
 
+//				for (String b : blogs)
+//				{
+//					logger.info("Getting posts from blog: " + b);
+//					int startSize = posts.size();
+//					if (System.currentTimeMillis() - cacheTime > (30 * 60 * 1000))
+//					{
+//						logger.info("Invalidating expired cache");
+//						Map<Post, String> p = client.getPostsFromBlog(b, null, blog);
+//						posts.putAll(p);
+//						if (!cache.containsKey("blog:" + b))
+//						{
+//							List<Post> list = new ArrayList<>();
+//							cache.put("blog:" + b, list);
+//						}
+//						for (Post pst : p.keySet())
+//						{
+//							cache.get(p.get(pst)).add(pst);
+//						}
+//					}
+//					else
+//					{
+//						logger.info("Using cached posts");
+//						for (Post p : cache.get("blog:" + b))
+//						{
+//							posts.put(p, "blog:" + b);
+//						}
+//					}
+//					System.out.println(posts.size() - startSize);
+//				}
+
 				//for (String b : blogs) posts.putAll(client.getPostsFromBlog(b, null, blog));
-				cacheTime = System.currentTimeMillis();
 				boolean hasPosted = false;
 
 				loop:
 				while (!hasPosted)
 				{
+					logger.info("Selecting post");
 					List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
 							sortTimestamp(posts.keySet(), 50), 1, true);
 
@@ -228,27 +250,32 @@ public class BotThread implements Runnable
 					{
 						if (blog.getPosts().contains(post.getId()))
 						{
+							logger.info("Post already used, getting new post");
 							hasPosted = false;
 							continue;
 						}
-						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5) continue;
+						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5)
+						{
+							logger.info("Post may be spam, getting new post");
+							continue;
+						}
 
 						Map<String, Object> params = new HashMap<>();
 
 						params.put("state", blog.getPostState());
 
 						if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
-							params.put("comment", blog.getPostComment());
+						{ params.put("comment", blog.getPostComment()); }
 
 						List<String> rbTags = new ArrayList<>();
 
 						if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
-							Collections.addAll(rbTags, blog.getPostTags().split(",\\s?"));
+						{ Collections.addAll(rbTags, blog.getPostTags().split(",\\s?")); }
 
 						if (blog.getPreserveTags()) for (String s : post.getTags()) rbTags.add(s);
 
 						params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
-
+						logger.info("Attempting to reblog post...");
 						Post rb = null;
 						boolean rbd = false;
 						int failCount = 0;
@@ -257,8 +284,16 @@ public class BotThread implements Runnable
 							try
 							{
 								rb = post.reblog(url, params);
-								if (rb != null) rbd = hasPosted = true;
-								else { failCount++; }
+								if (rb != null)
+								{
+									rbd = true;
+									hasPosted = true;
+								}
+								else
+								{
+									logger.warning("Posting failed.");
+									failCount++;
+								}
 							}
 							catch (JumblrException e)
 							{
@@ -384,7 +419,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getBoolean("blog_check_active");
+				{ return configRs.getBoolean("blog_check_active"); }
 			}
 			catch (SQLException e)
 			{
@@ -405,7 +440,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getBoolean("preserve_tags");
+				{ return configRs.getBoolean("preserve_tags"); }
 			}
 			catch (SQLException e)
 			{
@@ -426,7 +461,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getString("post_select");
+				{ return configRs.getString("post_select"); }
 			}
 			catch (SQLException e)
 			{
@@ -447,7 +482,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getString("post_state");
+				{ return configRs.getString("post_state"); }
 			}
 			catch (SQLException e)
 			{
@@ -468,7 +503,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getString("post_comment");
+				{ return configRs.getString("post_comment"); }
 			}
 			catch (SQLException e)
 			{
@@ -489,7 +524,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getString("post_tags");
+				{ return configRs.getString("post_tags"); }
 			}
 			catch (SQLException e)
 			{
@@ -510,7 +545,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getInt("sample_size");
+				{ return configRs.getInt("sample_size"); }
 			}
 			catch (SQLException e)
 			{
@@ -531,7 +566,7 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-					return configRs.getInt("post_buffer");
+				{ return configRs.getInt("post_buffer"); }
 			}
 			catch (SQLException e)
 			{

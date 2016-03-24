@@ -19,17 +19,13 @@
 package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.JumblrClient;
-import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.BotThread;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @SuppressWarnings ({"WeakerAccess", "unused"})
@@ -44,143 +40,143 @@ public class Tumblr extends JumblrClient
 		setToken(token, tokenSecret);
 	}
 
-	public Map<Post, String> getPostsFromTag(String tag, HashMap<String, Object> opts,
-											 BotThread.Blog blog) throws SQLException
-	{
-		List<String> blogBlacklist = blog.getBlogBlacklist();
-		List<String> tagBlacklist = blog.getTagBlacklist();
-		List<Long> postBlacklist = blog.getPosts();
-
-		int postNum = blog.getSampleSize();
-		String type = blog.getPostType();
-
-		int postCount = 0;
-		int searched = 0;
-
-		long lastTime = System.currentTimeMillis() / 1000;
-		long start = System.currentTimeMillis();
-
-		Map<Post, String> out = new HashMap<>();
-
-		logger.info("Searching tag " + tag);
-		while (postCount < postNum)
-		{
-			HashMap<String, Object> options = new HashMap<>();
-
-			options.put("before", lastTime);
-
-			if (opts != null) options.putAll(opts);
-
-			List<Post> posts;
-			try
-			{
-				if (tag.contains(","))
-					posts = tagged(tag.split(",\\s?")[0], options);
-				else
-					posts = tagged(tag, options);
-			}
-			catch (JumblrException e)
-			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				continue;
-			}
-
-			if (posts.size() == 0 || posts.isEmpty()) break;
-
-			loop:
-			for (Post post : posts)
-			{
-				searched++;
-				lastTime = post.getTimestamp();
-				if (type == null || post.getType().getValue().equals(type))
-				{
-					if (tag.contains(","))
-					{
-						for (String s : tag.split(",\\s?"))
-						{
-							if (!post.getTags().contains(s)) { continue loop; }
-							else { for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop; }
-						}
-					}
-
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-
-					out.put(post, String.format("tag:%s", tag));
-					postCount++;
-				}
-			}
-		}
-		long end = System.currentTimeMillis() - start;
-
-		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag,
-				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
-
-		blog.addStat("tag", tag, (int) end, searched, out.size());
-		return out;
-	}
-
-	public Map<Post, String> getPostsFromBlog(String b, Map<String, Object> params, BotThread.Blog blog) throws SQLException
-	{
-		List<String> blogBlacklist = blog.getBlogBlacklist();
-		List<String> tagBlacklist = blog.getTagBlacklist();
-		List<Long> postBlacklist = blog.getPosts();
-
-		int postNum = blog.getSampleSize();
-		String type = blog.getPostType();
-
-		int postCount = 0;
-		int searched = 0;
-
-		long start = System.currentTimeMillis();
-
-		Map<Post, String> out = new HashMap<>();
-
-		logger.info("Searching blog " + b);
-
-		while (postCount < postNum)
-		{
-			HashMap<String, Object> options = new HashMap<>();
-
-			options.put("offset", postCount);
-
-			if (params != null) options.putAll(params);
-
-			List<Post> posts;
-			try
-			{
-				posts = blogPosts(b, options);
-			}
-			catch (JumblrException e)
-			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				continue;
-			}
-
-			if (posts.size() == 0 || posts.isEmpty()) break;
-
-			loop:
-			for (Post post : posts)
-			{
-				searched++;
-				if (type == null || post.getType().getValue().equals(type))
-				{
-					for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop;
-
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-
-					out.put(post, String.format("blog:%s", b));
-					postCount++;
-				}
-			}
-		}
-		long end = System.currentTimeMillis() - start;
-
-		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", b,
-				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
-
-		blog.addStat("blog", b, (int) end, searched, out.size());
-		return out;
-	}
+//	public Map<Post, String> getPostsFromTag(String tag, HashMap<String, Object> opts,
+//											 BotThread.Blog blog) throws SQLException
+//	{
+//		List<String> blogBlacklist = blog.getBlogBlacklist();
+//		List<String> tagBlacklist = blog.getTagBlacklist();
+//		List<Long> postBlacklist = blog.getPosts();
+//
+//		int postNum = blog.getSampleSize();
+//		String type = blog.getPostType();
+//
+//		int postCount = 0;
+//		int searched = 0;
+//
+//		long lastTime = System.currentTimeMillis() / 1000;
+//		long start = System.currentTimeMillis();
+//
+//		Map<Post, String> out = new HashMap<>();
+//
+//		logger.info("Searching tag " + tag);
+//		while (postCount < postNum)
+//		{
+//			HashMap<String, Object> options = new HashMap<>();
+//
+//			options.put("before", lastTime);
+//
+//			if (opts != null) options.putAll(opts);
+//
+//			List<Post> posts;
+//			try
+//			{
+//				if (tag.contains(","))
+//					posts = tagged(tag.split(",\\s?")[0], options);
+//				else
+//					posts = tagged(tag, options);
+//			}
+//			catch (JumblrException e)
+//			{
+//				logger.log(Level.SEVERE, e.getMessage(), e);
+//				continue;
+//			}
+//
+//			if (posts.size() == 0 || posts.isEmpty()) break;
+//
+//			loop:
+//			for (Post post : posts)
+//			{
+//				searched++;
+//				lastTime = post.getTimestamp();
+//				if (type == null || post.getType().getValue().equals(type))
+//				{
+//					if (tag.contains(","))
+//					{
+//						for (String s : tag.split(",\\s?"))
+//						{
+//							if (!post.getTags().contains(s)) { continue loop; }
+//							else { for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop; }
+//						}
+//					}
+//
+//					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+//
+//					out.put(post, String.format("tag:%s", tag));
+//					postCount++;
+//				}
+//			}
+//		}
+//		long end = System.currentTimeMillis() - start;
+//
+//		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag,
+//				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
+//
+//		blog.addStat("tag", tag, (int) end, searched, out.size());
+//		return out;
+//	}
+//
+//	public Map<Post, String> getPostsFromBlog(String b, Map<String, Object> params, BotThread.Blog blog) throws SQLException
+//	{
+//		List<String> blogBlacklist = blog.getBlogBlacklist();
+//		List<String> tagBlacklist = blog.getTagBlacklist();
+//		List<Long> postBlacklist = blog.getPosts();
+//
+//		int postNum = blog.getSampleSize();
+//		String type = blog.getPostType();
+//
+//		int postCount = 0;
+//		int searched = 0;
+//
+//		long start = System.currentTimeMillis();
+//
+//		Map<Post, String> out = new HashMap<>();
+//
+//		logger.info("Searching blog " + b);
+//
+//		while (postCount < postNum)
+//		{
+//			HashMap<String, Object> options = new HashMap<>();
+//
+//			options.put("offset", postCount);
+//
+//			if (params != null) options.putAll(params);
+//
+//			List<Post> posts;
+//			try
+//			{
+//				posts = blogPosts(b, options);
+//			}
+//			catch (JumblrException e)
+//			{
+//				logger.log(Level.SEVERE, e.getMessage(), e);
+//				continue;
+//			}
+//
+//			if (posts.size() == 0 || posts.isEmpty()) break;
+//
+//			loop:
+//			for (Post post : posts)
+//			{
+//				searched++;
+//				if (type == null || post.getType().getValue().equals(type))
+//				{
+//					for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop;
+//
+//					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+//
+//					out.put(post, String.format("blog:%s", b));
+//					postCount++;
+//				}
+//			}
+//		}
+//		long end = System.currentTimeMillis() - start;
+//
+//		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", b,
+//				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
+//
+//		blog.addStat("blog", b, (int) end, searched, out.size());
+//		return out;
+//	}
 
 	/**
 	 * Retrives a blogs drafts
