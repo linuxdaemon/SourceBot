@@ -27,4 +27,6 @@ import java.util.Map;
 public interface SearchTerm
 {
 	Map<Post, String> getPosts(Map<String, Object> opts, BotThread.Blog blog) throws SQLException;
+
+	PostCache getCache();
 }

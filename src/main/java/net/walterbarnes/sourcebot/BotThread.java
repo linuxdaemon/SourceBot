@@ -305,6 +305,7 @@ public class BotThread implements Runnable
 							}
 						}
 						String val = posts.get(post);
+						terms.get(val).getCache().remove(post.getId());
 						blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 					}
 				}

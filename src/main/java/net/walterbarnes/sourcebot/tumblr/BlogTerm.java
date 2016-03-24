@@ -121,4 +121,10 @@ public class BlogTerm implements SearchTerm
 		blog.addStat("blog", b, (int) end, searched, out.size());
 		return out;
 	}
+
+	@Override
+	public PostCache getCache()
+	{
+		return cache;
+	}
 }

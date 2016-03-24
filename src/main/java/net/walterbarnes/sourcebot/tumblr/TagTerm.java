@@ -131,4 +131,9 @@ public class TagTerm implements SearchTerm
 		blog.addStat("tag", tag, (int) end, searched, out.size());
 		return out;
 	}
+
+	public PostCache getCache()
+	{
+		return cache;
+	}
 }
