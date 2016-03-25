@@ -18,9 +18,20 @@
 
 package net.walterbarnes.sourcebot.tumblr;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.tumblr.jumblr.JumblrClient;
+import com.tumblr.jumblr.responses.PostDeserializer;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
+import org.scribe.builder.ServiceBuilder;
+import org.scribe.builder.api.TumblrApi;
+import org.scribe.model.OAuthRequest;
+import org.scribe.model.Response;
+import org.scribe.model.Token;
+import org.scribe.oauth.OAuthService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,151 +43,19 @@ import java.util.logging.Logger;
 public class Tumblr extends JumblrClient
 {
 	private final Logger logger;
+	private final String consumerKey;
+	private final String consumerSecret;
+	private final Token token;
 
 	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret, Logger logger)
 	{
 		super(consumerKey, consumerSecret);
 		this.logger = logger;
 		setToken(token, tokenSecret);
+		this.consumerKey = consumerKey;
+		this.consumerSecret = consumerSecret;
+		this.token = new Token(token, tokenSecret);
 	}
-
-//	public Map<Post, String> getPostsFromTag(String tag, HashMap<String, Object> opts,
-//											 BotThread.Blog blog) throws SQLException
-//	{
-//		List<String> blogBlacklist = blog.getBlogBlacklist();
-//		List<String> tagBlacklist = blog.getTagBlacklist();
-//		List<Long> postBlacklist = blog.getPosts();
-//
-//		int postNum = blog.getSampleSize();
-//		String type = blog.getPostType();
-//
-//		int postCount = 0;
-//		int searched = 0;
-//
-//		long lastTime = System.currentTimeMillis() / 1000;
-//		long start = System.currentTimeMillis();
-//
-//		Map<Post, String> out = new HashMap<>();
-//
-//		logger.info("Searching tag " + tag);
-//		while (postCount < postNum)
-//		{
-//			HashMap<String, Object> options = new HashMap<>();
-//
-//			options.put("before", lastTime);
-//
-//			if (opts != null) options.putAll(opts);
-//
-//			List<Post> posts;
-//			try
-//			{
-//				if (tag.contains(","))
-//					posts = tagged(tag.split(",\\s?")[0], options);
-//				else
-//					posts = tagged(tag, options);
-//			}
-//			catch (JumblrException e)
-//			{
-//				logger.log(Level.SEVERE, e.getMessage(), e);
-//				continue;
-//			}
-//
-//			if (posts.size() == 0 || posts.isEmpty()) break;
-//
-//			loop:
-//			for (Post post : posts)
-//			{
-//				searched++;
-//				lastTime = post.getTimestamp();
-//				if (type == null || post.getType().getValue().equals(type))
-//				{
-//					if (tag.contains(","))
-//					{
-//						for (String s : tag.split(",\\s?"))
-//						{
-//							if (!post.getTags().contains(s)) { continue loop; }
-//							else { for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop; }
-//						}
-//					}
-//
-//					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-//
-//					out.put(post, String.format("tag:%s", tag));
-//					postCount++;
-//				}
-//			}
-//		}
-//		long end = System.currentTimeMillis() - start;
-//
-//		logger.info(String.format("Searched tag %s, selected %d posts out of %d searched (%f%%), took %d ms", tag,
-//				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
-//
-//		blog.addStat("tag", tag, (int) end, searched, out.size());
-//		return out;
-//	}
-//
-//	public Map<Post, String> getPostsFromBlog(String b, Map<String, Object> params, BotThread.Blog blog) throws SQLException
-//	{
-//		List<String> blogBlacklist = blog.getBlogBlacklist();
-//		List<String> tagBlacklist = blog.getTagBlacklist();
-//		List<Long> postBlacklist = blog.getPosts();
-//
-//		int postNum = blog.getSampleSize();
-//		String type = blog.getPostType();
-//
-//		int postCount = 0;
-//		int searched = 0;
-//
-//		long start = System.currentTimeMillis();
-//
-//		Map<Post, String> out = new HashMap<>();
-//
-//		logger.info("Searching blog " + b);
-//
-//		while (postCount < postNum)
-//		{
-//			HashMap<String, Object> options = new HashMap<>();
-//
-//			options.put("offset", postCount);
-//
-//			if (params != null) options.putAll(params);
-//
-//			List<Post> posts;
-//			try
-//			{
-//				posts = blogPosts(b, options);
-//			}
-//			catch (JumblrException e)
-//			{
-//				logger.log(Level.SEVERE, e.getMessage(), e);
-//				continue;
-//			}
-//
-//			if (posts.size() == 0 || posts.isEmpty()) break;
-//
-//			loop:
-//			for (Post post : posts)
-//			{
-//				searched++;
-//				if (type == null || post.getType().getValue().equals(type))
-//				{
-//					for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop;
-//
-//					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-//
-//					out.put(post, String.format("blog:%s", b));
-//					postCount++;
-//				}
-//			}
-//		}
-//		long end = System.currentTimeMillis() - start;
-//
-//		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", b,
-//				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
-//
-//		blog.addStat("blog", b, (int) end, searched, out.size());
-//		return out;
-//	}
 
 	/**
 	 * Retrives a blogs drafts
@@ -267,5 +146,38 @@ public class Tumblr extends JumblrClient
 				out.add(post);
 			}
 		return out;
+	}
+
+	@SuppressWarnings ("Duplicates")
+	public List<String> getRawTaggedPosts(String tag)
+	{
+		OAuthService service = new ServiceBuilder().
+				provider(TumblrApi.class).
+				apiKey(consumerKey).apiSecret(consumerSecret).
+				build();
+		//List<Post> posts = client.blogPosts("thelinuxdemon");
+		String path = "/tagged";
+		Map<String, Object> map = new HashMap<>();
+		map.put("api_key", consumerKey);
+		map.put("tag", tag);
+		OAuthRequest request = getRequestBuilder().constructGet(path, map);
+		if (token != null)
+		{
+			service.signRequest(token, request);
+		}
+		Gson gsonBuilder = new Gson();
+		//Gson gsonBuilder = new GsonBuilder().setPrettyPrinting().create();
+		JsonParser parser = new JsonParser();
+		Response response = request.send();
+
+		System.out.println(gsonBuilder.toJson(parser.parse(response.getBody())
+				.getAsJsonObject().get("response").getAsJsonObject().getAsJsonArray("posts").get(0)));
+		Gson gson = new GsonBuilder().
+				registerTypeAdapter(Post.class, new PostDeserializer()).
+				create();
+		String post = "{\"blog_name\":\"hecklinghyena\",\"id\":141574004892,\"post_url\":\"http://hecklinghyena.tumblr.com/post/141574004892/propression-oppression-noticing-and-suffering\",\"slug\":\"propression-oppression-noticing-and-suffering\",\"type\":\"text\",\"date\":\"2016-03-24 00:12:26 GMT\",\"timestamp\":1458778346,\"state\":\"published\",\"format\":\"html\",\"reblog_key\":\"YOSHbzbt\",\"tags\":[],\"short_url\":\"https://tmblr.co/ZhF1th23sT_2S\",\"summary\":\"Oppression: -Noticing and suffering from inequality and mistreatment your entire life almost every day -Not being able to stand...\",\"followed\":false,\"highlighted\":[],\"liked\":false,\"note_count\":22,\"body\":\"\\u003cp\\u003e\\u003ca href\\u003d\\\"http://propression.tumblr.com/post/141301268295/oppression-noticing-and-suffering-from\\\" class\\u003d\\\"tumblr_blog\\\"\\u003epropression\\u003c/a\\u003e:\\u003c/p\\u003e\\u003cblockquote\\u003e\\n\\u003cp\\u003e\\u003cb\\u003eOppression: \\u003cbr/\\u003e\\u003c/b\\u003e-Noticing and suffering from inequality and mistreatment your entire life almost every day\\u003cbr/\\u003e-Not being able to stand up against said inequality because you will get killed or imprisoned \\u003c/p\\u003e\\n\\u003cp\\u003e\\u003cb\\u003eNot oppression: \\u003c/b\\u003e\\u003cbr/\\u003e-Not noticing inequality \\n\\nand mistreatment \\n\\nunless a certain group tells you about it\\u003cbr/\\u003e-Being able to stand up against this non-existing inequality while getting paid  doing it\\u003c/p\\u003e\\n\\u003cp\\u003eBroken~Seal\\u003c/p\\u003e\\n\\u003c/blockquote\\u003e\\n\\u003cp\\u003eSource?\\u003c/p\\u003e\",\"reblog\":{\"tree_html\":\"\\u003cp\\u003e\\u003ca href\\u003d\\\"http://propression.tumblr.com/post/141301268295/oppression-noticing-and-suffering-from\\\" class\\u003d\\\"tumblr_blog\\\"\\u003epropression\\u003c/a\\u003e:\\u003c/p\\u003e\\n\\u003cblockquote\\u003e\\n\\u003cp\\u003e\\u003cb\\u003eOppression: \\u003cbr\\u003e\\u003c/b\\u003e-Noticing and suffering from inequality and mistreatment your entire life almost every day\\u003cbr\\u003e-Not being able to stand up against said inequality because you will get killed or imprisoned \\u003c/p\\u003e\\n\\u003cp\\u003e\\u003cb\\u003eNot oppression: \\u003c/b\\u003e\\u003cbr\\u003e-Not noticing inequality \\n\\nand mistreatment \\n\\nunless a certain group tells you about it\\u003cbr\\u003e-Being able to stand up against this non-existing inequality while getting paid  doing it\\u003c/p\\u003e\\n\\u003cp\\u003eBroken~Seal\\u003c/p\\u003e\\n\\u003c/blockquote\\u003e\",\"comment\":\"\\u003cp\\u003eSource?\\u003c/p\\u003e\"},\"trail\":[{\"blog\":{\"name\":\"propression\",\"active\":true,\"theme\":{\"avatar_shape\":\"square\",\"background_color\":\"#1b3539\",\"body_font\":\"Helvetica Neue\",\"header_bounds\":0,\"header_image\":\"https://secure.static.tumblr.com/36eb5ce8f98bbd4f7174b9055a3c7437/2cg9sut/418o1rhpn/tumblr_static_el55gt8vpog0ggkw8gs0c8w4s.jpg\",\"header_image_focused\":\"https://secure.static.tumblr.com/36eb5ce8f98bbd4f7174b9055a3c7437/2cg9sut/418o1rhpn/tumblr_static_el55gt8vpog0ggkw8gs0c8w4s.jpg\",\"header_image_scaled\":\"https://secure.static.tumblr.com/36eb5ce8f98bbd4f7174b9055a3c7437/2cg9sut/418o1rhpn/tumblr_static_el55gt8vpog0ggkw8gs0c8w4s.jpg\",\"header_stretch\":true,\"link_color\":\"#0e5a5d\",\"show_avatar\":true,\"show_description\":true,\"show_header_image\":true,\"show_title\":true,\"title_color\":\"#CCCCCC\",\"title_font\":\"Bookmania\",\"title_font_weight\":\"bold\"},\"share_likes\":false,\"share_following\":false},\"post\":{\"id\":\"141301268295\"},\"content_raw\":\"\\u003cp\\u003e\\u003cb\\u003eOppression: \\u003cbr\\u003e\\u003c/b\\u003e-Noticing and suffering from inequality and mistreatment your entire life almost every day\\u003cbr\\u003e-Not being able to stand up against said inequality because you will get killed or imprisoned \\u003c/p\\u003e\\n\\u003cp\\u003e\\u003cb\\u003eNot oppression: \\u003c/b\\u003e\\u003cbr\\u003e-Not noticing inequality \\n\\nand mistreatment \\n\\nunless a certain group tells you about it\\u003cbr\\u003e-Being able to stand up against this non-existing inequality while getting paid  doing it\\u003c/p\\u003e\\n\\u003cp\\u003eBroken~Seal\\u003c/p\\u003e\",\"content\":\"\\u003cp\\u003e\\u003cb\\u003eOppression: \\u003cbr /\\u003e\\u003c/b\\u003e-Noticing and suffering from inequality and mistreatment your entire life almost every day\\u003cbr /\\u003e-Not being able to stand up against said inequality because you will get killed or imprisoned \\u003c/p\\u003e\\n\\u003cp\\u003e\\u003cb\\u003eNot oppression: \\u003c/b\\u003e\\u003cbr /\\u003e-Not noticing inequality \\n\\nand mistreatment \\n\\nunless a certain group tells you about it\\u003cbr /\\u003e-Being able to stand up against this non-existing inequality while getting paid  doing it\\u003c/p\\u003e\\n\\u003cp\\u003eBroken~Seal\\u003c/p\\u003e\",\"is_root_item\":true},{\"blog\":{\"name\":\"hecklinghyena\",\"active\":true,\"theme\":{\"avatar_shape\":\"square\",\"background_color\":\"#FAFAFA\",\"body_font\":\"Helvetica Neue\",\"header_bounds\":0,\"header_image\":\"https://secure.assets.tumblr.com/images/default_header/optica_pattern_04.png?_v\\u003d7c4e5e82cf797042596e2e64af1c383f\",\"header_image_focused\":\"https://secure.assets.tumblr.com/images/default_header/optica_pattern_04.png?_v\\u003d7c4e5e82cf797042596e2e64af1c383f\",\"header_image_scaled\":\"https://secure.assets.tumblr.com/images/default_header/optica_pattern_04.png?_v\\u003d7c4e5e82cf797042596e2e64af1c383f\",\"header_stretch\":true,\"link_color\":\"#529ECC\",\"show_avatar\":true,\"show_description\":true,\"show_header_image\":true,\"show_title\":true,\"title_color\":\"#444444\",\"title_font\":\"Gibson\",\"title_font_weight\":\"bold\"},\"share_likes\":false,\"share_following\":false},\"post\":{\"id\":\"141574004892\"},\"content_raw\":\"\\u003cp\\u003eSource?\\u003c/p\\u003e\",\"content\":\"\\u003cp\\u003eSource?\\u003c/p\\u003e\",\"is_current_item\":true}],\"can_send_in_message\":true,\"can_reply\":false}";
+		Post pst = gson.fromJson(post, new TypeToken<Post>() {}.getType());
+		System.out.println(pst.getId());
+		return null;
 	}
 }

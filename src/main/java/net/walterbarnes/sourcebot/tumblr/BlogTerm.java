@@ -34,7 +34,8 @@ public class BlogTerm implements SearchTerm
 	private final String b;
 	private final Tumblr client;
 	private final Logger logger;
-	private PostCache cache = new PostCache(3 * 60 * 1000);
+	private PostCache cache = new PostCache(30 * 60 * 1000);
+	private int lastPostCount = 0;
 
 	public BlogTerm(String b, Tumblr client, Logger logger)
 	{
@@ -50,7 +51,7 @@ public class BlogTerm implements SearchTerm
 		List<String> tagBlacklist = blog.getTagBlacklist();
 		List<Long> postBlacklist = blog.getPosts();
 
-		int postNum = blog.getSampleSize();
+		int postNum = lastPostCount > 0 ? lastPostCount : blog.getSampleSize();
 		String type = blog.getPostType();
 
 		int postCount = 0;
@@ -106,7 +107,7 @@ public class BlogTerm implements SearchTerm
 				{
 					for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop;
 
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+					if (postBlacklist.contains(post.getId())) continue;
 					cache.addPost(post);
 					out.put(post, String.format("blog:%s", b));
 					postCount++;
@@ -118,6 +119,7 @@ public class BlogTerm implements SearchTerm
 		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", b,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
+		lastPostCount = out.size();
 		blog.addStat("blog", b, (int) end, searched, out.size());
 		return out;
 	}

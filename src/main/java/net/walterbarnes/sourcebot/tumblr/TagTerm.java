@@ -23,7 +23,6 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +34,8 @@ public class TagTerm implements SearchTerm
 	private final Tumblr client;
 	private final Logger logger;
 	private String tag;
-	private PostCache cache = new PostCache(3 * 60 * 1000);
-	private List<Long> ids = new ArrayList<>();
+	private PostCache cache = new PostCache(30 * 60 * 1000);
+	private int lastPostCount = 0;
 
 	public TagTerm(String tag, Tumblr client, Logger logger)
 	{
@@ -51,7 +50,7 @@ public class TagTerm implements SearchTerm
 		List<String> tagBlacklist = blog.getTagBlacklist();
 		List<Long> postBlacklist = blog.getPosts();
 
-		int postNum = blog.getSampleSize();
+		int postNum = lastPostCount > 0 ? lastPostCount : blog.getSampleSize();
 		String type = blog.getPostType();
 
 		int searched = 0;
@@ -118,8 +117,7 @@ public class TagTerm implements SearchTerm
 					}
 
 					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-					cache.addPost(post);
-					out.put(post, String.format("tag:%s", tag));
+					if (cache.addPost(post)) out.put(post, String.format("tag:%s", tag));
 				}
 			}
 		}
@@ -129,6 +127,7 @@ public class TagTerm implements SearchTerm
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
 		blog.addStat("tag", tag, (int) end, searched, out.size());
+		lastPostCount = out.size();
 		return out;
 	}
 
