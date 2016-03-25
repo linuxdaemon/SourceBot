@@ -371,7 +371,7 @@ public class SourceBot
 		Connection conn = DriverManager.getConnection("jdbc:mysql://" + db.get("host").getAsString() + "/" +
 				db.get("db_name").getAsString(), db.get("user").getAsString(), db.get("pass").getAsString());
 
-		PreparedStatement getBlogs = conn.prepareStatement("SELECT DISTINCT url,active FROM blogs ORDER BY id;");
+		PreparedStatement getBlogs = conn.prepareStatement("SELECT DISTINCT url,active,adm_active FROM blogs ORDER BY id;");
 		ResultSet rs = getBlogs.executeQuery();
 
 		long queryTime = System.currentTimeMillis();
@@ -394,7 +394,8 @@ public class SourceBot
 				{
 					String url = rs.getString("url");
 					boolean active = rs.getBoolean("active");
-					if (active)
+					boolean adm_active = rs.getBoolean("adm_active");
+					if (active && adm_active)
 					{
 						if (!threads.containsKey(url)) threads.put(url, new BotThread(client, url, conn));
 						logger.info("Running Thread for " + url);

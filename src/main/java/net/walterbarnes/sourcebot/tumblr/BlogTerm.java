@@ -34,7 +34,7 @@ public class BlogTerm implements SearchTerm
 	private final String b;
 	private final Tumblr client;
 	private final Logger logger;
-	private PostCache cache = new PostCache(30 * 60 * 1000);
+	private PostCache cache = new PostCache(120 * 60 * 1000);
 	private int lastPostCount = 0;
 
 	public BlogTerm(String b, Tumblr client, Logger logger)
