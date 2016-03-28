@@ -367,10 +367,9 @@ public class SourceBot
 
 		Tumblr client = new Tumblr(consumer.get("key").getAsString(), consumer.get("secret").getAsString(),
 				token.get("key").getAsString(), token.get("secret").getAsString(), logger);
-
-		Connection conn = DriverManager.getConnection("jdbc:mysql://" + db.get("host").getAsString() + "/" +
-				db.get("db_name").getAsString(), db.get("user").getAsString(), db.get("pass").getAsString());
-
+		Connection conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/%s", db.get("host").getAsString(),
+				db.get("port").getAsString(), db.get("db_name").getAsString()), db.get("user").getAsString(),
+				db.get("pass").getAsString());
 		PreparedStatement getBlogs = conn.prepareStatement("SELECT DISTINCT url,active,adm_active FROM blogs ORDER BY id;");
 		ResultSet rs = getBlogs.executeQuery();
 
