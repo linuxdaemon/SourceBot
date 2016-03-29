@@ -19,14 +19,15 @@
 package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.BotThread;
 
 import java.sql.SQLException;
 import java.util.Map;
 
 public interface SearchTerm
 {
-	Map<Post, String> getPosts(Map<String, Object> opts, BotThread.Blog blog) throws SQLException;
+	Map<Post, String> getPosts(Map<String, Object> opts) throws SQLException;
 
 	PostCache getCache();
+
+	String getSearchTerm();
 }

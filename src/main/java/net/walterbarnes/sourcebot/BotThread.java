@@ -83,7 +83,7 @@ public class BotThread implements Runnable
 	 * @param n     Number of top posts to select
 	 * @return Top n posts from set
 	 */
-	private static ArrayList<Post> getTopPosts(Set<Post> posts, int n)
+	private static ArrayList<Post> getTopPosts(Collection<Post> posts, int n)
 	{
 		int moves = 0;
 		boolean firstRun = true;
@@ -115,7 +115,7 @@ public class BotThread implements Runnable
 	 * @param n     Number of posts to return
 	 * @return Sorted List of posts
 	 */
-	private static ArrayList<Post> sortTimestamp(Set<Post> posts, int n)
+	private static ArrayList<Post> sortTimestamp(Collection<Post> posts, int n)
 	{
 		int moves = 0;
 		boolean firstRun = true;
@@ -140,6 +140,21 @@ public class BotThread implements Runnable
 		return new ArrayList<>(p.subList(0, n - 1));
 	}
 
+	private List<Post> selectPosts(Collection<Post> posts, String method, int n)
+	{
+		switch (method)
+		{
+			case "top":
+				return getTopPosts(posts, n);
+
+			case "recent":
+				return sortTimestamp(posts, n);
+
+			default:
+				return sortTimestamp(posts, n);
+		}
+	}
+
 	@Override
 	public void run()
 	{
@@ -150,29 +165,35 @@ public class BotThread implements Runnable
 			{
 				logger.info("Adding posts to queue");
 
-				Map<Post, String> posts = new HashMap<>();
+				Map<Post, String> postMap = new HashMap<>();
 
 				List<String> tags = blog.getTagWhitelist();
 				List<String> blogs = blog.getBlogWhitelist();
+				List<Post> posts = new ArrayList<>();
 
 				for (String tag : tags)
 				{
 					logger.info("Getting posts from tag: " + tag);
 					if (!terms.containsKey("tag:" + tag))
 					{
-						terms.put("tag:" + tag, new TagTerm(tag, client, logger));
+						terms.put("tag:" + tag, new TagTerm(tag, client, blog, logger));
 					}
-					posts.putAll(terms.get("tag:" + tag).getPosts(null, blog));
+					SearchTerm t = terms.get("tag:" + tag);
+					Map<Post, String> p = t.getPosts(null);
+					postMap.putAll(p);
+					posts.addAll(selectPosts(p.keySet(), blog.getPostSelect(t.getSearchTerm()), 50));
 				}
-
 				for (String b : blogs)
 				{
 					logger.info("Getting posts from tag: " + b);
 					if (!terms.containsKey("blog:" + b))
 					{
-						terms.put("blog:" + b, new BlogTerm(b, client, logger));
+						terms.put("blog:" + b, new BlogTerm(b, client, blog, logger));
 					}
-					posts.putAll(terms.get("blog:" + b).getPosts(null, blog));
+					SearchTerm t = terms.get("blog:" + b);
+					Map<Post, String> p = t.getPosts(null);
+					postMap.putAll(p);
+					posts.addAll(selectPosts(p.keySet(), blog.getPostSelect(t.getSearchTerm()), 50));
 				}
 
 				boolean hasPosted = false;
@@ -181,8 +202,7 @@ public class BotThread implements Runnable
 				while (!hasPosted)
 				{
 					logger.info("Selecting post");
-					List<Post> p = randomElement(blog.getPostSelect().equals("top") ? getTopPosts(posts.keySet(), 50) :
-							sortTimestamp(posts.keySet(), 50), 1, true);
+					List<Post> p = randomElement(posts, 1, true);
 
 					for (Post post : p)
 					{
@@ -242,7 +262,7 @@ public class BotThread implements Runnable
 								Thread.sleep(1000);
 							}
 						}
-						String val = posts.get(post);
+						String val = postMap.get(post);
 						terms.get(val).getCache().remove(post.getId());
 						blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 					}
@@ -263,6 +283,12 @@ public class BotThread implements Runnable
 
 		private PreparedStatement getRules;
 
+		private PreparedStatement getPS;
+		private Map<String, Long> psQtimeMap = new HashMap<>();
+		private Map<String, String> psQMap = new HashMap<>();
+
+
+
 		private long tbQTime = 0;
 		private List<String> tbList;
 
@@ -277,21 +303,25 @@ public class BotThread implements Runnable
 
 		private PreparedStatement getPosts;
 
+		//TODO search term specific configs
 		Blog(String url) throws SQLException
 		{
-			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?;");
+			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?");
 			getConfig.setString(1, url);
 
-			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?;");
+			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?");
 			getRules.setString(1, url);
 
-			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?;");
+			getPS = conn.prepareStatement("SELECT type, term, post_select FROM search_rules WHERE url = ? && action = 'allow'");
+			getPS.setString(1, url);
+
+			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?");
 			getPosts.setString(1, url);
 
 			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, search_type, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?, ?)");
 			addPosts.setString(1, url);
 
-			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, search_type, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?, ?);");
+			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, search_type, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?, ?)");
 			addStats.setString(1, url);
 		}
 
@@ -408,6 +438,39 @@ public class BotThread implements Runnable
 				return null;
 			}
 			return null;
+		}
+
+		String getPostSelect(String search_term)
+		{
+			try
+			{
+				if (!psQtimeMap.containsKey(search_term))
+				{
+					psQtimeMap.put(search_term, 0L);
+				}
+				if (System.currentTimeMillis() - psQtimeMap.get(search_term) > 60000)
+				{
+					long qTime = System.currentTimeMillis();
+					ResultSet rs = getPS.executeQuery();
+					while (rs.next())
+					{
+						String term = String.format("%s:%s", rs.getString("type"), rs.getString("term"));
+						psQtimeMap.put(term, qTime);
+						psQMap.put(term, rs.getString("post_select"));
+					}
+				}
+				if (psQMap.get(search_term) == null || psQMap.get(search_term).isEmpty())
+				{
+					return getPostSelect();
+				}
+				System.out.println(search_term + " : " + psQMap.get(search_term));
+				return psQMap.get(search_term);
+			}
+			catch (SQLException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				return null;
+			}
 		}
 
 		String getPostState()

@@ -40,8 +40,8 @@ import java.util.regex.Pattern;
 
 public class SourceBot
 {
-	private static final File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 	private static final String jsonName = "SourceBot.json";
+	private static File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 	private static Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private static JsonParser parser = new JsonParser();
 	private static JsonObject json;
@@ -54,6 +54,8 @@ public class SourceBot
 		CrashReport crashreport;
 		try
 		{
+			if (args.length > 0)
+			{ confDir = new File(args[0]); }
 			LogHelper.init(SourceBot.class);
 
 			if (!confDir.exists())

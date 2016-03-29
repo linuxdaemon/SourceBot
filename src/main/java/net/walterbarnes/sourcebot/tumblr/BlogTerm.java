@@ -34,18 +34,20 @@ public class BlogTerm implements SearchTerm
 	private final String b;
 	private final Tumblr client;
 	private final Logger logger;
+	private BotThread.Blog blog;
 	private PostCache cache = new PostCache(120 * 60 * 1000);
 	private int lastPostCount = 0;
 
-	public BlogTerm(String b, Tumblr client, Logger logger)
+	public BlogTerm(String b, Tumblr client, BotThread.Blog blog, Logger logger)
 	{
 		this.b = b;
 		this.client = client;
+		this.blog = blog;
 		this.logger = logger;
 	}
 
 	@Override
-	public Map<Post, String> getPosts(Map<String, Object> opts, BotThread.Blog blog) throws SQLException
+	public Map<Post, String> getPosts(Map<String, Object> opts) throws SQLException
 	{
 		List<String> blogBlacklist = blog.getBlogBlacklist();
 		List<String> tagBlacklist = blog.getTagBlacklist();
@@ -128,5 +130,11 @@ public class BlogTerm implements SearchTerm
 	public PostCache getCache()
 	{
 		return cache;
+	}
+
+	@Override
+	public String getSearchTerm()
+	{
+		return "blog:" + b;
 	}
 }
