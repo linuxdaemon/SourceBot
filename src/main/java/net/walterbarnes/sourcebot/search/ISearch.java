@@ -16,19 +16,15 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.tumblr;
+package net.walterbarnes.sourcebot.search;
 
-import com.tumblr.jumblr.types.Post;
-
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-
-public interface SearchTerm
+public interface ISearch
 {
-	PostCache getCache();
+	String getType();
 
-	String getSearchTerm();
+	String getTerm();
 
-	Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, String[] requiredTags, String[] postType, String postSelect, int sampleSize, boolean active) throws SQLException;
+	int getId();
+
+	boolean isActive();
 }

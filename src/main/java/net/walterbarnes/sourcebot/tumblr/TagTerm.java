@@ -23,9 +23,7 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,14 +44,13 @@ public class TagTerm implements SearchTerm
 		this.logger = logger;
 	}
 
-	public Map<Post, String> getPosts(Map<String, Object> opts) throws SQLException
+	public Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, String[] requiredTags,
+									  String[] postType, String postSelect, int sampleSize, boolean active) throws SQLException
 	{
-		List<String> blogBlacklist = blog.getBlogBlacklist();
-		List<String> tagBlacklist = blog.getTagBlacklist();
 		List<Long> postBlacklist = blog.getPosts();
 
-		int postNum = lastPostCount > 0 ? lastPostCount : blog.getSampleSize();
-		String type = blog.getPostType();
+		int postNum = lastPostCount > 0 ? lastPostCount : (sampleSize == 0 ? blog.getSampleSize() : sampleSize);
+		String[] type = postType == null ? blog.getPostType() : postType;
 
 		int searched = 0;
 
@@ -84,8 +81,6 @@ public class TagTerm implements SearchTerm
 
 			options.put("before", lastTime);
 
-			if (opts != null) options.putAll(opts);
-
 			List<Post> posts;
 			try
 			{
@@ -107,18 +102,26 @@ public class TagTerm implements SearchTerm
 			{
 				searched++;
 				lastTime = post.getTimestamp();
-				if (type == null || post.getType().getValue().equals(type))
+				List<String> types = new ArrayList<>(Arrays.asList(type == null ? blog.getPostType() : type));
+				if (types.contains(post.getType().getValue()))
 				{
-					if (tag.contains(","))
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+
+					if (requiredTags != null)
 					{
-						for (String s : tag.split(",\\s?"))
+						for (String rt : requiredTags)
 						{
-							if (!post.getTags().contains(s)) { continue loop; }
-							else { for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop; }
+							if (!post.getTags().contains(rt)) continue loop;
+						}
+					}
+					else
+					{
+						for (String tag : tagBlacklist)
+						{
+							if (post.getTags().contains(tag)) continue loop;
 						}
 					}
 
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
 					if (cache.addPost(post)) out.put(post, String.format("tag:%s", tag));
 				}
 			}

@@ -21,6 +21,8 @@ package net.walterbarnes.sourcebot;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.search.SearchExclusion;
+import net.walterbarnes.sourcebot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.tumblr.BlogTerm;
 import net.walterbarnes.sourcebot.tumblr.SearchTerm;
 import net.walterbarnes.sourcebot.tumblr.TagTerm;
@@ -171,105 +173,140 @@ public class BotThread implements Runnable
 
 				Map<Post, String> postMap = new HashMap<>();
 
-				List<String> tags = blog.getTagWhitelist();
-				List<String> blogs = blog.getBlogWhitelist();
+				List<SearchInclusion> inclusions = blog.getInclusions();
+				List<SearchExclusion> exclusions = blog.getExclusions();
+
+				List<String> tagBlacklist = new ArrayList<>();
+				List<String> blogBlacklist = new ArrayList<>();
+
+				for (SearchExclusion exclusion : exclusions)
+				{
+					if (exclusion.isActive())
+					{
+						switch (exclusion.getType())
+						{
+							case "tag":
+								tagBlacklist.add(exclusion.getTerm());
+								break;
+							case "blog":
+								blogBlacklist.add(exclusion.getTerm());
+								break;
+						}
+					}
+				}
+
 				List<Post> posts = new ArrayList<>();
 
-				for (String tag : tags)
+				for (SearchInclusion inclusion : inclusions)
 				{
-					logger.info("Getting posts from tag: " + tag);
-					if (!terms.containsKey("tag:" + tag))
+					SearchTerm t = null;
+					if (inclusion.isActive())
 					{
-						terms.put("tag:" + tag, new TagTerm(tag, client, blog, logger));
+						t = null;
+						switch (inclusion.getType())
+						{
+							case "tag":
+								String tag = inclusion.getTerm();
+								logger.info("Getting posts from tag: " + tag);
+								if (!terms.containsKey("tag:" + tag))
+								{
+									terms.put("tag:" + tag, new TagTerm(tag, client, blog, logger));
+								}
+								t = terms.get("tag:" + tag);
+								break;
+
+							case "blog":
+								String b = inclusion.getTerm();
+								logger.info("Getting posts from blog: " + b);
+								if (!terms.containsKey("blog:" + b))
+								{
+									terms.put("blog:" + b, new BlogTerm(b, client, blog, logger));
+								}
+								t = terms.get("blog:" + b);
+								break;
+						}
+						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion.getRequiredTags(),
+								inclusion.getPostType(), inclusion.getPostSelect(), inclusion.getSampleSize(),
+								inclusion.isActive());
+						postMap.putAll(p);
+						posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() == null ? blog.getPostSelect() : inclusion.getPostSelect(), 50));
 					}
-					SearchTerm t = terms.get("tag:" + tag);
-					Map<Post, String> p = t.getPosts(null);
-					postMap.putAll(p);
-					posts.addAll(selectPosts(p.keySet(), blog.getPostSelect(t.getSearchTerm()), 50));
-				}
-				for (String b : blogs)
-				{
-					logger.info("Getting posts from tag: " + b);
-					if (!terms.containsKey("blog:" + b))
-					{
-						terms.put("blog:" + b, new BlogTerm(b, client, blog, logger));
-					}
-					SearchTerm t = terms.get("blog:" + b);
-					Map<Post, String> p = t.getPosts(null);
-					postMap.putAll(p);
-					posts.addAll(selectPosts(p.keySet(), blog.getPostSelect(t.getSearchTerm()), 50));
+
 				}
 
 				boolean hasPosted = false;
 
-				loop:
-				while (!hasPosted)
+				if (posts.size() > 0)
 				{
-					logger.info("Selecting post");
-					List<Post> p = randomElement(posts, 1, true);
-
-					for (Post post : p)
+					loop:
+					while (!hasPosted)
 					{
-						if (blog.getPosts().contains(post.getId()))
+						logger.info("Selecting post");
+						List<Post> p = randomElement(posts, 1, true);
+
+						for (Post post : p)
 						{
-							logger.info("Post already used, getting new post");
-							hasPosted = false;
-							continue;
-						}
-						if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5)
-						{
-							logger.info("Post may be spam, getting new post");
-							continue;
-						}
-
-						Map<String, Object> params = new HashMap<>();
-
-						params.put("state", blog.getPostState());
-
-						if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
-						{ params.put("comment", blog.getPostComment()); }
-
-						List<String> rbTags = new ArrayList<>();
-
-						if (!(blog.getPostTags().isEmpty() || blog.getPostTags().equals("null")))
-						{ Collections.addAll(rbTags, blog.getPostTags().split(",\\s?")); }
-
-						if (blog.getPreserveTags()) for (String s : post.getTags()) rbTags.add(s);
-
-						params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
-						logger.info("Attempting to reblog post...");
-						Post rb = null;
-						boolean rbd = false;
-						int failCount = 0;
-						while (!rbd)
-						{
-							try
+							if (blog.getPosts().contains(post.getId()))
 							{
-								rb = post.reblog(url, params);
-								if (rb != null)
-								{
-									rbd = true;
-									hasPosted = true;
-								}
-								else
-								{
-									logger.warning("Posting failed.");
-									failCount++;
-								}
-							}
-							catch (JumblrException e)
-							{
-								if (failCount > 10) break loop;
-								rbd = false;
+								logger.info("Post already used, getting new post");
 								hasPosted = false;
-								failCount++;
-								logger.log(Level.SEVERE, e.getMessage(), e);
-								Thread.sleep(1000);
+								continue;
 							}
+							if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5)
+							{
+								logger.info("Post may be spam, getting new post");
+								continue;
+							}
+
+							Map<String, Object> params = new HashMap<>();
+
+							params.put("state", blog.getPostState());
+
+							if (!(blog.getPostComment() == null || blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
+							{ params.put("comment", blog.getPostComment()); }
+
+							List<String> rbTags = new ArrayList<>();
+
+							if (!(blog.getPostTags() == null || blog.getPostTags().length == 0))
+							{ Collections.addAll(rbTags, blog.getPostTags()); }
+
+							if (blog.getPreserveTags()) for (String s : post.getTags()) rbTags.add(s);
+
+							params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
+							logger.info("Attempting to reblog post...");
+							Post rb = null;
+							boolean rbd = false;
+							int failCount = 0;
+							while (!rbd)
+							{
+								try
+								{
+									rb = post.reblog(url, params);
+									if (rb != null)
+									{
+										rbd = true;
+										hasPosted = true;
+									}
+									else
+									{
+										logger.warning("Posting failed.");
+										failCount++;
+									}
+								}
+								catch (JumblrException e)
+								{
+									if (failCount > 10) break loop;
+									rbd = false;
+									hasPosted = false;
+									failCount++;
+									logger.log(Level.SEVERE, e.getMessage(), e);
+									Thread.sleep(1000);
+								}
+							}
+							String val = postMap.get(post);
+							terms.get(val).getCache().remove(post.getId());
+							blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 						}
-						String val = postMap.get(post);
-						terms.get(val).getCache().remove(post.getId());
-						blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 					}
 				}
 			}
@@ -279,6 +316,12 @@ public class BotThread implements Runnable
 
 	public class Blog
 	{
+		private final PreparedStatement getBId;
+		private final int id;
+		private List<SearchExclusion> exclusions = new ArrayList<>();
+		private long exclusionsQTime = 0;
+		private List<SearchInclusion> inclusions = new ArrayList<>();
+		private long inclusionsQTime = 0;
 		private PreparedStatement addPosts;
 		private PreparedStatement addStats;
 
@@ -286,46 +329,38 @@ public class BotThread implements Runnable
 		private ResultSet configRs;
 		private long configQTime = 0;
 
-		private PreparedStatement getRules;
-
-		private PreparedStatement getPS;
-		private Map<String, Long> psQtimeMap = new HashMap<>();
-		private Map<String, String> psQMap = new HashMap<>();
-
-		private long tbQTime = 0;
-		private List<String> tbList;
-
-		private long twQTime = 0;
-		private List<String> twList;
-
-		private long bbQTime = 0;
-		private List<String> bbList;
-
-		private long bwQTime = 0;
-		private List<String> bwList;
+		private PreparedStatement getSI;
+		private PreparedStatement getSE;
 
 		private PreparedStatement getPosts;
 
 		//TODO search term specific configs
 		Blog(String url) throws SQLException
 		{
-			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE url = ?");
-			getConfig.setString(1, url);
+			getBId = conn.prepareStatement("SELECT id FROM blogs WHERE url = ?");
+			getBId.setString(1, url);
+			ResultSet rs = getBId.executeQuery();
+			//rs.first();
+			rs.next();
+			id = rs.getInt("id");
 
-			getRules = conn.prepareStatement("SELECT DISTINCT term FROM search_rules WHERE url = ? && type = ? && action = ?");
-			getRules.setString(1, url);
+			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE id = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			getConfig.setInt(1, id);
 
-			getPS = conn.prepareStatement("SELECT type, term, post_select FROM search_rules WHERE url = ? && action = 'allow'");
-			getPS.setString(1, url);
+			getSI = conn.prepareStatement("SELECT DISTINCT * FROM search_inclusions WHERE blog_id = ? ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			getSI.setInt(1, id);
 
-			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?");
+			getSE = conn.prepareStatement("SELECT DISTINCT * FROM search_exclusions WHERE blog_id = ? ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			getSE.setInt(1, id);
+
+			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getPosts.setString(1, url);
 
-			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, search_type, post_id, rb_id, tag, blog) VALUES (?, ?, ?, ?, ?, ?)");
+			addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, search_type, post_id, rb_id, search_term, blog) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			addPosts.setString(1, url);
 
-			addStats = conn.prepareStatement("INSERT INTO tag_stats (url, search_type, tag, search_time, search, selected) VALUES (?, ?, ?, ?, ?, ?)");
-			addStats.setString(1, url);
+			addStats = conn.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			addStats.setInt(1, id);
 		}
 
 		public boolean addStat(String type, String tag, int time, int searched, int selected) throws SQLException
@@ -356,7 +391,7 @@ public class BotThread implements Runnable
 			return out;
 		}
 
-		public String getPostType()
+		public String[] getPostType()
 		{
 			try
 			{
@@ -368,8 +403,7 @@ public class BotThread implements Runnable
 				configRs.beforeFirst();
 				if (configRs.next())
 				{
-					return configRs.getString("post_type").isEmpty() || configRs.getString("post_type").equals("null") ?
-							null : configRs.getString("post_type");
+					return (String[]) configRs.getArray("post_type").getArray();
 				}
 			}
 			catch (SQLException e)
@@ -443,39 +477,6 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		String getPostSelect(String search_term)
-		{
-			try
-			{
-				if (!psQtimeMap.containsKey(search_term))
-				{
-					psQtimeMap.put(search_term, 0L);
-				}
-				if (System.currentTimeMillis() - psQtimeMap.get(search_term) > 60000)
-				{
-					long qTime = System.currentTimeMillis();
-					ResultSet rs = getPS.executeQuery();
-					while (rs.next())
-					{
-						String term = String.format("%s:%s", rs.getString("type"), rs.getString("term"));
-						psQtimeMap.put(term, qTime);
-						psQMap.put(term, rs.getString("post_select"));
-					}
-				}
-				if (psQMap.get(search_term) == null || psQMap.get(search_term).isEmpty())
-				{
-					return getPostSelect();
-				}
-				System.out.println(search_term + " : " + psQMap.get(search_term));
-				return psQMap.get(search_term);
-			}
-			catch (SQLException e)
-			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				return null;
-			}
-		}
-
 		String getPostState()
 		{
 			try
@@ -518,7 +519,7 @@ public class BotThread implements Runnable
 			return null;
 		}
 
-		String getPostTags()
+		String[] getPostTags()
 		{
 			try
 			{
@@ -529,7 +530,9 @@ public class BotThread implements Runnable
 				}
 				configRs.beforeFirst();
 				if (configRs.next())
-				{ return configRs.getString("post_tags"); }
+				{
+					return (String[]) configRs.getArray("post_tags").getArray();
+				}
 			}
 			catch (SQLException e)
 			{
@@ -581,65 +584,43 @@ public class BotThread implements Runnable
 			return 0;
 		}
 
-		public List<String> getBlogBlacklist() throws SQLException
+		public List<SearchExclusion> getExclusions() throws SQLException
 		{
-			if (System.currentTimeMillis() - bbQTime > 60000)
+			if (System.currentTimeMillis() - exclusionsQTime > 60000)
 			{
-				getRules.setString(2, "blog");
-				getRules.setString(3, "block");
-				ResultSet rs = getRules.executeQuery();
-				List<String> out = new ArrayList<>();
+				ResultSet rs = getSE.executeQuery();
+				List<SearchExclusion> out = new ArrayList<>();
 				while (rs.next())
-					out.add(rs.getString("term"));
-				return (bbList = out);
+				{
+					out.add(new SearchExclusion(rs.getInt("id"), rs.getString("type"), rs.getString("term"),
+							rs.getBoolean("active")));
+				}
+				return (exclusions = out);
 			}
-			return bbList;
+			return exclusions;
 		}
 
-		@SuppressWarnings ("unused")
-		public List<String> getBlogWhitelist() throws SQLException
+		public List<SearchInclusion> getInclusions() throws SQLException
 		{
-			if (System.currentTimeMillis() - bwQTime > 60000)
+			if (System.currentTimeMillis() - inclusionsQTime > 60000)
 			{
-				getRules.setString(2, "blog");
-				getRules.setString(3, "allow");
-				ResultSet rs = getRules.executeQuery();
-				List<String> out = new ArrayList<>();
+				ResultSet rs = getSI.executeQuery();
+				List<SearchInclusion> out = new ArrayList<>();
 				while (rs.next())
-					out.add(rs.getString("term"));
-				return (bwList = out);
+				{
+					int incId = rs.getInt("id");
+					String type = rs.getString("type");
+					String term = rs.getString("term");
+					String[] required_tags = rs.getArray("required_tags") != null ? (String[]) rs.getArray("required_tags").getArray() : null;
+					String[] postType = rs.getArray("post_type") != null ? (String[]) rs.getArray("post_type").getArray() : null;
+					String postSelect = rs.getString("post_select");
+					int sample = rs.getInt("sample_size");
+					boolean active = rs.getBoolean("active");
+					out.add(new SearchInclusion(incId, type, term, required_tags, postType, postSelect, sample, active));
+				}
+				return (inclusions = out);
 			}
-			return bwList;
-		}
-
-		public List<String> getTagBlacklist() throws SQLException
-		{
-			if (System.currentTimeMillis() - tbQTime > 60000)
-			{
-				getRules.setString(2, "tag");
-				getRules.setString(3, "block");
-				ResultSet rs = getRules.executeQuery();
-				List<String> out = new ArrayList<>();
-				while (rs.next())
-					out.add(rs.getString("term"));
-				return (tbList = out);
-			}
-			return tbList;
-		}
-
-		List<String> getTagWhitelist() throws SQLException
-		{
-			if (System.currentTimeMillis() - twQTime > 60000)
-			{
-				getRules.setString(2, "tag");
-				getRules.setString(3, "allow");
-				ResultSet rs = getRules.executeQuery();
-				List<String> out = new ArrayList<>();
-				while (rs.next())
-					out.add(rs.getString("term"));
-				return (twList = out);
-			}
-			return twList;
+			return inclusions;
 		}
 	}
 }

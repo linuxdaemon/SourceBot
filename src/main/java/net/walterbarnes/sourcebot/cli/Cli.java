@@ -62,6 +62,16 @@ public class Cli
 		return l;
 	}
 
+	public static String prompt(String title, Pattern valid, String def)
+	{
+		String s = prompt(title, valid);
+		if (s.trim().isEmpty())
+		{
+			return def;
+		}
+		return s;
+	}
+
 	public static int promptInt(String title)
 	{
 		return Integer.parseInt(prompt(title, Pattern.compile("[0-9]+")));

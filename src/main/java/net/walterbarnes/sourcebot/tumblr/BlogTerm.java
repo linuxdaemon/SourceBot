@@ -23,6 +23,7 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,15 +47,15 @@ public class BlogTerm implements SearchTerm
 		this.logger = logger;
 	}
 
+	@SuppressWarnings ("Duplicates")
 	@Override
-	public Map<Post, String> getPosts(Map<String, Object> opts) throws SQLException
+	public Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, String[] requiredTags,
+									  String[] postType, String postSelect, int sampleSize, boolean active) throws SQLException
 	{
-		List<String> blogBlacklist = blog.getBlogBlacklist();
-		List<String> tagBlacklist = blog.getTagBlacklist();
 		List<Long> postBlacklist = blog.getPosts();
 
-		int postNum = lastPostCount > 0 ? lastPostCount : blog.getSampleSize();
-		String type = blog.getPostType();
+		int postNum = lastPostCount > 0 ? lastPostCount : (sampleSize == 0 ? blog.getSampleSize() : sampleSize);
+		String[] type = postType == null ? blog.getPostType() : postType;
 
 		int postCount = 0;
 		int searched = 0;
@@ -86,8 +87,6 @@ public class BlogTerm implements SearchTerm
 
 			options.put("offset", postCount);
 
-			if (opts != null) options.putAll(opts);
-
 			List<Post> posts;
 			try
 			{
@@ -105,14 +104,23 @@ public class BlogTerm implements SearchTerm
 			for (Post post : posts)
 			{
 				searched++;
-				if (type == null || post.getType().getValue().equals(type))
+				if (Arrays.asList(type).contains(post.getType().getValue()))
 				{
-					for (String t : tagBlacklist) if (post.getTags().contains(t)) continue loop;
+					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+					for (String tag : tagBlacklist)
+					{
+						if (post.getTags().contains(tag)) continue loop;
+					}
 
-					if (postBlacklist.contains(post.getId())) continue;
-					cache.addPost(post);
-					out.put(post, String.format("blog:%s", b));
-					postCount++;
+					if (requiredTags != null)
+					{
+						for (String rt : requiredTags)
+						{
+							if (!post.getTags().contains(rt)) continue loop;
+						}
+					}
+
+					if (cache.addPost(post)) out.put(post, String.format("blog:%s", b));
 				}
 			}
 		}
