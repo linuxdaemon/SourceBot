@@ -294,58 +294,6 @@ public class SourceBot
 				statsCreate.execute();
 				logger.info("Created.");
 			}
-			logger.info("Creating First Blog Configuration...");
-			PreparedStatement firstBlog = conn.prepareStatement("INSERT INTO blogs (id,url,blog_check_active,sample_size,post_type,post_select,post_state,post_buffer,post_comment,post_tags,active) VALUES (?,?,?,?,?,?,?,?,?,?,?);");
-			firstBlog.setInt(1, 1);
-			boolean valid = false;
-			String url = "";
-			while (!valid)
-			{
-				url = Cli.prompt("[Config] Blog Name: ", Pattern.compile("[^ ]+"));
-				logger.info("Checking URL...");
-				if (blogs == null)
-				{
-					JsonObject api = json.getAsJsonObject("api");
-					JsonObject consumer = api.getAsJsonObject("consumer");
-					JsonObject token = api.getAsJsonObject("token");
-					Tumblr tumblr = new Tumblr(consumer.get("key").getAsString(), consumer.get("secret").getAsString(),
-							token.get("key").getAsString(), token.get("secret").getAsString(), logger);
-					blogs = tumblr.user().getBlogs();
-				}
-				for (Blog b : blogs) if (url != null && b.getName().equals(url)) valid = true;
-				if (!valid) System.out.println("URL Not Registered to Your Account");
-			}
-			firstBlog.setString(2, url);
-			firstBlog.setBoolean(3, Cli.promptYesNo("[Config] Require Blogs to be Active (5 or more posts) Before Reblogging From Them?[Y/n]: "));
-			firstBlog.setInt(4, Cli.promptInt("[Config] Post Sample Size?(per tag)[1000]: ", 1000));
-			Map<String, String> opts = new LinkedHashMap<>();
-			opts.put("All", "null");
-			opts.put("Text", "text");
-			opts.put("Quote", "quote");
-			opts.put("Link", "link");
-			opts.put("Photo", "photo");
-			opts.put("Answer", "answer");
-			opts.put("Chat", "chat");
-
-			firstBlog.setString(5, Cli.promptList("[Config] Post Type: ", opts));
-			opts.clear();
-			opts.put("Select Top 50 Posts by Notes", "top");
-			opts.put("Select Top 50 Posts by Time Posted", "recent");
-			firstBlog.setString(6, Cli.promptList("[Config] Post Selection Method: ", opts));
-			opts.clear();
-			opts.put("Queued", "queue");
-			opts.put("Drafted", "draft");
-			firstBlog.setString(7, Cli.promptList("[Config] Reblogged Post State: ", opts));
-			opts.clear();
-			firstBlog.setInt(8, Cli.promptInt("[Config] Number of Posts to Keep in Queue/Drafts[20]: ", 20));
-			firstBlog.setString(9, Cli.prompt("[Config] Comment to Add to All Reblogged Posts[]: ",
-					Pattern.compile(".*")).trim());
-			firstBlog.setString(10, Cli.prompt("[Config] Tag to Add to All Reblogged Posts[]: ",
-					Pattern.compile("[^,]*")).trim());
-			firstBlog.setBoolean(11, false);
-			firstBlog.execute();
-			logger.info("Created.");
-			System.out.println("Now Add Search Rules Before Activating The Blog");
 			logger.info("Disconnecting from Database Server...");
 			conn.close();
 			logger.info("Disconnected.");

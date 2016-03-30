@@ -137,6 +137,10 @@ public class BotThread implements Runnable
 				}
 			}
 		}
+		if (n > p.size())
+		{
+			return new ArrayList<>(p);
+		}
 		return new ArrayList<>(p.subList(0, n - 1));
 	}
 
@@ -256,7 +260,8 @@ public class BotThread implements Runnable
 							catch (JumblrException e)
 							{
 								if (failCount > 10) break loop;
-								rbd = hasPosted = false;
+								rbd = false;
+								hasPosted = false;
 								failCount++;
 								logger.log(Level.SEVERE, e.getMessage(), e);
 								Thread.sleep(1000);
@@ -286,8 +291,6 @@ public class BotThread implements Runnable
 		private PreparedStatement getPS;
 		private Map<String, Long> psQtimeMap = new HashMap<>();
 		private Map<String, String> psQMap = new HashMap<>();
-
-
 
 		private long tbQTime = 0;
 		private List<String> tbList;
