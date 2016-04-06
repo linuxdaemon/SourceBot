@@ -169,6 +169,10 @@ public class BotThread implements Runnable
 			if ((blog.getPostState().equals("draft") && client.getDrafts(url).size() < blog.getPostBuffer()) ||
 					(blog.getPostState().equals("queue") && client.getQueuedPosts(url).size() < blog.getPostBuffer()))
 			{
+				if (blog.getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
+				{
+					logger.warning("Bot is not admin on '" + url + "', not running thread");
+				}
 				logger.info("Adding posts to queue");
 
 				Map<Post, String> postMap = new HashMap<>();
