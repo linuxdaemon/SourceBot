@@ -47,6 +47,18 @@ public class BlogTerm implements SearchTerm
 		this.logger = logger;
 	}
 
+	@Override
+	public PostCache getCache()
+	{
+		return cache;
+	}
+
+	@Override
+	public String getSearchTerm()
+	{
+		return "blog:" + b;
+	}
+
 	@SuppressWarnings ("Duplicates")
 	@Override
 	public Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, String[] requiredTags,
@@ -55,7 +67,7 @@ public class BlogTerm implements SearchTerm
 		List<Long> postBlacklist = blog.getPosts();
 
 		int postNum = lastPostCount > 0 ? lastPostCount : (sampleSize == 0 ? blog.getSampleSize() : sampleSize);
-		String[] type = postType == null ? blog.getPostType() : postType;
+		String[] types = postType == null ? blog.getPostType() : postType;
 
 		int postCount = 0;
 		int searched = 0;
@@ -80,7 +92,6 @@ public class BlogTerm implements SearchTerm
 		}
 
 		logger.info("Searching blog " + b);
-
 		while (out.size() < postNum)
 		{
 			HashMap<String, Object> options = new HashMap<>();
@@ -104,19 +115,23 @@ public class BlogTerm implements SearchTerm
 			for (Post post : posts)
 			{
 				searched++;
-				if (Arrays.asList(type).contains(post.getType().getValue()))
+				postCount++;
+				if (Arrays.asList(types).contains(post.getType().getValue()))
 				{
 					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-					for (String tag : tagBlacklist)
-					{
-						if (post.getTags().contains(tag)) continue loop;
-					}
 
 					if (requiredTags != null)
 					{
 						for (String rt : requiredTags)
 						{
 							if (!post.getTags().contains(rt)) continue loop;
+						}
+					}
+					else
+					{
+						for (String tag : tagBlacklist)
+						{
+							if (post.getTags().contains(tag)) continue loop;
 						}
 					}
 
@@ -129,20 +144,8 @@ public class BlogTerm implements SearchTerm
 		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", b,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
-		lastPostCount = out.size();
 		blog.addStat("blog", b, (int) end, searched, out.size());
+		lastPostCount = out.size();
 		return out;
-	}
-
-	@Override
-	public PostCache getCache()
-	{
-		return cache;
-	}
-
-	@Override
-	public String getSearchTerm()
-	{
-		return "blog:" + b;
 	}
 }

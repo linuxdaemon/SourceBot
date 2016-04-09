@@ -21,7 +21,7 @@ package net.walterbarnes.sourcebot.search;
 public class SearchInclusion implements ISearch
 {
 	private int id;
-	private String type;
+	private SearchType type;
 	private String term;
 	private String[] requiredTags;
 	private String[] postType;
@@ -33,7 +33,7 @@ public class SearchInclusion implements ISearch
 						   int sampleSize, boolean active)
 	{
 		this.id = id;
-		this.type = type;
+		this.type = SearchType.getType(type);
 		this.term = term;
 		this.requiredTags = requiredTags;
 		this.postType = postType;
@@ -43,7 +43,13 @@ public class SearchInclusion implements ISearch
 	}
 
 	@Override
-	public String getType()
+	public String getAction()
+	{
+		return "include";
+	}
+
+	@Override
+	public SearchType getType()
 	{
 		return type;
 	}
@@ -52,11 +58,6 @@ public class SearchInclusion implements ISearch
 	public String getTerm()
 	{
 		return term;
-	}
-
-	public String[] getRequiredTags()
-	{
-		return requiredTags;
 	}
 
 	@Override
@@ -69,6 +70,11 @@ public class SearchInclusion implements ISearch
 	public boolean isActive()
 	{
 		return active;
+	}
+
+	public String[] getRequiredTags()
+	{
+		return requiredTags;
 	}
 
 	public String[] getPostType()

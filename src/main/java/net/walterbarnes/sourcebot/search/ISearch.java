@@ -20,7 +20,9 @@ package net.walterbarnes.sourcebot.search;
 
 public interface ISearch
 {
-	String getType();
+	String getAction();
+
+	SearchType getType();
 
 	String getTerm();
 
@@ -28,3 +30,4 @@ public interface ISearch
 
 	boolean isActive();
 }
+

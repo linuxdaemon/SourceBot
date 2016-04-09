@@ -55,112 +55,6 @@ public class BotThread implements Runnable
 		this.blog = new Blog(url);
 	}
 
-	/**
-	 * Selects pseudo-random elements from a collection
-	 *
-	 * @param c      Collection to select from
-	 * @param n      Number of elements to select
-	 * @param unique Whether the selection should be unique
-	 * @param <E>    Type of element in collection
-	 * @return Random element(s) from collection
-	 */
-	private static <E> List<E> randomElement(Collection<E> c, int n, boolean unique)
-	{
-		List<E> out = new ArrayList<>();
-		List<E> l = new ArrayList<>(c);
-
-		while (out.size() < n)
-		{
-			E e = l.get(ThreadLocalRandom.current().nextInt(0, l.size()));
-			out.add(e);
-			if (unique) l.remove(e);
-		}
-		return out;
-	}
-
-	/**
-	 * Selects the top posts from a set by their note count
-	 *
-	 * @param posts Set to sort
-	 * @param n     Number of top posts to select
-	 * @return Top n posts from set
-	 */
-	private static ArrayList<Post> getTopPosts(Collection<Post> posts, int n)
-	{
-		int moves = 0;
-		boolean firstRun = true;
-		List<Post> p = new ArrayList<>(posts);
-		while (firstRun || moves > 0)
-		{
-			moves = 0;
-			firstRun = false;
-			for (int i = 1; i < p.size(); i++)
-			{
-				Post a = p.get(i - 1);
-				Post b = p.get(i);
-
-				if (a.getNoteCount() < b.getNoteCount())
-				{
-					p.set(i - 1, b);
-					p.set(i, a);
-					moves++;
-				}
-			}
-		}
-		return new ArrayList<>(p.subList(0, n - 1));
-	}
-
-	/**
-	 * Sorts a set of Tumblr Posts by their timestamp
-	 *
-	 * @param posts Set to sort
-	 * @param n     Number of posts to return
-	 * @return Sorted List of posts
-	 */
-	private static ArrayList<Post> sortTimestamp(Collection<Post> posts, int n)
-	{
-		int moves = 0;
-		boolean firstRun = true;
-		List<Post> p = new ArrayList<>(posts);
-		while (firstRun || moves > 0)
-		{
-			moves = 0;
-			firstRun = false;
-			for (int i = 1; i < p.size(); i++)
-			{
-				Post a = p.get(i - 1);
-				Post b = p.get(i);
-
-				if (a.getTimestamp() < b.getTimestamp())
-				{
-					p.set(i - 1, b);
-					p.set(i, a);
-					moves++;
-				}
-			}
-		}
-		if (n > p.size())
-		{
-			return new ArrayList<>(p);
-		}
-		return new ArrayList<>(p.subList(0, n - 1));
-	}
-
-	private List<Post> selectPosts(Collection<Post> posts, String method, int n)
-	{
-		switch (method)
-		{
-			case "top":
-				return getTopPosts(posts, n);
-
-			case "recent":
-				return sortTimestamp(posts, n);
-
-			default:
-				return sortTimestamp(posts, n);
-		}
-	}
-
 	@Override
 	public void run()
 	{
@@ -189,10 +83,10 @@ public class BotThread implements Runnable
 					{
 						switch (exclusion.getType())
 						{
-							case "tag":
+							case TAG:
 								tagBlacklist.add(exclusion.getTerm());
 								break;
-							case "blog":
+							case BLOG:
 								blogBlacklist.add(exclusion.getTerm());
 								break;
 						}
@@ -209,7 +103,7 @@ public class BotThread implements Runnable
 						t = null;
 						switch (inclusion.getType())
 						{
-							case "tag":
+							case TAG:
 								String tag = inclusion.getTerm();
 								logger.info("Getting posts from tag: " + tag);
 								if (!terms.containsKey("tag:" + tag))
@@ -219,7 +113,7 @@ public class BotThread implements Runnable
 								t = terms.get("tag:" + tag);
 								break;
 
-							case "blog":
+							case BLOG:
 								String b = inclusion.getTerm();
 								logger.info("Getting posts from blog: " + b);
 								if (!terms.containsKey("blog:" + b))
@@ -316,6 +210,112 @@ public class BotThread implements Runnable
 			}
 		}
 		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
+	}
+
+	private List<Post> selectPosts(Collection<Post> posts, String method, int n)
+	{
+		switch (method)
+		{
+			case "top":
+				return getTopPosts(posts, n);
+
+			case "recent":
+				return sortTimestamp(posts, n);
+
+			default:
+				return sortTimestamp(posts, n);
+		}
+	}
+
+	/**
+	 * Selects pseudo-random elements from a collection
+	 *
+	 * @param c      Collection to select from
+	 * @param n      Number of elements to select
+	 * @param unique Whether the selection should be unique
+	 * @param <E>    Type of element in collection
+	 * @return Random element(s) from collection
+	 */
+	private static <E> List<E> randomElement(Collection<E> c, int n, boolean unique)
+	{
+		List<E> out = new ArrayList<>();
+		List<E> l = new ArrayList<>(c);
+
+		while (out.size() < n)
+		{
+			E e = l.get(ThreadLocalRandom.current().nextInt(0, l.size()));
+			out.add(e);
+			if (unique) l.remove(e);
+		}
+		return out;
+	}
+
+	/**
+	 * Selects the top posts from a set by their note count
+	 *
+	 * @param posts Set to sort
+	 * @param n     Number of top posts to select
+	 * @return Top n posts from set
+	 */
+	private static ArrayList<Post> getTopPosts(Collection<Post> posts, int n)
+	{
+		int moves = 0;
+		boolean firstRun = true;
+		List<Post> p = new ArrayList<>(posts);
+		while (firstRun || moves > 0)
+		{
+			moves = 0;
+			firstRun = false;
+			for (int i = 1; i < p.size(); i++)
+			{
+				Post a = p.get(i - 1);
+				Post b = p.get(i);
+
+				if (a.getNoteCount() < b.getNoteCount())
+				{
+					p.set(i - 1, b);
+					p.set(i, a);
+					moves++;
+				}
+			}
+		}
+		return new ArrayList<>(p.subList(0, n - 1));
+	}
+
+	/**
+	 * Sorts a set of Tumblr Posts by their timestamp
+	 *
+	 * @param posts Set to sort
+	 * @param n     Number of posts to return
+	 * @return Sorted List of posts
+	 */
+	private static ArrayList<Post> sortTimestamp(Collection<Post> posts, int n)
+	{
+		int moves = 0;
+		boolean firstRun = true;
+		List<Post> p = new ArrayList<>(posts);
+		while (firstRun || moves > 0)
+		{
+			moves = 0;
+			firstRun = false;
+			for (int i = 1; i < p.size(); i++)
+			{
+				Post a = p.get(i - 1);
+				Post b = p.get(i);
+
+				if (a.getTimestamp() < b.getTimestamp())
+				{
+					p.set(i - 1, b);
+					p.set(i, a);
+					moves++;
+				}
+			}
+		}
+		if (n > p.size())
+		{
+			return new ArrayList<>(p);
+		}
+		return new ArrayList<>(p.subList(0, n - 1));
 	}
 
 	public class Blog

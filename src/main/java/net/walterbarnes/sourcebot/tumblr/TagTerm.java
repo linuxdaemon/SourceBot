@@ -23,7 +23,10 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,8 +34,8 @@ public class TagTerm implements SearchTerm
 {
 	private final Tumblr client;
 	private final Logger logger;
-	private BotThread.Blog blog;
 	private String tag;
+	private BotThread.Blog blog;
 	private PostCache cache = new PostCache(120 * 60 * 1000);
 	private int lastPostCount = 0;
 
@@ -44,17 +47,31 @@ public class TagTerm implements SearchTerm
 		this.logger = logger;
 	}
 
+	@Override
+	public PostCache getCache()
+	{
+		return cache;
+	}
+
+	@Override
+	public String getSearchTerm()
+	{
+		return "tag:" + tag;
+	}
+
+	@SuppressWarnings ("Duplicates")
+	@Override
 	public Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, String[] requiredTags,
 									  String[] postType, String postSelect, int sampleSize, boolean active) throws SQLException
 	{
 		List<Long> postBlacklist = blog.getPosts();
 
 		int postNum = lastPostCount > 0 ? lastPostCount : (sampleSize == 0 ? blog.getSampleSize() : sampleSize);
-		String[] type = postType == null ? blog.getPostType() : postType;
-
-		int searched = 0;
+		String[] types = postType == null ? blog.getPostType() : postType;
 
 		long lastTime = System.currentTimeMillis() / 1000;
+		int searched = 0;
+
 		long start = System.currentTimeMillis();
 
 		cache.validate();
@@ -84,10 +101,7 @@ public class TagTerm implements SearchTerm
 			List<Post> posts;
 			try
 			{
-				if (tag.contains(","))
-				{ posts = client.tagged(tag.split(",\\s?")[0], options); }
-				else
-				{ posts = client.tagged(tag, options); }
+				posts = client.tagged(tag, options);
 			}
 			catch (JumblrException e)
 			{
@@ -102,8 +116,7 @@ public class TagTerm implements SearchTerm
 			{
 				searched++;
 				lastTime = post.getTimestamp();
-				List<String> types = new ArrayList<>(Arrays.asList(type == null ? blog.getPostType() : type));
-				if (types.contains(post.getType().getValue()))
+				if (Arrays.asList(types).contains(post.getType().getValue()))
 				{
 					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
 
@@ -134,16 +147,5 @@ public class TagTerm implements SearchTerm
 		blog.addStat("tag", tag, (int) end, searched, out.size());
 		lastPostCount = out.size();
 		return out;
-	}
-
-	public PostCache getCache()
-	{
-		return cache;
-	}
-
-	@Override
-	public String getSearchTerm()
-	{
-		return "tag:" + tag;
 	}
 }

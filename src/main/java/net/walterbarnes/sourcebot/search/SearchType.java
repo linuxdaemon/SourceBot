@@ -18,48 +18,30 @@
 
 package net.walterbarnes.sourcebot.search;
 
-public class SearchExclusion implements ISearch
+public enum SearchType
 {
-	private int id;
-	private SearchType type;
-	private String term;
-	private boolean active;
+	TAG("tag"),
+	BLOG("blog");
 
-	public SearchExclusion(int id, String type, String term, boolean active)
+	private String name;
+
+	SearchType(String name)
 	{
-		this.id = id;
-		this.type = SearchType.getType(type);
-		this.term = term;
-		this.active = active;
+		this.name = name;
 	}
 
-	@Override
-	public String getAction()
+	public static SearchType getType(String name)
 	{
-		return "exclude";
+		for (SearchType type : SearchType.values())
+		{
+			if (type.getName().equals(name))
+			{ return type; }
+		}
+		return null;
 	}
 
-	@Override
-	public SearchType getType()
+	public String getName()
 	{
-		return type;
-	}
-
-	@Override
-	public String getTerm()
-	{
-		return term;
-	}
-
-	@Override
-	public int getId()
-	{
-		return id;
-	}
-
-	@Override
-	public boolean isActive()
-	{
-		return active;
+		return name;
 	}
 }
