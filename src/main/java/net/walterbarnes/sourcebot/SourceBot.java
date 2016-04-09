@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.thread.InputThread;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 import org.scribe.exceptions.OAuthConnectionException;
@@ -39,21 +40,29 @@ import java.util.logging.Logger;
 
 public class SourceBot
 {
-	static final String confName = "SourceBot.json";
+	private static final String CLASS_NAME = SourceBot.class.getName();
+	private static final String confName = "SourceBot.json";
 	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
+	public static volatile boolean running = true;
+	public static Thread currentThread;
+	public static InputThread inputThread = new InputThread();
 	static File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 	private static Config conf;
 
 	public static void main(String[] args)
 	{
+		Thread t = null;
 		try
 		{
+			LogHelper.init();
+			t = new Thread(inputThread);
+			t.start();
+
 			if (args.length > 0)
 			{
 				confDir = new File(args[0]);
+				logger.info(String.format("Set config dir to %s", confDir.getAbsolutePath()));
 			}
-
-			LogHelper.init();
 
 			if (!confDir.exists())
 			{
@@ -67,7 +76,7 @@ public class SourceBot
 
 			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
 			{
-				Install.install();
+				Install.install(confDir.getAbsolutePath(), confName);
 				System.exit(0);
 			}
 
@@ -77,6 +86,13 @@ public class SourceBot
 		catch (Throwable throwable)
 		{
 			displayCrashReport(new CrashReport("Unexpected error", throwable));
+		}
+		finally
+		{
+			if (t != null)
+			{
+				t.interrupt();
+			}
 		}
 	}
 
@@ -111,10 +127,9 @@ public class SourceBot
 
 		long queryTime = System.currentTimeMillis();
 
-		Map<String, BotThread> threads = new HashMap<>();
+		Map<String, Thread> threads = new HashMap<>();
 
-		//noinspection InfiniteLoopStatement
-		while (true)
+		while (running)
 		{
 			try
 			{
@@ -125,25 +140,34 @@ public class SourceBot
 				}
 
 				rs.beforeFirst();
-				while (rs.next())
+				while (rs.next() && running)
 				{
 					String url = rs.getString("url");
 					boolean active = rs.getBoolean("active");
 					boolean adm_active = rs.getBoolean("adm_active");
 					if (active && adm_active)
 					{
-						if (!threads.containsKey(url)) threads.put(url, new BotThread(client, url, conn));
+						if (!threads.containsKey(url))
+						{
+							BotThread bt = new BotThread(client, url, conn);
+							threads.put(url, new Thread(bt));
+						}
 						logger.info("Running Thread for " + url);
 						long start = System.currentTimeMillis();
-						threads.get(url).run();
+						currentThread = threads.get(url);
+						currentThread.start();
+						currentThread.join();
 						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
 					}
 				}
-				Thread.sleep(5000);
+				Thread.sleep(1000);
 			}
-			catch (OAuthConnectionException | InterruptedException e)
+			catch (OAuthConnectionException e)
 			{
 				logger.log(Level.SEVERE, e.getMessage(), e);
+			}
+			catch (InterruptedException ignored)
+			{
 			}
 		}
 	}

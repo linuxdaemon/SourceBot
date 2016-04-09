@@ -208,6 +208,7 @@ public class BotThread implements Runnable
 				}
 			}
 		}
+		catch (InterruptedException ignored) {}
 		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
 	}
 

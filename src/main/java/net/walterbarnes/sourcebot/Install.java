@@ -37,9 +37,9 @@ class Install
 {
 	private static final Logger logger = Logger.getLogger(Install.class.getName());
 	
-	public static boolean install() throws IOException
+	static boolean install(String path, String name) throws IOException
 	{
-		Config conf = new Config(SourceBot.confDir.getAbsolutePath(), SourceBot.confName);
+		Config conf = new Config(path, name);
 		Config apiCat = conf.getCategory("api", new JsonObject());
 		Config consumerCat = apiCat.getCategory("consumer", new JsonObject());
 		Config tokenCat = apiCat.getCategory("tokan", new JsonObject());
