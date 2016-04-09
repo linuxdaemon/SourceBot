@@ -57,41 +57,6 @@ public class Tumblr extends JumblrClient
 		this.token = new Token(token, tokenSecret);
 	}
 
-	/**
-	 * Retrives a blogs drafts
-	 *
-	 * @param blogName Blog to retrieve posts from
-	 * @param before   Retrieve posts before this id
-	 * @return A List of posts from the blogs drafts
-	 */
-	public List<Post> blogDraftPosts(String blogName, long before)
-	{
-		Map<String, Object> params = new HashMap<>();
-		params.put("before_id", before);
-		return blogDraftPosts(blogName, params);
-	}
-
-	public List<Post> blogQueuedPosts(String blogName, long offset)
-	{
-		Map<String, Object> params = new HashMap<>();
-		params.put("offset", offset);
-		return blogDraftPosts(blogName, params);
-	}
-
-	public List<Post> blogPosts(String blogName, long before)
-	{
-		Map<String, Object> params = new HashMap<>();
-		params.put("offset", before);
-		return blogPosts(blogName, params);
-	}
-
-	public List<Post> blogSubmissions(String blogName, int offset)
-	{
-		Map<String, Object> params = new HashMap<>();
-		params.put("offset", offset);
-		return blogSubmissions(blogName, params);
-	}
-
 	public List<AnswerPost> getAsks(String blogName)
 	{
 		int offset = 0;
@@ -108,6 +73,13 @@ public class Tumblr extends JumblrClient
 		return asks;
 	}
 
+	public List<Post> blogSubmissions(String blogName, int offset)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("offset", offset);
+		return blogSubmissions(blogName, params);
+	}
+
 	public List<Post> getQueuedPosts(String blogName)
 	{
 		long offset = 0;
@@ -120,6 +92,13 @@ public class Tumblr extends JumblrClient
 				offset++;
 			}
 		return out;
+	}
+
+	public List<Post> blogQueuedPosts(String blogName, long offset)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("offset", offset);
+		return blogDraftPosts(blogName, params);
 	}
 
 	public List<Post> getDrafts(String blogName)
@@ -136,6 +115,20 @@ public class Tumblr extends JumblrClient
 		return out;
 	}
 
+	/**
+	 * Retrives a blogs drafts
+	 *
+	 * @param blogName Blog to retrieve posts from
+	 * @param before   Retrieve posts before this id
+	 * @return A List of posts from the blogs drafts
+	 */
+	public List<Post> blogDraftPosts(String blogName, long before)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("before_id", before);
+		return blogDraftPosts(blogName, params);
+	}
+
 	public List<Post> getBlogPosts(String blogName)
 	{
 		List<Post> posts;
@@ -146,6 +139,13 @@ public class Tumblr extends JumblrClient
 				out.add(post);
 			}
 		return out;
+	}
+
+	public List<Post> blogPosts(String blogName, long before)
+	{
+		Map<String, Object> params = new HashMap<>();
+		params.put("offset", before);
+		return blogPosts(blogName, params);
 	}
 
 	@SuppressWarnings ("Duplicates")

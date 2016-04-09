@@ -63,12 +63,6 @@ public class Config
 		}
 	}
 
-	public Config(JsonObject json, Config parent)
-	{
-		this.json = json;
-		this.parent = parent;
-	}
-
 	private void load() throws IOException
 	{
 		if (!file.canRead())
@@ -94,6 +88,12 @@ public class Config
 		}
 		FileReader fr = new FileReader(this.file);
 		json = parser.parse(fr).getAsJsonObject();
+	}
+
+	public Config(JsonObject json, Config parent)
+	{
+		this.json = json;
+		this.parent = parent;
 	}
 
 	public Config getCategory(String key, JsonObject def) throws IOException

@@ -29,25 +29,14 @@ public class Cli
 {
 	private static Console console = System.console();
 
-	public static void printf(String format, Object... args)
+	public static String prompt(String title, Pattern valid, String def)
 	{
-		if (console == null)
-		{ System.out.print(String.format(format, (java.lang.Object[]) args)); }
-		else
-		{ console.printf(format, (java.lang.Object[]) args); }
-	}
-
-	public static String readLine()
-	{
-		if (console != null)
-		{ return console.readLine(); }
-		Scanner s = new Scanner(System.in);
-		return s.nextLine();
-	}
-
-	public static String readPassword()
-	{
-		return console == null ? readLine() : new String(console.readPassword());
+		String s = prompt(title, valid);
+		if (s.trim().isEmpty())
+		{
+			return def;
+		}
+		return s;
 	}
 
 	public static String prompt(String title, Pattern valid)
@@ -62,19 +51,20 @@ public class Cli
 		return l;
 	}
 
-	public static String prompt(String title, Pattern valid, String def)
+	public static void printf(String format, Object... args)
 	{
-		String s = prompt(title, valid);
-		if (s.trim().isEmpty())
-		{
-			return def;
-		}
-		return s;
+		if (console == null)
+		{ System.out.print(String.format(format, (java.lang.Object[]) args)); }
+		else
+		{ console.printf(format, (java.lang.Object[]) args); }
 	}
 
-	public static int promptInt(String title)
+	public static String readLine()
 	{
-		return Integer.parseInt(prompt(title, Pattern.compile("[0-9]+")));
+		if (console != null)
+		{ return console.readLine(); }
+		Scanner s = new Scanner(System.in);
+		return s.nextLine();
 	}
 
 	public static int promptInt(String title, int def)
@@ -108,6 +98,11 @@ public class Cli
 		return l.get(i - 1);
 	}
 
+	public static int promptInt(String title)
+	{
+		return Integer.parseInt(prompt(title, Pattern.compile("[0-9]+")));
+	}
+
 	public static String password(String title, Pattern valid)
 	{
 		printf(title);
@@ -118,5 +113,10 @@ public class Cli
 			printf(title);
 		}
 		return p;
+	}
+
+	public static String readPassword()
+	{
+		return console == null ? readLine() : new String(console.readPassword());
 	}
 }

@@ -48,25 +48,66 @@ public class CrashReport
 		this.cause = cause;
 	}
 
-	/**
-	 * Gets the various sections of the crash report into the given StringBuilder
-	 */
-	public void getSectionsInStringBuilder(StringBuilder stringBuilder)
+	public File getFile()
 	{
-		if (this.stacktrace != null && this.stacktrace.length > 0)
-		{
-			stringBuilder.append("-- Head --\n");
-			stringBuilder.append("Stacktrace:\n");
-			StackTraceElement[] astacktraceelement = this.stacktrace;
+		return this.crashReportFile;
+	}
 
-			for (StackTraceElement stacktraceelement : astacktraceelement)
+	public boolean saveToFile(File p_147149_1_)
+	{
+		if (this.crashReportFile != null)
+		{
+			return false;
+		}
+		else
+		{
+			if (p_147149_1_.getParentFile() != null)
 			{
-				stringBuilder.append("\t").append("at ").append(stacktraceelement.toString());
-				stringBuilder.append("\n");
+				//noinspection ResultOfMethodCallIgnored
+				p_147149_1_.getParentFile().mkdirs();
 			}
 
-			stringBuilder.append("\n");
+			try
+			{
+				FileWriter filewriter = new FileWriter(p_147149_1_);
+				filewriter.write(this.getCompleteReport());
+				filewriter.close();
+				this.crashReportFile = p_147149_1_;
+				return true;
+			}
+			catch (Throwable throwable)
+			{
+				LogHelper.getLogger().log(Level.SEVERE, "Could not save crash report to " + p_147149_1_, throwable);
+				return false;
+			}
 		}
+	}
+
+	/**
+	 * Gets the complete report with headers, stack trace, and different sections as a string.
+	 */
+	public String getCompleteReport()
+	{
+		StringBuilder stringbuilder = new StringBuilder();
+		stringbuilder.append("---- SourceBot Crash Report ----\n");
+		stringbuilder.append("\n\n");
+		stringbuilder.append("Time: ");
+		stringbuilder.append((new SimpleDateFormat()).format(new Date()));
+		stringbuilder.append("\n");
+		stringbuilder.append("Description: ");
+		stringbuilder.append(this.description);
+		stringbuilder.append("\n\n");
+		stringbuilder.append(this.getCauseStackTraceOrString());
+		stringbuilder.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
+
+		for (int i = 0; i < 87; ++i)
+		{
+			stringbuilder.append("-");
+		}
+
+		stringbuilder.append("\n\n");
+		this.getSectionsInStringBuilder(stringbuilder);
+		return stringbuilder.toString();
 	}
 
 	/**
@@ -129,64 +170,23 @@ public class CrashReport
 	}
 
 	/**
-	 * Gets the complete report with headers, stack trace, and different sections as a string.
+	 * Gets the various sections of the crash report into the given StringBuilder
 	 */
-	public String getCompleteReport()
+	public void getSectionsInStringBuilder(StringBuilder stringBuilder)
 	{
-		StringBuilder stringbuilder = new StringBuilder();
-		stringbuilder.append("---- SourceBot Crash Report ----\n");
-		stringbuilder.append("\n\n");
-		stringbuilder.append("Time: ");
-		stringbuilder.append((new SimpleDateFormat()).format(new Date()));
-		stringbuilder.append("\n");
-		stringbuilder.append("Description: ");
-		stringbuilder.append(this.description);
-		stringbuilder.append("\n\n");
-		stringbuilder.append(this.getCauseStackTraceOrString());
-		stringbuilder.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
-
-		for (int i = 0; i < 87; ++i)
+		if (this.stacktrace != null && this.stacktrace.length > 0)
 		{
-			stringbuilder.append("-");
-		}
+			stringBuilder.append("-- Head --\n");
+			stringBuilder.append("Stacktrace:\n");
+			StackTraceElement[] astacktraceelement = this.stacktrace;
 
-		stringbuilder.append("\n\n");
-		this.getSectionsInStringBuilder(stringbuilder);
-		return stringbuilder.toString();
-	}
-
-	public File getFile()
-	{
-		return this.crashReportFile;
-	}
-
-	public boolean saveToFile(File p_147149_1_)
-	{
-		if (this.crashReportFile != null)
-		{
-			return false;
-		}
-		else
-		{
-			if (p_147149_1_.getParentFile() != null)
+			for (StackTraceElement stacktraceelement : astacktraceelement)
 			{
-				//noinspection ResultOfMethodCallIgnored
-				p_147149_1_.getParentFile().mkdirs();
+				stringBuilder.append("\t").append("at ").append(stacktraceelement.toString());
+				stringBuilder.append("\n");
 			}
 
-			try
-			{
-				FileWriter filewriter = new FileWriter(p_147149_1_);
-				filewriter.write(this.getCompleteReport());
-				filewriter.close();
-				this.crashReportFile = p_147149_1_;
-				return true;
-			}
-			catch (Throwable throwable)
-			{
-				LogHelper.getLogger().log(Level.SEVERE, "Could not save crash report to " + p_147149_1_, throwable);
-				return false;
-			}
+			stringBuilder.append("\n");
 		}
 	}
 }

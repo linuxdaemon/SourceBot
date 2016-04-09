@@ -12,31 +12,23 @@ user, either through the drafts or queue.
 
 #### Requirements
 * [Java 7+](#setup-java)
-* [MySQL Database](#setup-database)
+* [PostgreSQL Database](#setup-database)
 * [Tumblr API Authentication](#tumblr-authentication)
 
 ### Setup Database
 The Bot requires a MySQL database for configuration and caching purposes
 
-#### MySQL Installation
-[Windows](https://dev.mysql.com/doc/refman/5.7/en/windows-installation.html)
+#### Installation
+This project uses version 9.4 of the PostgreSQL server
 
-[Linux](https://dev.mysql.com/doc/refman/5.7/en/linux-installation.html)
+[PostgreSQL Download](http://www.postgresql.org/download/)
 
 #### Creating the Database
-Ok, so now that you have MySQL installed, we need to create a database 
+Ok, so now that you have PostgreSQL installed, we need to create a database 
 for the bot to use
 
-1. First we need to sign in to the database console
-    * Windows
-        * `cd <mysql install directory>` at the Command Prompt
-        * `mysql -u root -p <mysql root password>`
-        
-    * Linux
-        * `mysql -u root -p <mysql root password>` in the Terminal
-        
-2. Then we need to create the database with the command `CREATE DATABASE <database name>;` ex: `CREATE DATABASE sourcebot;`
-3. Now you can type `\q` to quit the MySQL console
+For most installation, I would recommend using [PgAdmin](http://www.pgadmin.org/index.php) for configuring the database
+
 
 And now you have the initial database set up
 

@@ -160,12 +160,8 @@ public class Install
 	public static void checkDbTables(Connection conn) throws SQLException
 	{
 		logger.info("Checking Existence of Required Tables...");
-		PreparedStatement admCreate = conn.prepareStatement("CREATE TABLE IF NOT EXISTS admins (" +
-				"user_id INTEGER PRIMARY KEY NOT NULL" +
-				")");
 		PreparedStatement blogsCreate = conn.prepareStatement("CREATE TABLE IF NOT EXISTS blogs (" +
 				"id SERIAL PRIMARY KEY NOT NULL," +
-				"user_id INTEGER NOT NULL," +
 				"url TEXT NOT NULL," +
 				"blog_check_active BOOLEAN NOT NULL DEFAULT TRUE," +
 				"sample_size INTEGER NOT NULL DEFAULT 1000," +
@@ -176,8 +172,7 @@ public class Install
 				"post_comment TEXT," +
 				"post_tags TEXT[]," +
 				"preserve_tags BOOLEAN NOT NULL DEFAULT FALSE," +
-				"active BOOLEAN NOT NULL DEFAULT FALSE," +
-				"adm_active BOOLEAN NOT NULL DEFAULT TRUE" +
+				"active BOOLEAN NOT NULL DEFAULT FALSE" +
 				");");
 
 		PreparedStatement searchExcCreate = conn.prepareStatement("CREATE TABLE IF NOT EXISTS search_exclusions (" +
@@ -221,22 +216,6 @@ public class Install
 				"rb_id BIGINT NOT NULL" +
 				");");
 
-		PreparedStatement usersCreate = conn.prepareStatement("CREATE TABLE IF NOT EXISTS users (" +
-				"id SERIAL NOT NULL," +
-				"name TEXT NOT NULL," +
-				"email TEXT NOT NULL," +
-				"is_email_verified BOOLEAN NOT NULL DEFAULT FALSE," +
-				"blog_allot INTEGER NOT NULL DEFAULT 0," +
-				"has_blog_limit BOOLEAN NOT NULL DEFAULT TRUE," +
-				"last_invoice DATE NOT NULL DEFAULT now()," +
-				"last_payment DATE NOT NULL DEFAULT now()," +
-				"requires_payment BOOLEAN NOT NULL DEFAULT TRUE" +
-				");");
-
-		logger.info("Creating admins table if it doesn't exist...");
-		admCreate.execute();
-		logger.info("Done.");
-
 		logger.info("Creating blogs table if it doesn't exist...");
 		blogsCreate.execute();
 		logger.info("Done.");
@@ -255,10 +234,6 @@ public class Install
 
 		logger.info("Creating seen_posts table if it doesn't exist...");
 		postsCreate.execute();
-		logger.info("Done.");
-
-		logger.info("Creating users table if it doesn't exist...");
-		usersCreate.execute();
 		logger.info("Done.");
 	}
 

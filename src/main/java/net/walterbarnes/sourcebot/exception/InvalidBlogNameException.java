@@ -23,12 +23,12 @@ public class InvalidBlogNameException extends RuntimeException
 {
 	private final String blogName;
 
-	public InvalidBlogNameException (String blogName)
+	public InvalidBlogNameException(String blogName)
 	{
 		this.blogName = blogName;
 	}
 
-	public String getBlogName ()
+	public String getBlogName()
 	{
 		return blogName;
 	}
