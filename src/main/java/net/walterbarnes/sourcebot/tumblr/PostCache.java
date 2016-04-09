@@ -27,8 +27,8 @@ import java.util.Map;
 
 public class PostCache implements Iterable
 {
-	private Map<Post, Long> posts = new LinkedHashMap<>();
-	private long cacheLife;
+	private final Map<Post, Long> posts = new LinkedHashMap<>();
+	private final long cacheLife;
 
 	public PostCache(long cacheLife)
 	{

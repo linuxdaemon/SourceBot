@@ -38,11 +38,11 @@ public class LogHelper
 	private static FileHandler fileTxt;
 	private static SimpleFormatter formatterTxt;
 
-	public static void init(Class c)
+	public static void init()
 	{
 		try
 		{
-			logger = Logger.getLogger(c.getName());
+			logger = Logger.getLogger("net.walterbarnes.sourcebot");
 			File dir = new File(logsDir);
 			if (!(dir.exists() && dir.isDirectory()))
 			{

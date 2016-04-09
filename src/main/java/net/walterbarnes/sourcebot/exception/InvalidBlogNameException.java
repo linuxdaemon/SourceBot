@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.exception;
 
-@SuppressWarnings ("unused")
+@SuppressWarnings ("WeakerAccess")
 public class InvalidBlogNameException extends RuntimeException
 {
 	private final String blogName;
@@ -31,5 +31,11 @@ public class InvalidBlogNameException extends RuntimeException
 	public String getBlogName()
 	{
 		return blogName;
+	}
+
+	@Override
+	public String getMessage()
+	{
+		return this.blogName + " is not registered to this account";
 	}
 }

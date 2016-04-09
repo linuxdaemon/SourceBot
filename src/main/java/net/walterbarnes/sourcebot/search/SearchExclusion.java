@@ -20,10 +20,10 @@ package net.walterbarnes.sourcebot.search;
 
 public class SearchExclusion implements ISearch
 {
-	private int id;
-	private SearchType type;
-	private String term;
-	private boolean active;
+	private final int id;
+	private final SearchType type;
+	private final String term;
+	private final boolean active;
 
 	public SearchExclusion(int id, String type, String term, boolean active)
 	{

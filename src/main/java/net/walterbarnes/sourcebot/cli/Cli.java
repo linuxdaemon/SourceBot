@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-@SuppressWarnings ("WeakerAccess")
+@SuppressWarnings ({"WeakerAccess", "ClassWithoutLogger", "PublicMethodWithoutLogging", "SameParameterValue"})
 public class Cli
 {
-	private static Console console = System.console();
+	private static final Console console = System.console();
 
 	public static String prompt(String title, Pattern valid, String def)
 	{

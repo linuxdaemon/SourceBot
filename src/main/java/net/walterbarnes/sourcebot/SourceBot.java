@@ -22,7 +22,6 @@ import com.google.gson.JsonObject;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
-import net.walterbarnes.sourcebot.reference.Constants;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 import org.scribe.exceptions.OAuthConnectionException;
@@ -36,50 +35,55 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SourceBot
 {
 	static final String confName = "SourceBot.json";
+	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
 	static File confDir = new File(System.getProperty("user.home"), ".sourcebot");
-	private static String[] args;
 	private static Config conf;
 
 	public static void main(String[] args)
 	{
-		SourceBot.args = args;
-		CrashReport crashreport;
 		try
 		{
 			if (args.length > 0)
 			{
 				confDir = new File(args[0]);
 			}
-			LogHelper.init(SourceBot.class);
+
+			LogHelper.init();
 
 			if (!confDir.exists())
-			{ confDir.mkdirs(); }
+			{
+				if (!confDir.mkdirs())
+				{
+					throw new RuntimeException("Unable to create config dir");
+				}
+			}
+
 			File jsonFile = new File(confDir, confName);
-			Constants.LOGGER.info(jsonFile.getAbsolutePath());
 
 			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
 			{
 				Install.install();
 				System.exit(0);
 			}
+
 			conf = new Config(confDir.getAbsolutePath(), confName);
-			Class.forName("org.postgresql.Driver").newInstance();
 			run();
 		}
 		catch (Throwable throwable)
 		{
-			crashreport = new CrashReport("Unexpected error", throwable);
-			displayCrashReport(crashreport);
+			displayCrashReport(new CrashReport("Unexpected error", throwable));
 		}
 	}
 
-	private static void run() throws InvalidBlogNameException, SQLException, IOException,
-			InstantiationException, IllegalAccessException
+	private static void run() throws InvalidBlogNameException, SQLException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException
 	{
+		Driver driver = (Driver) Class.forName("org.postgresql.Driver").newInstance();
+
 		Config apiCat = conf.getCategory("api", new JsonObject());
 		Config consumerCat = apiCat.getCategory("consumer", new JsonObject());
 		Config tokenCat = apiCat.getCategory("token", new JsonObject());
@@ -129,17 +133,17 @@ public class SourceBot
 					if (active && adm_active)
 					{
 						if (!threads.containsKey(url)) threads.put(url, new BotThread(client, url, conn));
-						Constants.LOGGER.info("Running Thread for " + url);
+						logger.info("Running Thread for " + url);
 						long start = System.currentTimeMillis();
 						threads.get(url).run();
-						Constants.LOGGER.info("Took " + (System.currentTimeMillis() - start) + " ms");
+						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
 					}
 				}
 				Thread.sleep(5000);
 			}
 			catch (OAuthConnectionException | InterruptedException e)
 			{
-				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
+				logger.log(Level.SEVERE, e.getMessage(), e);
 			}
 		}
 	}

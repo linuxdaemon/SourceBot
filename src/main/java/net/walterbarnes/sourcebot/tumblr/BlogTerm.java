@@ -21,7 +21,6 @@ package net.walterbarnes.sourcebot.tumblr;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.BotThread;
-import net.walterbarnes.sourcebot.reference.Constants;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
 
 import java.sql.SQLException;
@@ -30,13 +29,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BlogTerm implements SearchTerm
 {
+	private static final Logger logger = Logger.getLogger(BlogTerm.class.getName());
+
 	private final String term;
 	private final Tumblr client;
-	private BotThread.Blog blog;
-	private PostCache cache = new PostCache(120 * 60 * 1000);
+	private final BotThread.Blog blog;
+	private final PostCache cache = new PostCache(120 * 60 * 1000);
 	private int lastPostCount = 0;
 
 	public BlogTerm(String term, Tumblr client, BotThread.Blog blog)
@@ -89,7 +91,7 @@ public class BlogTerm implements SearchTerm
 			}
 		}
 
-		Constants.LOGGER.info("Searching blog " + term);
+		logger.info("Searching blog " + term);
 		while (out.size() < postNum)
 		{
 			HashMap<String, Object> options = new HashMap<>();
@@ -103,7 +105,7 @@ public class BlogTerm implements SearchTerm
 			}
 			catch (JumblrException e)
 			{
-				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
+				logger.log(Level.SEVERE, e.getMessage(), e);
 				continue;
 			}
 
@@ -139,7 +141,7 @@ public class BlogTerm implements SearchTerm
 		}
 		long end = System.currentTimeMillis() - start;
 
-		Constants.LOGGER.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", term,
+		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", term,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
 		blog.addStat("blog", term, (int) end, searched, out.size());

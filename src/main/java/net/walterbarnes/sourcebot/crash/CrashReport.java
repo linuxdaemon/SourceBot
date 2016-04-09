@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 
-@SuppressWarnings ("WeakerAccess")
+@SuppressWarnings ({"WeakerAccess", "SameParameterValue"})
 public class CrashReport
 {
 	/**
@@ -36,11 +36,11 @@ public class CrashReport
 	 * The Throwable that is the "cause" for this crash and Crash Report.
 	 */
 	private final Throwable cause;
+	private final StackTraceElement[] stacktrace = new StackTraceElement[0];
 	/**
 	 * File of crash report.
 	 */
 	private File crashReportFile;
-	private StackTraceElement[] stacktrace = new StackTraceElement[0];
 
 	public CrashReport(String description, Throwable cause)
 	{
@@ -174,7 +174,7 @@ public class CrashReport
 	 */
 	public void getSectionsInStringBuilder(StringBuilder stringBuilder)
 	{
-		if (this.stacktrace != null && this.stacktrace.length > 0)
+		if (this.stacktrace.length > 0)
 		{
 			stringBuilder.append("-- Head --\n");
 			stringBuilder.append("Stacktrace:\n");

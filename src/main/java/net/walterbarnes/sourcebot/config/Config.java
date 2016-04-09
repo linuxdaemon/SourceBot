@@ -30,26 +30,25 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Logger;
 
+@SuppressWarnings ("SameParameterValue")
 public class Config
 {
 	private final JsonParser parser = new JsonParser();
-	private File configDir;
-	private String configPath = null;
-	private String fileName = null;
 	private File file = null;
 	private Config parent = null;
 	private JsonObject json;
 
 	public Config(String configPath, String fileName) throws IOException
 	{
-		this.configPath = configPath;
-		this.configDir = new File(this.configPath);
-		if (!this.configDir.exists())
+		File configDir = new File(configPath);
+		if (!configDir.exists())
 		{
-			this.configDir.mkdirs();
+			if (!configDir.mkdirs())
+			{
+				throw new RuntimeException("Unable to create config dir '" + configDir.getAbsolutePath() + "'");
+			}
 		}
-		this.fileName = fileName;
-		this.file = new File(this.configDir, this.fileName);
+		this.file = new File(configDir, fileName);
 		try
 		{
 			load();
@@ -60,7 +59,10 @@ public class Config
 					new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".errored");
 			Logger logger = Logger.getLogger(SourceBot.class.getName());
 			logger.warning("Encountered an error while loading configuration, generating new config");
-			file.renameTo(fileBak);
+			if (!file.renameTo(fileBak))
+			{
+				throw new RuntimeException("Unable to back up config file");
+			}
 			load();
 		}
 	}
@@ -92,13 +94,13 @@ public class Config
 		json = parser.parse(fr).getAsJsonObject();
 	}
 
-	public Config(JsonObject json, Config parent)
+	private Config(JsonObject json, Config parent)
 	{
 		this.json = json;
 		this.parent = parent;
 	}
 
-	public Config getCategory(String key, JsonObject def) throws IOException
+	public Config getCategory(String key, JsonObject def)
 	{
 		if (!json.has(key))
 		{
@@ -107,7 +109,7 @@ public class Config
 		return new Config(json.getAsJsonObject(key), this);
 	}
 
-	public String getString(String key, String def) throws IOException
+	public String getString(String key, String def)
 	{
 		if (!json.has(key))
 		{

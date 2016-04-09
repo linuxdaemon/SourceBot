@@ -18,39 +18,25 @@
 
 package net.walterbarnes.sourcebot.tumblr;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParser;
 import com.tumblr.jumblr.JumblrClient;
-import com.tumblr.jumblr.responses.PostDeserializer;
 import com.tumblr.jumblr.types.AnswerPost;
 import com.tumblr.jumblr.types.Post;
-import org.scribe.builder.ServiceBuilder;
-import org.scribe.builder.api.TumblrApi;
-import org.scribe.model.OAuthRequest;
-import org.scribe.model.Response;
-import org.scribe.model.Token;
-import org.scribe.oauth.OAuthService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @SuppressWarnings ({"WeakerAccess", "unused"})
 public class Tumblr extends JumblrClient
 {
-	private final String consumerKey;
-	private final String consumerSecret;
-	private final Token token;
+	public static final Logger logger = Logger.getLogger(Tumblr.class.getName());
 
 	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret)
 	{
 		super(consumerKey, consumerSecret);
 		setToken(token, tokenSecret);
-		this.consumerKey = consumerKey;
-		this.consumerSecret = consumerSecret;
-		this.token = new Token(token, tokenSecret);
 	}
 
 	public List<AnswerPost> getAsks(String blogName)
@@ -142,34 +128,5 @@ public class Tumblr extends JumblrClient
 		Map<String, Object> params = new HashMap<>();
 		params.put("offset", before);
 		return blogPosts(blogName, params);
-	}
-
-	@SuppressWarnings ("Duplicates")
-	public List<String> getRawTaggedPosts(String tag)
-	{
-		OAuthService service = new ServiceBuilder().
-				provider(TumblrApi.class).
-				apiKey(consumerKey).apiSecret(consumerSecret).
-				build();
-		String path = "/tagged";
-		Map<String, Object> map = new HashMap<>();
-		map.put("api_key", consumerKey);
-		map.put("tag", tag);
-		OAuthRequest request = getRequestBuilder().constructGet(path, map);
-		if (token != null)
-		{
-			service.signRequest(token, request);
-		}
-		Gson gsonBuilder = new Gson();
-		//Gson gsonBuilder = new GsonBuilder().setPrettyPrinting().create();
-		JsonParser parser = new JsonParser();
-		Response response = request.send();
-
-		System.out.println(gsonBuilder.toJson(parser.parse(response.getBody())
-				.getAsJsonObject().get("response").getAsJsonObject().getAsJsonArray("posts").get(0)));
-		Gson gson = new GsonBuilder().
-				registerTypeAdapter(Post.class, new PostDeserializer()).
-				create();
-		return null;
 	}
 }

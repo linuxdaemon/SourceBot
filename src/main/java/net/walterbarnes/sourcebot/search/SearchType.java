@@ -23,7 +23,7 @@ public enum SearchType
 	TAG("tag"),
 	BLOG("blog");
 
-	private String name;
+	private final String name;
 
 	SearchType(String name)
 	{
@@ -40,7 +40,7 @@ public enum SearchType
 		return null;
 	}
 
-	public String getName()
+	private String getName()
 	{
 		return name;
 	}

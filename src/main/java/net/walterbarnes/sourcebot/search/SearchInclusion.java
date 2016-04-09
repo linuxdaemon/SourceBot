@@ -20,14 +20,14 @@ package net.walterbarnes.sourcebot.search;
 
 public class SearchInclusion implements ISearch
 {
-	private int id;
-	private SearchType type;
-	private String term;
-	private String[] requiredTags;
-	private String[] postType;
-	private String postSelect;
-	private int sampleSize;
-	private boolean active;
+	private final int id;
+	private final SearchType type;
+	private final String term;
+	private final String[] requiredTags;
+	private final String[] postType;
+	private final String postSelect;
+	private final int sampleSize;
+	private final boolean active;
 
 	public SearchInclusion(int id, String type, String term, String[] requiredTags, String[] postType, String postSelect,
 						   int sampleSize, boolean active)

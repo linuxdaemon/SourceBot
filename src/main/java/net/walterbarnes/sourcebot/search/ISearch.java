@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.search;
 
-public interface ISearch
+interface ISearch
 {
 	String getAction();
 
