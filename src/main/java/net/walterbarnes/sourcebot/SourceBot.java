@@ -94,6 +94,10 @@ public class SourceBot
 			{
 				t.interrupt();
 			}
+			if (currentThread != null)
+			{
+				currentThread.interrupt();
+			}
 			if (conn != null)
 			{
 				try
