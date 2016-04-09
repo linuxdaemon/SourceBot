@@ -20,20 +20,54 @@ package net.walterbarnes.sourcebot.thread;
 
 import net.walterbarnes.sourcebot.SourceBot;
 
-import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.logging.Logger;
 
 public class InputThread implements Runnable
 {
-	public static final Logger logger = Logger.getLogger(InputThread.class.getName());
+	private static final Logger logger = Logger.getLogger(InputThread.class.getName());
 
 	@Override
 	public void run()
 	{
-		Scanner scanner = new Scanner(System.in);
-		while (!scanner.nextLine().equals("stop")) ;
+		//Scanner scanner = new Scanner(System.in);
+
+		//noinspection StatementWithEmptyBody
+		//while (!scanner.nextLine().equals("stop"))
+		//{
+		//	if (Thread.currentThread().isInterrupted()) break;
+		//}
+
+		BufferedReader br = new BufferedReader(
+				new InputStreamReader(System.in));
+		String input = "";
+		do
+		{
+			System.out.println("> ");
+			try
+			{
+				while (!br.ready())
+				{
+					Thread.sleep(200);
+				}
+				input = br.readLine();
+			}
+			catch (InterruptedException ignored)
+			{
+				Thread.currentThread().interrupt();
+				break;
+			}
+			catch (IOException ignored) {}
+		}
+		while (!"stop".equals(input));
+
 		logger.info("Shutting down....");
 		SourceBot.running = false;
-		SourceBot.currentThread.interrupt();
+		if (SourceBot.currentThread != null)
+		{
+			SourceBot.currentThread.interrupt();
+		}
 	}
 }

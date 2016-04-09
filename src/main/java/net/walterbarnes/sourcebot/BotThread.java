@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 @SuppressWarnings ("SameParameterValue")
 public class BotThread implements Runnable
 {
-	private static final Logger logger = Logger.getLogger(BotThread.class.getName());
+	private static Logger logger;
 
 	private final Tumblr client;
 	private final Blog blog;
@@ -52,6 +52,7 @@ public class BotThread implements Runnable
 	BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
 		this.url = url;
+		logger = Logger.getLogger(BotThread.class.getName() + " " + url);
 		this.client = client;
 		this.conn = conn;
 		this.blog = new Blog(url);

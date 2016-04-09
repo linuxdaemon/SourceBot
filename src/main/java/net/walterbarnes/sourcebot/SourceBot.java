@@ -127,7 +127,7 @@ public class SourceBot
 
 		long queryTime = System.currentTimeMillis();
 
-		Map<String, Thread> threads = new HashMap<>();
+		Map<String, BotThread> threads = new HashMap<>();
 
 		while (running)
 		{
@@ -150,11 +150,11 @@ public class SourceBot
 						if (!threads.containsKey(url))
 						{
 							BotThread bt = new BotThread(client, url, conn);
-							threads.put(url, new Thread(bt));
+							threads.put(url, bt);
 						}
 						logger.info("Running Thread for " + url);
 						long start = System.currentTimeMillis();
-						currentThread = threads.get(url);
+						currentThread = new Thread(threads.get(url));
 						currentThread.start();
 						currentThread.join();
 						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
@@ -174,7 +174,6 @@ public class SourceBot
 
 	/**
 	 * Displays a crash report and saves it to a file
-	 *
 	 * @param crashReport Report to display
 	 */
 	private static void displayCrashReport(CrashReport crashReport)
