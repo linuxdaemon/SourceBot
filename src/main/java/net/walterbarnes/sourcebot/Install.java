@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import net.walterbarnes.sourcebot.cli.Cli;
 import net.walterbarnes.sourcebot.config.Config;
+import net.walterbarnes.sourcebot.reference.Constants;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
 import java.io.IOException;
@@ -30,13 +31,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class Install
 {
-	private static Logger logger = Logger.getLogger(SourceBot.class.getName());
-
 	public static boolean install() throws IOException
 	{
 		Config conf = new Config(SourceBot.confDir.getAbsolutePath(), SourceBot.confName);
@@ -74,21 +72,21 @@ public class Install
 					tokenSecret = Cli.prompt("[Tumblr API] Token Secret: ", Pattern.compile("[0-9A-Za-z]+"));
 					tokenCat.setString("secret", tokenSecret);
 				}
-				Tumblr tumblr = new Tumblr(consumerKey, consumerSecret, token, tokenSecret, logger);
+				Tumblr tumblr = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
 				tumblr.user().getBlogs();
 				validOauth = true;
 			}
 			catch (JumblrException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				logger.warning("!!Invalid API Authentication!!");
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.warning("!!Invalid API Authentication!!");
 				failCount++;
 			}
-			if (!validOauth)
-			{ throw new RuntimeException("Unable to Install SourceBot, too many failed attempts"); }
-			installDb(conf);
-			conf.save();
 		}
+		if (!validOauth)
+		{ throw new RuntimeException("Unable to Install SourceBot, too many failed attempts"); }
+		installDb(conf);
+		conf.save();
 		return true;
 	}
 
@@ -112,46 +110,46 @@ public class Install
 		}
 		catch (IllegalAccessException e)
 		{
-			logger.severe("Unable to Access MySQL Driver Classes, Exiting...");
+			Constants.LOGGER.severe("Unable to Access MySQL Driver Classes, Exiting...");
 			System.exit(1);
 		}
 		catch (InstantiationException e)
 		{
-			logger.severe("Unable to Instantiate MySQL Driver, Exiting...");
+			Constants.LOGGER.severe("Unable to Instantiate MySQL Driver, Exiting...");
 			System.exit(1);
 		}
 		catch (ClassNotFoundException e)
 		{
-			logger.severe("Unable to load MySQL Driver, Exiting...");
+			Constants.LOGGER.severe("Unable to load MySQL Driver, Exiting...");
 			System.exit(1);
 		}
-		logger.info("Connecting to Database Server...");
+		Constants.LOGGER.info("Connecting to Database Server...");
 		Connection conn;
 		try
 		{
 			conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s", dbHost, dbPort), dbUser, dbPass);
-			logger.info("Connected to Server.");
+			Constants.LOGGER.info("Connected to Server.");
 
-			logger.info("Creating Database if it doesn't exist...");
+			Constants.LOGGER.info("Creating Database if it doesn't exist...");
 			PreparedStatement createDb = conn.prepareStatement(String.format("CREATE DATABASE IF NOT EXISTS %s;", dbName));
 			createDb.execute();
-			logger.info("Done.");
+			Constants.LOGGER.info("Done.");
 
-			logger.info("Disconnecting From Server...");
+			Constants.LOGGER.info("Disconnecting From Server...");
 			conn.close();
-			logger.info("Disconnected.");
+			Constants.LOGGER.info("Disconnected.");
 
-			logger.info("Reconnecting to Server with New Database...");
+			Constants.LOGGER.info("Reconnecting to Server with New Database...");
 			conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName), dbUser, dbPass);
-			logger.info("Connected.");
+			Constants.LOGGER.info("Connected.");
 			checkDbTables(conn);
-			logger.info("Disconnecting from Database Server...");
+			Constants.LOGGER.info("Disconnecting from Database Server...");
 			conn.close();
-			logger.info("Disconnected.");
+			Constants.LOGGER.info("Disconnected.");
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 			System.exit(1);
 		}
 		return true;
@@ -159,7 +157,7 @@ public class Install
 
 	public static void checkDbTables(Connection conn) throws SQLException
 	{
-		logger.info("Checking Existence of Required Tables...");
+		Constants.LOGGER.info("Checking Existence of Required Tables...");
 		PreparedStatement blogsCreate = conn.prepareStatement("CREATE TABLE IF NOT EXISTS blogs (" +
 				"id SERIAL PRIMARY KEY NOT NULL," +
 				"url TEXT NOT NULL," +
@@ -216,25 +214,25 @@ public class Install
 				"rb_id BIGINT NOT NULL" +
 				");");
 
-		logger.info("Creating blogs table if it doesn't exist...");
+		Constants.LOGGER.info("Creating blogs table if it doesn't exist...");
 		blogsCreate.execute();
-		logger.info("Done.");
+		Constants.LOGGER.info("Done.");
 
-		logger.info("Creating search_exclusions table if it doesn't exist...");
+		Constants.LOGGER.info("Creating search_exclusions table if it doesn't exist...");
 		searchExcCreate.execute();
-		logger.info("Done.");
+		Constants.LOGGER.info("Done.");
 
-		logger.info("Creating search_inclusions table if it doesn't exist...");
+		Constants.LOGGER.info("Creating search_inclusions table if it doesn't exist...");
 		searchIncCreate.execute();
-		logger.info("Done.");
+		Constants.LOGGER.info("Done.");
 
-		logger.info("Creating search_stats table if it doesn't exist...");
+		Constants.LOGGER.info("Creating search_stats table if it doesn't exist...");
 		searchStatsCreate.execute();
-		logger.info("Done.");
+		Constants.LOGGER.info("Done.");
 
-		logger.info("Creating seen_posts table if it doesn't exist...");
+		Constants.LOGGER.info("Creating seen_posts table if it doesn't exist...");
 		postsCreate.execute();
-		logger.info("Done.");
+		Constants.LOGGER.info("Done.");
 	}
 
 }

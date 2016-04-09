@@ -21,6 +21,7 @@ package net.walterbarnes.sourcebot;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.reference.Constants;
 import net.walterbarnes.sourcebot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.tumblr.BlogTerm;
@@ -36,11 +37,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class BotThread implements Runnable
 {
-	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private final Tumblr client;
 	private final Blog blog;
 	private final Connection conn;
@@ -65,9 +64,9 @@ public class BotThread implements Runnable
 			{
 				if (blog.getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
 				{
-					logger.warning("Bot is not admin on '" + url + "', not running thread");
+					Constants.LOGGER.warning("Bot is not admin on '" + url + "', not running thread");
 				}
-				logger.info("Adding posts to queue");
+				Constants.LOGGER.info("Adding posts to queue");
 
 				Map<Post, String> postMap = new HashMap<>();
 
@@ -97,7 +96,7 @@ public class BotThread implements Runnable
 
 				for (SearchInclusion inclusion : inclusions)
 				{
-					SearchTerm t = null;
+					SearchTerm t;
 					if (inclusion.isActive())
 					{
 						t = null;
@@ -105,31 +104,28 @@ public class BotThread implements Runnable
 						{
 							case TAG:
 								String tag = inclusion.getTerm();
-								logger.info("Getting posts from tag: " + tag);
+								Constants.LOGGER.info("Getting posts from tag: " + tag);
 								if (!terms.containsKey("tag:" + tag))
 								{
-									terms.put("tag:" + tag, new TagTerm(tag, client, blog, logger));
+									terms.put("tag:" + tag, new TagTerm(tag, client, blog));
 								}
 								t = terms.get("tag:" + tag);
 								break;
 
 							case BLOG:
 								String b = inclusion.getTerm();
-								logger.info("Getting posts from blog: " + b);
+								Constants.LOGGER.info("Getting posts from blog: " + b);
 								if (!terms.containsKey("blog:" + b))
 								{
-									terms.put("blog:" + b, new BlogTerm(b, client, blog, logger));
+									terms.put("blog:" + b, new BlogTerm(b, client, blog));
 								}
 								t = terms.get("blog:" + b);
 								break;
 						}
-						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion.getRequiredTags(),
-								inclusion.getPostType(), inclusion.getPostSelect(), inclusion.getSampleSize(),
-								inclusion.isActive());
+						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion);
 						postMap.putAll(p);
 						posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() == null ? blog.getPostSelect() : inclusion.getPostSelect(), 50));
 					}
-
 				}
 
 				boolean hasPosted = false;
@@ -139,20 +135,20 @@ public class BotThread implements Runnable
 					loop:
 					while (!hasPosted)
 					{
-						logger.info("Selecting post");
+						Constants.LOGGER.info("Selecting post");
 						List<Post> p = randomElement(posts, 1, true);
 
 						for (Post post : p)
 						{
 							if (blog.getPosts().contains(post.getId()))
 							{
-								logger.info("Post already used, getting new post");
+								Constants.LOGGER.info("Post already used, getting new post");
 								hasPosted = false;
 								continue;
 							}
 							if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5)
 							{
-								logger.info("Post may be spam, getting new post");
+								Constants.LOGGER.info("Post may be spam, getting new post");
 								continue;
 							}
 
@@ -171,7 +167,7 @@ public class BotThread implements Runnable
 							if (blog.getPreserveTags()) for (String s : post.getTags()) rbTags.add(s);
 
 							params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
-							logger.info("Attempting to reblog post...");
+							Constants.LOGGER.info("Attempting to reblog post...");
 							Post rb = null;
 							boolean rbd = false;
 							int failCount = 0;
@@ -187,7 +183,7 @@ public class BotThread implements Runnable
 									}
 									else
 									{
-										logger.warning("Posting failed.");
+										Constants.LOGGER.warning("Posting failed.");
 										failCount++;
 									}
 								}
@@ -197,7 +193,7 @@ public class BotThread implements Runnable
 									rbd = false;
 									hasPosted = false;
 									failCount++;
-									logger.log(Level.SEVERE, e.getMessage(), e);
+									Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 									Thread.sleep(1000);
 								}
 							}
@@ -209,7 +205,7 @@ public class BotThread implements Runnable
 				}
 			}
 		}
-		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
+		catch (Exception e) { Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e); }
 	}
 
 	private List<Post> selectPosts(Collection<Post> posts, String method, int n)
@@ -338,13 +334,11 @@ public class BotThread implements Runnable
 
 		private PreparedStatement getPosts;
 
-		//TODO search term specific configs
 		Blog(String url) throws SQLException
 		{
 			getBId = conn.prepareStatement("SELECT id FROM blogs WHERE url = ?");
 			getBId.setString(1, url);
 			ResultSet rs = getBId.executeQuery();
-			//rs.first();
 			rs.next();
 			id = rs.getInt("id");
 
@@ -412,7 +406,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -433,7 +427,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return false;
 			}
 			return false;
@@ -454,7 +448,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return false;
 			}
 			return false;
@@ -475,7 +469,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -496,7 +490,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -517,7 +511,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -540,7 +534,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return null;
 			}
 			return null;
@@ -561,7 +555,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return 0;
 			}
 			return 0;
@@ -582,7 +576,7 @@ public class BotThread implements Runnable
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 				return 0;
 			}
 			return 0;

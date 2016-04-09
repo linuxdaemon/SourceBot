@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
+import net.walterbarnes.sourcebot.reference.Constants;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 import org.scribe.exceptions.OAuthConnectionException;
@@ -35,13 +36,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SourceBot
 {
 	static final String confName = "SourceBot.json";
 	static File confDir = new File(System.getProperty("user.home"), ".sourcebot");
-	private static Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private static String[] args;
 	private static Config conf;
 
@@ -60,7 +59,7 @@ public class SourceBot
 			if (!confDir.exists())
 			{ confDir.mkdirs(); }
 			File jsonFile = new File(confDir, confName);
-			logger.info(jsonFile.getAbsolutePath());
+			Constants.LOGGER.info(jsonFile.getAbsolutePath());
 
 			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
 			{
@@ -91,7 +90,7 @@ public class SourceBot
 		String token = tokenCat.getString("key", "");
 		String tokenSecret = tokenCat.getString("secret", "");
 
-		Tumblr client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret, logger);
+		Tumblr client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
 
 		String dbHost = dbCat.getString("host", "localhost");
 		String dbPort = dbCat.getString("port", "5432");
@@ -130,17 +129,17 @@ public class SourceBot
 					if (active && adm_active)
 					{
 						if (!threads.containsKey(url)) threads.put(url, new BotThread(client, url, conn));
-						logger.info("Running Thread for " + url);
+						Constants.LOGGER.info("Running Thread for " + url);
 						long start = System.currentTimeMillis();
 						threads.get(url).run();
-						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
+						Constants.LOGGER.info("Took " + (System.currentTimeMillis() - start) + " ms");
 					}
 				}
 				Thread.sleep(5000);
 			}
 			catch (OAuthConnectionException | InterruptedException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				Constants.LOGGER.log(Level.SEVERE, e.getMessage(), e);
 			}
 		}
 	}

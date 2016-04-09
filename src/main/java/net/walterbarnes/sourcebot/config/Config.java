@@ -45,7 +45,9 @@ public class Config
 		this.configPath = configPath;
 		this.configDir = new File(this.configPath);
 		if (!this.configDir.exists())
-		{ this.configDir.mkdirs(); }
+		{
+			this.configDir.mkdirs();
+		}
 		this.fileName = fileName;
 		this.file = new File(this.configDir, this.fileName);
 		try

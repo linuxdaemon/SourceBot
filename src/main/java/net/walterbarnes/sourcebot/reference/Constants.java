@@ -16,21 +16,13 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.tumblr;
+package net.walterbarnes.sourcebot.reference;
 
-import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.search.SearchInclusion;
+import net.walterbarnes.sourcebot.SourceBot;
 
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
+import java.util.logging.Logger;
 
-public interface SearchTerm
+public class Constants
 {
-	PostCache getCache();
-
-	String getSearchTerm();
-
-	@SuppressWarnings ("Duplicates")
-	Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, SearchInclusion rule) throws SQLException;
+	public static final Logger LOGGER = Logger.getLogger(SourceBot.class.getName());
 }

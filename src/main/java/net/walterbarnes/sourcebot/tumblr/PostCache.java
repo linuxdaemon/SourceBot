@@ -58,11 +58,11 @@ public class PostCache implements Iterable
 	public void validate()
 	{
 		ArrayList<Post> set = new ArrayList<>(posts.keySet());
-		for (int i = 0; i < set.size(); i++)
+		for (Post key : set)
 		{
-			if (System.currentTimeMillis() - posts.get(set.get(i)) > cacheLife)
+			if (System.currentTimeMillis() - posts.get(key) > cacheLife)
 			{
-				posts.remove(set.get(i));
+				posts.remove(key);
 			}
 		}
 	}
