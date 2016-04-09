@@ -48,6 +48,7 @@ public class SourceBot
 	public static InputThread inputThread = new InputThread();
 	static File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 	private static Config conf;
+	private static Connection conn;
 
 	public static void main(String[] args)
 	{
@@ -93,6 +94,17 @@ public class SourceBot
 			{
 				t.interrupt();
 			}
+			if (conn != null)
+			{
+				try
+				{
+					conn.close();
+				}
+				catch (SQLException e)
+				{
+					logger.warning("Error occurred on closing connection to database");
+				}
+			}
 		}
 	}
 
@@ -119,7 +131,7 @@ public class SourceBot
 		String dbName = dbCat.getString("db_name", "sourcebot");
 		conf.save();
 
-		Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
+		conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
 		PreparedStatement getBlogs = conn.prepareStatement("SELECT url,active,adm_active FROM blogs ORDER BY id;",
 				ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
