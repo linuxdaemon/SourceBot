@@ -46,7 +46,9 @@ public class SourceBot
 	/**
 	 * Static link to current SourceBot instance
 	 */
-	private static SourceBot currentBot;
+	private static final SourceBot currentBot;
+
+	static {currentBot = new SourceBot();}
 
 	/**
 	 * Default config file name. In the future, this may be overridden via command line arguments
@@ -147,7 +149,9 @@ public class SourceBot
 	public CommandHandler getCommandHandler()
 	{
 		if (commandHandler == null)
-		{ commandHandler = new CommandHandler(); }
+		{
+			commandHandler = new CommandHandler();
+		}
 		return commandHandler;
 	}
 
@@ -275,8 +279,6 @@ public class SourceBot
 	 */
 	public static SourceBot getCurrentBot()
 	{
-		if (currentBot == null)
-		{ currentBot = new SourceBot(); }
 		return currentBot;
 	}
 }
