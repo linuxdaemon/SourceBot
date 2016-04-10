@@ -52,11 +52,11 @@ public class SourceBot
 
 	public static void main(String[] args)
 	{
-		Thread t = null;
 		try
 		{
 			LogHelper.init();
-			t = new Thread(inputThread);
+			Thread t = new Thread(inputThread, "Console Input Handler");
+			t.setDaemon(true);
 			t.start();
 
 			if (args.length > 0)
@@ -90,10 +90,6 @@ public class SourceBot
 		}
 		finally
 		{
-			if (t != null)
-			{
-				t.interrupt();
-			}
 			if (currentThread != null)
 			{
 				currentThread.interrupt();
@@ -126,70 +122,89 @@ public class SourceBot
 		String token = tokenCat.getString("key", "");
 		String tokenSecret = tokenCat.getString("secret", "");
 
-		Tumblr client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
+		final Tumblr client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
 
-		String dbHost = dbCat.getString("host", "localhost");
-		String dbPort = dbCat.getString("port", "5432");
-		String dbUser = dbCat.getString("user", "sourcebot");
-		String dbPass = dbCat.getString("pass", "password");
-		String dbName = dbCat.getString("db_name", "sourcebot");
+		String dbHost = dbCat.getString("host", "");
+		String dbPort = dbCat.getString("port", "");
+		String dbUser = dbCat.getString("user", "");
+		String dbPass = dbCat.getString("pass", "");
+		String dbName = dbCat.getString("db_name", "");
 		conf.save();
 
-		conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
+		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
-		PreparedStatement getBlogs = conn.prepareStatement("SELECT url,active,adm_active FROM blogs ORDER BY id;",
-				ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		ResultSet rs = getBlogs.executeQuery();
 
-		long queryTime = System.currentTimeMillis();
-
-		Map<String, BotThread> threads = new HashMap<>();
-
-		while (running)
+		Thread botThread = new Thread()
 		{
-			try
+			public void run()
 			{
-				if ((System.currentTimeMillis() - queryTime) > 60000)
+				try
 				{
-					rs = getBlogs.executeQuery();
-					queryTime = System.currentTimeMillis();
-				}
+					PreparedStatement getBlogs = conn.prepareStatement("SELECT url,active,adm_active FROM blogs ORDER BY id;",
+							ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-				rs.beforeFirst();
-				while (rs.next() && running)
-				{
-					String url = rs.getString("url");
-					boolean active = rs.getBoolean("active");
-					boolean adm_active = rs.getBoolean("adm_active");
-					if (active && adm_active)
+					ResultSet rs = getBlogs.executeQuery();
+
+					long queryTime = System.currentTimeMillis();
+
+					Map<String, SearchThread> threads = new HashMap<>();
+
+					while (running)
 					{
-						if (!threads.containsKey(url))
+						try
 						{
-							BotThread bt = new BotThread(client, url, conn);
-							threads.put(url, bt);
+							if ((System.currentTimeMillis() - queryTime) > 60000)
+							{
+								rs = getBlogs.executeQuery();
+								queryTime = System.currentTimeMillis();
+							}
+
+							rs.beforeFirst();
+							while (rs.next() && running)
+							{
+								String url = rs.getString("url");
+								boolean active = rs.getBoolean("active");
+								boolean adm_active = rs.getBoolean("adm_active");
+								if (active && adm_active)
+								{
+									if (!threads.containsKey(url))
+									{
+										SearchThread bt = new SearchThread(client, url, conn);
+										threads.put(url, bt);
+									}
+									logger.info("Running Thread for " + url);
+									long start = System.currentTimeMillis();
+									currentThread = new Thread(threads.get(url));
+									currentThread.start();
+									currentThread.join();
+									logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
+								}
+							}
+							Thread.sleep(1000);
 						}
-						logger.info("Running Thread for " + url);
-						long start = System.currentTimeMillis();
-						currentThread = new Thread(threads.get(url));
-						currentThread.start();
-						currentThread.join();
-						logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
+						catch (OAuthConnectionException e)
+						{
+							logger.log(Level.SEVERE, e.getMessage(), e);
+						}
+						catch (InterruptedException ignored)
+						{
+							Thread.currentThread().interrupt();
+						}
 					}
 				}
-				Thread.sleep(1000);
+				catch (SQLException e)
+				{
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
 			}
-			catch (OAuthConnectionException e)
-			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
-			}
-			catch (InterruptedException ignored)
-			{
-			}
-		}
+		};
+		//botThread.setDaemon(true);
+		botThread.start();
 	}
 
 	/**
 	 * Displays a crash report and saves it to a file
+	 *
 	 * @param crashReport Report to display
 	 */
 	private static void displayCrashReport(CrashReport crashReport)

@@ -32,20 +32,12 @@ public class InputThread implements Runnable
 	@Override
 	public void run()
 	{
-		//Scanner scanner = new Scanner(System.in);
-
-		//noinspection StatementWithEmptyBody
-		//while (!scanner.nextLine().equals("stop"))
-		//{
-		//	if (Thread.currentThread().isInterrupted()) break;
-		//}
-
 		BufferedReader br = new BufferedReader(
 				new InputStreamReader(System.in));
 		String input = "";
 		do
 		{
-			System.out.println("> ");
+			//System.out.println("> ");
 			try
 			{
 				while (!br.ready())

@@ -27,16 +27,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-@SuppressWarnings ("FieldCanBeLocal")
 public class LogHelper
 {
 	private static final String logFileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date()) +
 			"-SourceBot.log";
 	private static final String logsDir = "logs";
 	private static Logger logger;
-
-	private static FileHandler fileTxt;
-	private static SimpleFormatter formatterTxt;
 
 	public static void init()
 	{
@@ -46,11 +42,13 @@ public class LogHelper
 			File dir = new File(logsDir);
 			if (!(dir.exists() && dir.isDirectory()))
 			{
-				//noinspection ResultOfMethodCallIgnored
-				dir.mkdirs();
+				if (!dir.mkdirs())
+				{
+					throw new RuntimeException("Unable to create log dir");
+				}
 			}
-			fileTxt = new FileHandler("logs/" + logFileName);
-			formatterTxt = new SimpleFormatter();
+			FileHandler fileTxt = new FileHandler("logs/" + logFileName);
+			SimpleFormatter formatterTxt = new SimpleFormatter();
 			logger.setLevel(Level.ALL);
 			fileTxt.setFormatter(formatterTxt);
 			logger.addHandler(fileTxt);

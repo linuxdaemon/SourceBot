@@ -39,7 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @SuppressWarnings ("SameParameterValue")
-public class BotThread implements Runnable
+public class SearchThread implements Runnable
 {
 	private static Logger logger;
 
@@ -49,10 +49,10 @@ public class BotThread implements Runnable
 	private final String url;
 	private final Map<String, SearchTerm> terms = new HashMap<>();
 
-	BotThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
+	SearchThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
 	{
 		this.url = url;
-		logger = Logger.getLogger(BotThread.class.getName() + " " + url);
+		logger = Logger.getLogger(SearchThread.class.getName() + "." + url);
 		this.client = client;
 		this.conn = conn;
 		this.blog = new Blog(url);
@@ -70,12 +70,16 @@ public class BotThread implements Runnable
 				{
 					logger.warning("Bot is not admin on '" + url + "', not running thread");
 				}
+
+				logger.info(String.format("[%s] %d posts in queue", url, client.getQueuedPosts(url).size()));
 				logger.info("Adding posts to queue");
 
 				Map<Post, String> postMap = new HashMap<>();
 
 				List<SearchInclusion> inclusions = blog.getInclusions();
+				logger.info(String.format("[%s] %d Search inclusions loaded.", url, inclusions.size()));
 				List<SearchExclusion> exclusions = blog.getExclusions();
+				logger.info(String.format("[%s] %d search exclusions loaded.", url, exclusions.size()));
 
 				List<String> tagBlacklist = new ArrayList<>();
 				List<String> blogBlacklist = new ArrayList<>();

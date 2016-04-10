@@ -64,7 +64,7 @@ public class Tumblr extends JumblrClient
 
 	public List<Post> getQueuedPosts(String blogName)
 	{
-		long offset = 0;
+		int offset = 0;
 		List<Post> queue;
 		ArrayList<Post> out = new ArrayList<>();
 		while ((queue = blogQueuedPosts(blogName, offset)).size() > 0)
@@ -76,11 +76,11 @@ public class Tumblr extends JumblrClient
 		return out;
 	}
 
-	public List<Post> blogQueuedPosts(String blogName, long offset)
+	public List<Post> blogQueuedPosts(String blogName, int offset)
 	{
 		Map<String, Object> params = new HashMap<>();
-		params.put("offset", offset);
-		return blogDraftPosts(blogName, params);
+		params.put("offset", String.valueOf(offset));
+		return blogQueuedPosts(blogName, params);
 	}
 
 	public List<Post> getDrafts(String blogName)
