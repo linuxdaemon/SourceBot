@@ -42,9 +42,8 @@ import java.util.logging.Logger;
 public class SearchThread implements Runnable
 {
 	private static Logger logger;
-
+	public final Blog blog;
 	private final Tumblr client;
-	private final Blog blog;
 	private final Connection conn;
 	private final String url;
 	private final Map<String, SearchTerm> terms = new HashMap<>();
@@ -484,7 +483,7 @@ public class SearchThread implements Runnable
 			return null;
 		}
 
-		String getPostState()
+		public String getPostState()
 		{
 			try
 			{

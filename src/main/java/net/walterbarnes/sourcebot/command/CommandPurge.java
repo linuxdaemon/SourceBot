@@ -16,46 +16,38 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.thread;
+package net.walterbarnes.sourcebot.command;
 
+import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.SourceBot;
-import net.walterbarnes.sourcebot.command.CommandHandler;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.List;
 import java.util.logging.Logger;
 
-public class InputThread implements Runnable
+public class CommandPurge implements ICommand
 {
-	private static final Logger logger = Logger.getLogger(InputThread.class.getName());
+	private static final Logger logger = Logger.getLogger(CommandPurge.class.getName());
 
 	@Override
-	public void run()
+	public void run(String... args)
 	{
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		CommandHandler ch = SourceBot.getCurrentBot().getCommandHandler();
-		ch.init();
-		String input;
-		do
+		List<Post> posts = null;
+		logger.info(args[0]);
+		switch (SourceBot.getCurrentBot().threads.get(args[0]).blog.getPostState())
 		{
-			try
-			{
-				while (!br.ready())
-				{
-					Thread.sleep(200);
-				}
-				input = br.readLine();
-				ch.addPendingCommand(input);
-				ch.executePendingCommands();
-			}
-			catch (InterruptedException ignored)
-			{
-				Thread.currentThread().interrupt();
+			case "draft":
+				posts = SourceBot.getCurrentBot().client.getDrafts(args[0]);
 				break;
-			}
-			catch (IOException ignored) {}
+			case "queue":
+				posts = SourceBot.getCurrentBot().client.getQueuedPosts(args[0]);
+				break;
 		}
-		while (true);
+		if (posts != null)
+		{
+			for (Post post : posts)
+			{
+				post.delete();
+			}
+		}
 	}
 }

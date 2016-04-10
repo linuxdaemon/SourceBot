@@ -18,16 +18,47 @@
 
 package net.walterbarnes.sourcebot.command;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class CommandHandler
 {
 	private final List<String> commandQueue = Collections.synchronizedList(new ArrayList<String>());
+	private final Map<String, ICommand> commandMap = new HashMap<>();
+
+	public void init()
+	{
+		registerCommand("stop", new CommandStop());
+		registerCommand("purge", new CommandPurge());
+	}
+
+	public boolean registerCommand(String identifier, ICommand cmd)
+	{
+		if (!commandMap.keySet().contains(identifier))
+		{
+			commandMap.put(identifier, cmd);
+			return true;
+		}
+		return false;
+	}
 
 	public void addPendingCommand(String command)
 	{
 		commandQueue.add(command);
+	}
+
+	public void executePendingCommands()
+	{
+		while (!this.commandQueue.isEmpty())
+		{
+			String cmd = this.commandQueue.remove(0);
+			this.executeCommand(cmd);
+		}
+	}
+
+	private void executeCommand(String input)
+	{
+		List<String> inputSplit = new ArrayList<>(Arrays.asList(input.split(" ")));
+		String cmd = inputSplit.remove(0);
+		commandMap.get(cmd).run(inputSplit.toArray(new String[0]));
 	}
 }

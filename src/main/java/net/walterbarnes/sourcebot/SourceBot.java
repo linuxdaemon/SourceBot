@@ -19,6 +19,7 @@
 package net.walterbarnes.sourcebot;
 
 import com.google.gson.JsonObject;
+import net.walterbarnes.sourcebot.command.CommandHandler;
 import net.walterbarnes.sourcebot.config.Config;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
@@ -41,48 +42,55 @@ import java.util.logging.Logger;
 public class SourceBot
 {
 	private static final String CLASS_NAME = SourceBot.class.getName();
-	private static final String confName = "SourceBot.json";
-	private static final Logger logger = Logger.getLogger(SourceBot.class.getName());
-	public static volatile boolean running = true;
-	public static Thread currentThread;
-	public static InputThread inputThread = new InputThread();
-	static File confDir = new File(System.getProperty("user.home"), ".sourcebot");
-	private static Config conf;
-	private static Connection conn;
+	private static SourceBot currentBot;
+	private final String confName = "SourceBot.json";
+	private final Logger logger = Logger.getLogger(SourceBot.class.getName());
+	public volatile boolean running = true;
+	public Thread currentThread;
+	public InputThread inputThread = new InputThread();
+	public Tumblr client;
+	public Map<String, SearchThread> threads = new HashMap<>();
+	File confDir = new File(System.getProperty("user.home"), ".sourcebot");
+	private Config conf;
+	private Connection conn;
+	private CommandHandler commandHandler;
 
 	public static void main(String[] args)
 	{
+		SourceBot sb = getCurrentBot();
+		;
 		try
 		{
 			LogHelper.init();
-			Thread t = new Thread(inputThread, "Console Input Handler");
+			Thread t = new Thread(sb.inputThread, "Console Input Handler");
 			t.setDaemon(true);
 			t.start();
 
 			if (args.length > 0)
 			{
-				confDir = new File(args[0]);
-				logger.info(String.format("Set config dir to %s", confDir.getAbsolutePath()));
+				sb.confDir = new File(args[0]);
+				sb.logger.info(String.format("Set config dir to %s", sb.confDir.getAbsolutePath()));
 			}
 
-			if (!confDir.exists())
+			if (!sb.confDir.exists())
 			{
-				if (!confDir.mkdirs())
+				if (!sb.confDir.mkdirs())
 				{
 					throw new RuntimeException("Unable to create config dir");
 				}
 			}
 
-			File jsonFile = new File(confDir, confName);
+			File jsonFile = new File(sb.confDir, sb.confName);
 
 			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
 			{
-				Install.install(confDir.getAbsolutePath(), confName);
+				Install.install(sb.confDir.getAbsolutePath(), sb.confName);
 				System.exit(0);
 			}
 
-			conf = new Config(confDir.getAbsolutePath(), confName);
-			run();
+			sb.conf = new Config(sb.confDir.getAbsolutePath(), sb.confName);
+			sb.getCommandHandler();
+			sb.run();
 		}
 		catch (Throwable throwable)
 		{
@@ -90,25 +98,39 @@ public class SourceBot
 		}
 		finally
 		{
-			if (currentThread != null)
+			if (sb.currentThread != null)
 			{
-				currentThread.interrupt();
+				sb.currentThread.interrupt();
 			}
-			if (conn != null)
+			if (sb.conn != null)
 			{
 				try
 				{
-					conn.close();
+					sb.conn.close();
 				}
 				catch (SQLException e)
 				{
-					logger.warning("Error occurred on closing connection to database");
+					sb.logger.warning("Error occurred on closing connection to database");
 				}
 			}
 		}
 	}
 
-	private static void run() throws InvalidBlogNameException, SQLException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException
+	public static SourceBot getCurrentBot()
+	{
+		if (currentBot == null)
+		{ currentBot = new SourceBot(); }
+		return currentBot;
+	}
+
+	public CommandHandler getCommandHandler()
+	{
+		if (commandHandler == null)
+		{ commandHandler = new CommandHandler(); }
+		return commandHandler;
+	}
+
+	private void run() throws InvalidBlogNameException, SQLException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException
 	{
 		Driver driver = (Driver) Class.forName("org.postgresql.Driver").newInstance();
 
@@ -122,7 +144,7 @@ public class SourceBot
 		String token = tokenCat.getString("key", "");
 		String tokenSecret = tokenCat.getString("secret", "");
 
-		final Tumblr client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
+		this.client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
 
 		String dbHost = dbCat.getString("host", "");
 		String dbPort = dbCat.getString("port", "");
@@ -146,8 +168,6 @@ public class SourceBot
 					ResultSet rs = getBlogs.executeQuery();
 
 					long queryTime = System.currentTimeMillis();
-
-					Map<String, SearchThread> threads = new HashMap<>();
 
 					while (running)
 					{
