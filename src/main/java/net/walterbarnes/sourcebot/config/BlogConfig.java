@@ -60,22 +60,22 @@ public class BlogConfig
 		rs.next();
 		id = rs.getString("id");
 
-		getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE id = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		getConfig.setString(1, id);
 
-		getSI = conn.prepareStatement("SELECT DISTINCT * FROM search_inclusions WHERE blog_id = ? ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		getSI = conn.prepareStatement("SELECT * FROM search_inclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		getSI.setString(1, id);
 
-		getSE = conn.prepareStatement("SELECT DISTINCT * FROM search_exclusions WHERE blog_id = ? ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		getSE = conn.prepareStatement("SELECT * FROM search_exclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		getSE.setString(1, id);
 
-		getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		getPosts.setString(1, id);
 
-		addPosts = conn.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		addPosts = conn.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		addPosts.setString(1, id);
 
-		addStats = conn.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		addStats = conn.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		addStats.setString(1, id);
 	}
 
