@@ -34,7 +34,7 @@ public class BlogConfig
 {
 	private static final Logger logger = Logger.getLogger(BlogConfig.class.getName());
 	private final PreparedStatement getBId;
-	private final int id;
+	private final String id;
 	private final PreparedStatement addPosts;
 	private final PreparedStatement addStats;
 	private final PreparedStatement getConfig;
@@ -58,25 +58,25 @@ public class BlogConfig
 		getBId.setString(1, url);
 		ResultSet rs = getBId.executeQuery();
 		rs.next();
-		id = rs.getInt("id");
+		id = rs.getString("id");
 
 		getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE id = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		getConfig.setInt(1, id);
+		getConfig.setString(1, id);
 
 		getSI = conn.prepareStatement("SELECT DISTINCT * FROM search_inclusions WHERE blog_id = ? ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		getSI.setInt(1, id);
+		getSI.setString(1, id);
 
 		getSE = conn.prepareStatement("SELECT DISTINCT * FROM search_exclusions WHERE blog_id = ? ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		getSE.setInt(1, id);
+		getSE.setString(1, id);
 
-		getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE url = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		getPosts.setString(1, url);
+		getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		getPosts.setString(1, id);
 
-		addPosts = conn.prepareStatement("INSERT INTO seen_posts (url, search_type, post_id, rb_id, search_term, blog) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		addPosts.setString(1, url);
+		addPosts = conn.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		addPosts.setString(1, id);
 
 		addStats = conn.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		addStats.setInt(1, id);
+		addStats.setString(1, id);
 	}
 
 	public boolean addStat(String type, String tag, int time, int searched, int selected) throws SQLException
