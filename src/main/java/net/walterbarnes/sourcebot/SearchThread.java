@@ -153,7 +153,7 @@ public class SearchThread implements Runnable
 								hasPosted = false;
 								continue;
 							}
-							if (blog.getCheckBlog() && client.blogPosts(post.getBlogName()).size() < 5)
+							if (blog.getCheckBlog() && (client.blogPosts(post.getBlogName()).size() < 5 || client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")))
 							{
 								logger.info("Post may be spam, getting new post");
 								continue;
