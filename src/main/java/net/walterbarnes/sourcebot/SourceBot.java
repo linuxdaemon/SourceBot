@@ -42,44 +42,66 @@ import java.util.logging.Logger;
 public class SourceBot
 {
 	private static final String CLASS_NAME = SourceBot.class.getName();
+
+	/**
+	 * Static link to current SourceBot instance
+	 */
 	private static SourceBot currentBot;
+
+	/**
+	 * Default config file name. In the future, this may be overridden via command line arguments
+	 */
 	private final String confName = "SourceBot.json";
 	private final Logger logger = Logger.getLogger(SourceBot.class.getName());
+
 	public volatile boolean running = true;
+
 	public Thread currentThread;
 	public InputThread inputThread = new InputThread();
 	public Tumblr client;
 	public Map<String, SearchThread> threads = new HashMap<>();
+
+	/**
+	 * Default configuration directory, can be overridden via command-line arguments
+	 */
 	File confDir = new File(System.getProperty("user.home"), ".sourcebot");
+
 	private Config conf;
 	private Connection conn;
 	private CommandHandler commandHandler;
 
 	public static void main(String[] args)
 	{
-		SourceBot sb = getCurrentBot();
-		;
+		// Set instance to variable, for access from a static context
+		SourceBot sb = new SourceBot();
 		try
 		{
+			// Initialize and configure the root logger
 			LogHelper.init();
+
 			Thread t = new Thread(sb.inputThread, "Console Input Handler");
 			t.setDaemon(true);
 			t.start();
 
+			// Check if there is an argument to set the config directory, otherwise, use the default
+			// TODO should probably use a keyword argument to allow for more options
 			if (args.length > 0)
 			{
 				sb.confDir = new File(args[0]);
 				sb.logger.info(String.format("Set config dir to %s", sb.confDir.getAbsolutePath()));
 			}
 
+			// Check existence of config directory
 			if (!sb.confDir.exists())
 			{
+				// Attempt to create the directory
 				if (!sb.confDir.mkdirs())
 				{
 					throw new RuntimeException("Unable to create config dir");
 				}
 			}
 
+			// TODO this is technically redundant and could be optimized
 			File jsonFile = new File(sb.confDir, sb.confName);
 
 			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
@@ -98,6 +120,7 @@ public class SourceBot
 		}
 		finally
 		{
+			// Shutdown sequence
 			if (sb.currentThread != null)
 			{
 				sb.currentThread.interrupt();
@@ -116,13 +139,11 @@ public class SourceBot
 		}
 	}
 
-	public static SourceBot getCurrentBot()
-	{
-		if (currentBot == null)
-		{ currentBot = new SourceBot(); }
-		return currentBot;
-	}
-
+	/**
+	 * Gets the current bots CommandHandler instance, or creates one if none is set
+	 *
+	 * @return the CommandHandler instance
+	 */
 	public CommandHandler getCommandHandler()
 	{
 		if (commandHandler == null)
@@ -218,7 +239,6 @@ public class SourceBot
 				}
 			}
 		};
-		//botThread.setDaemon(true);
 		botThread.start();
 	}
 
@@ -246,5 +266,17 @@ public class SourceBot
 		{
 			System.out.println("#@?@# Bot crashed! Crash report could not be saved. #@?@#");
 		}
+	}
+
+	/**
+	 * Gets the current instance of the bot, or creates one if none is set
+	 *
+	 * @return the bot instance
+	 */
+	public static SourceBot getCurrentBot()
+	{
+		if (currentBot == null)
+		{ currentBot = new SourceBot(); }
+		return currentBot;
 	}
 }

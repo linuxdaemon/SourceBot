@@ -20,7 +20,7 @@ package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.SearchThread;
+import net.walterbarnes.sourcebot.config.BlogConfig;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
 
 import java.sql.SQLException;
@@ -31,17 +31,17 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class BlogTerm implements SearchTerm
+public class BlogTerm implements ISearchTerm
 {
 	private static final Logger logger = Logger.getLogger(BlogTerm.class.getName());
 
 	private final String term;
 	private final Tumblr client;
-	private final SearchThread.Blog blog;
+	private final BlogConfig blog;
 	private final PostCache cache = new PostCache(120 * 60 * 1000);
 	private int lastPostCount = 0;
 
-	public BlogTerm(String term, Tumblr client, SearchThread.Blog blog)
+	public BlogTerm(String term, Tumblr client, BlogConfig blog)
 	{
 		this.term = term;
 		this.client = client;

@@ -26,6 +26,8 @@ interface ISearch
 
 	String getTerm();
 
+	String getFullTerm();
+
 	int getId();
 
 	boolean isActive();

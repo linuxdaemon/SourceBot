@@ -50,6 +50,7 @@ public class LogHelper
 			FileHandler fileTxt = new FileHandler("logs/" + logFileName);
 			SimpleFormatter formatterTxt = new SimpleFormatter();
 			logger.setLevel(Level.ALL);
+
 			fileTxt.setFormatter(formatterTxt);
 			logger.addHandler(fileTxt);
 		}

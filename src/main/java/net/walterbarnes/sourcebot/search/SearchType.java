@@ -35,12 +35,14 @@ public enum SearchType
 		for (SearchType type : SearchType.values())
 		{
 			if (type.getName().equals(name))
-			{ return type; }
+			{
+				return type;
+			}
 		}
 		return null;
 	}
 
-	private String getName()
+	public String getName()
 	{
 		return name;
 	}
