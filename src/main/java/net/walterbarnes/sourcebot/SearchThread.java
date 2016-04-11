@@ -18,6 +18,7 @@
 
 package net.walterbarnes.sourcebot;
 
+import com.github.OnyxFoxDevelopment.collections.CollectionHelper;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.config.BlogConfig;
@@ -29,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -136,7 +136,7 @@ public class SearchThread implements Runnable
 					while (!hasPosted)
 					{
 						logger.info("Selecting post");
-						List<Post> p = randomElement(posts, 1, true);
+						Collection<Post> p = CollectionHelper.randomElement(posts, 1, true);
 
 						for (Post post : p)
 						{
@@ -233,29 +233,6 @@ public class SearchThread implements Runnable
 			default:
 				return sortTimestamp(posts, n);
 		}
-	}
-
-	/**
-	 * Selects pseudo-random elements from a collection
-	 *
-	 * @param c      Collection to select from
-	 * @param n      Number of elements to select
-	 * @param unique Whether the selection should be unique
-	 * @param <E>    Type of element in collection
-	 * @return Random element(s) from collection
-	 */
-	private static <E> List<E> randomElement(Collection<E> c, int n, boolean unique)
-	{
-		List<E> out = new ArrayList<>();
-		List<E> l = new ArrayList<>(c);
-
-		while (out.size() < n)
-		{
-			E e = l.get(ThreadLocalRandom.current().nextInt(0, l.size()));
-			out.add(e);
-			if (unique) l.remove(e);
-		}
-		return out;
 	}
 
 	/**
