@@ -51,9 +51,9 @@ public class SourceBot
 	static {currentBot = new SourceBot();}
 
 	/**
-	 * Default config file name. In the future, this may be overridden via command line arguments
+	 * Default config file name, in the future, this may be overridden via command line arguments
 	 */
-	private final String confName = "SourceBot.json";
+	public final String confName = "SourceBot.json";
 	private final Logger logger = Logger.getLogger(SourceBot.class.getName());
 
 	public volatile boolean running = true;
@@ -66,7 +66,7 @@ public class SourceBot
 	/**
 	 * Default configuration directory, can be overridden via command-line arguments
 	 */
-	File confDir = new File(System.getProperty("user.home"), ".sourcebot");
+	public File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 
 	private Config conf;
 	private Connection conn;
@@ -225,7 +225,7 @@ public class SourceBot
 									logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
 								}
 							}
-							Thread.sleep(1000);
+							//Thread.sleep(1000);
 						}
 						catch (OAuthConnectionException e)
 						{

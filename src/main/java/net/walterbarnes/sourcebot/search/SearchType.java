@@ -46,4 +46,10 @@ public enum SearchType
 	{
 		return name;
 	}
+
+	@Override
+	public String toString()
+	{
+		return name;
+	}
 }

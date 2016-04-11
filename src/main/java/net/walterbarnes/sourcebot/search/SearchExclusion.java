@@ -54,7 +54,7 @@ public class SearchExclusion implements ISearch
 	@Override
 	public String getFullTerm()
 	{
-		return String.format("%s:%s", term, type.getName());
+		return String.format("%s:%s", type, term);
 	}
 
 	@Override

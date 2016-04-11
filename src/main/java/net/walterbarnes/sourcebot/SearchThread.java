@@ -24,10 +24,7 @@ import net.walterbarnes.sourcebot.config.BlogConfig;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
-import net.walterbarnes.sourcebot.tumblr.BlogTerm;
-import net.walterbarnes.sourcebot.tumblr.ISearchTerm;
-import net.walterbarnes.sourcebot.tumblr.TagTerm;
-import net.walterbarnes.sourcebot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.tumblr.*;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -211,7 +208,11 @@ public class SearchThread implements Runnable
 								}
 							}
 							String val = postMap.get(post);
-							terms.get(val).getCache().remove(post.getId());
+							logger.info(val);
+							logger.info(terms.toString());
+							ISearchTerm t = terms.get(val);
+							PostCache c = t.getCache();
+							c.remove(post.getId());
 							blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 						}
 					}

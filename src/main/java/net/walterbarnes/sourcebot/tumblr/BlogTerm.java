@@ -83,7 +83,7 @@ public class BlogTerm implements ISearchTerm
 			if (obj instanceof Post)
 			{
 				Post p = (Post) obj;
-				out.put(p, String.format("blog:%s", term));
+				out.put(p, rule.getFullTerm());
 			}
 			else
 			{
@@ -135,7 +135,7 @@ public class BlogTerm implements ISearchTerm
 						}
 					}
 
-					if (cache.addPost(post)) out.put(post, String.format("blog:%s", term));
+					if (cache.addPost(post)) out.put(post, rule.getFullTerm());
 				}
 			}
 		}
@@ -144,7 +144,7 @@ public class BlogTerm implements ISearchTerm
 		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", term,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
-		blog.addStat("blog", term, (int) end, searched, out.size());
+		blog.addStat(rule.getType().toString(), term, (int) end, searched, out.size());
 		lastPostCount = out.size();
 		return out;
 	}

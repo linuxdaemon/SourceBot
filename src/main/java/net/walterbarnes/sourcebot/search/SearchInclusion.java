@@ -63,7 +63,7 @@ public class SearchInclusion implements ISearch
 	@Override
 	public String getFullTerm()
 	{
-		return String.format("%s:%s", this.term, this.type.getName());
+		return String.format("%s:%s", this.type, this.term);
 	}
 
 	@Override
