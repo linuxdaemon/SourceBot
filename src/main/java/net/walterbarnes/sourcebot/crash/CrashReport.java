@@ -45,7 +45,7 @@ public class CrashReport
 	 */
 	private final Throwable cause;
 	private final CrashReportCategory rootCategory = new CrashReportCategory(this, "System Details");
-	private final List crashReportSections = new ArrayList();
+	private final List<CrashReportCategory> crashReportSections = new ArrayList<>();
 	private StackTraceElement[] stacktrace = new StackTraceElement[0];
 	/**
 	 * File of crash report.
@@ -61,75 +61,12 @@ public class CrashReport
 	
 	private void populateEnvironment()
 	{
-		this.rootCategory.addCrashSectionCallable("SourceBot Version", new Callable()
-		{
-			public String call()
-			{
-				return Constants.VERSION;
-			}
-		});
-		this.rootCategory.addCrashSectionCallable("Operating System", new Callable()
-		{
-			public String call()
-			{
-				return System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version");
-			}
-		});
-		this.rootCategory.addCrashSectionCallable("Java Version", new Callable()
-		{
-			public String call()
-			{
-				return System.getProperty("java.version") + ", " + System.getProperty("java.vendor");
-			}
-		});
-		this.rootCategory.addCrashSectionCallable("Java VM Version", new Callable()
-		{
-			public String call()
-			{
-				return System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor");
-			}
-		});
-		this.rootCategory.addCrashSectionCallable("Memory", new Callable()
-		{
-			public String call()
-			{
-				Runtime runtime = Runtime.getRuntime();
-				long i = runtime.maxMemory();
-				long j = runtime.totalMemory();
-				long k = runtime.freeMemory();
-				long l = i / 1024L / 1024L;
-				long i1 = j / 1024L / 1024L;
-				long j1 = k / 1024L / 1024L;
-				return k + " bytes (" + j1 + " MB) / " + j + " bytes (" + i1 + " MB) up to " + i + " bytes (" + l + " MB)";
-			}
-		});
-		this.rootCategory.addCrashSectionCallable("JVM Flags", new Callable()
-		{
-			public String call()
-			{
-				RuntimeMXBean runtimemxbean = ManagementFactory.getRuntimeMXBean();
-				List list = runtimemxbean.getInputArguments();
-				int i = 0;
-				StringBuilder stringbuilder = new StringBuilder();
-
-				for (Object aList : list)
-				{
-					String s = (String) aList;
-
-					if (s.startsWith("-X"))
-					{
-						if (i++ > 0)
-						{
-							stringbuilder.append(" ");
-						}
-
-						stringbuilder.append(s);
-					}
-				}
-
-				return String.format("%d total; %s", i, stringbuilder.toString());
-			}
-		});
+		this.rootCategory.addCrashSectionCallable("SourceBot Version", new GetVersion());
+		this.rootCategory.addCrashSectionCallable("Operating System", new GetOSVersion());
+		this.rootCategory.addCrashSectionCallable("Java Version", new GetJavaVersion());
+		this.rootCategory.addCrashSectionCallable("Java VM Version", new GetJVMVersion());
+		this.rootCategory.addCrashSectionCallable("Memory", new GetMemory());
+		this.rootCategory.addCrashSectionCallable("JVM Flags", new GetJVMFlags());
 	}
 	
 	public File getFile()
@@ -260,7 +197,7 @@ public class CrashReport
 	{
 		if ((this.stacktrace == null || this.stacktrace.length <= 0) && this.crashReportSections.size() > 0)
 		{
-			this.stacktrace = ArrayUtils.subarray(((CrashReportCategory) this.crashReportSections.get(0)).getStackTrace(), 0, 1);
+			this.stacktrace = ArrayUtils.subarray(this.crashReportSections.get(0).getStackTrace(), 0, 1);
 		}
 
 		if (this.stacktrace.length > 0)
@@ -278,13 +215,87 @@ public class CrashReport
 			stringBuilder.append("\n");
 		}
 
-		for (Object crashReportSection : this.crashReportSections)
+		for (CrashReportCategory crashReportSection : this.crashReportSections)
 		{
-			CrashReportCategory crashreportcategory = (CrashReportCategory) crashReportSection;
-			crashreportcategory.appendToStringBuilder(stringBuilder);
+			crashReportSection.appendToStringBuilder(stringBuilder);
 			stringBuilder.append("\n\n");
 		}
 
 		this.rootCategory.appendToStringBuilder(stringBuilder);
+	}
+
+	private static class GetJVMFlags implements Callable
+	{
+		public String call()
+		{
+			RuntimeMXBean runtimemxbean = ManagementFactory.getRuntimeMXBean();
+			List list = runtimemxbean.getInputArguments();
+			int i = 0;
+			StringBuilder stringbuilder = new StringBuilder();
+
+			for (Object aList : list)
+			{
+				String s = (String) aList;
+
+				if (s.startsWith("-X"))
+				{
+					if (i++ > 0)
+					{
+						stringbuilder.append(" ");
+					}
+
+					stringbuilder.append(s);
+				}
+			}
+
+			return String.format("%d total; %s", i, stringbuilder.toString());
+		}
+	}
+
+	private static class GetMemory implements Callable
+	{
+		public String call()
+		{
+			Runtime runtime = Runtime.getRuntime();
+			long i = runtime.maxMemory();
+			long j = runtime.totalMemory();
+			long k = runtime.freeMemory();
+			long l = i / 1024L / 1024L;
+			long i1 = j / 1024L / 1024L;
+			long j1 = k / 1024L / 1024L;
+			return k + " bytes (" + j1 + " MB) / " + j + " bytes (" + i1 + " MB) up to " + i + " bytes (" + l + " MB)";
+		}
+	}
+
+	private static class GetJVMVersion implements Callable
+	{
+		public String call()
+		{
+			return System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor");
+		}
+	}
+
+	private static class GetJavaVersion implements Callable
+	{
+		public String call()
+		{
+			return System.getProperty("java.version") + ", " + System.getProperty("java.vendor");
+		}
+	}
+
+	private static class GetOSVersion implements Callable
+	{
+		public String call()
+		{
+			return System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version");
+		}
+	}
+
+	private static class GetVersion implements Callable
+	{
+		public String call()
+		{
+			return Constants.VERSION;
+		}
 	}
 }
