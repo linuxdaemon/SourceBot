@@ -44,6 +44,7 @@ dependencies {
     compile 'com.tumblr:jumblr:0.0.12-SNAPSHOT'
     compile 'mysql:mysql-connector-java:5.1.38'
     compile 'org.postgresql:postgresql:9.4.1208.jre7'
+    compile 'commons-cli:commons-cli:1.3'
 }
 
 jar {
