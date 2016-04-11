@@ -29,6 +29,11 @@ public class Constants
 	private static final Logger logger = Logger.getLogger(Constants.class.getName());
 	public static String version;
 
+	static
+	{
+		new Constants();
+	}
+
 	public Constants()
 	{
 		InputStream input = getClass().getResourceAsStream("/sbversion.properties");
