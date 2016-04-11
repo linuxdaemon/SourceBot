@@ -60,7 +60,7 @@ jar {
     baseName = rootProject.name
     version = version
     eachFile { copyDetails ->
-        if (copyDetails.path == 'reference/Constants.java') {
+        if (copyDetails.path == 'com/walterbarnes/sourcebot/reference/Constants.java') {
             filter { line ->
                 line.replace('@VERSION@', version)
             }
