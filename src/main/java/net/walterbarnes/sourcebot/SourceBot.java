@@ -162,8 +162,6 @@ public class SourceBot
 		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
 
-		this.conn = conn;
-
 		Thread botThread = new Thread()
 		{
 			public void run()
