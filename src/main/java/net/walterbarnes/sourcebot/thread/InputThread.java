@@ -24,12 +24,9 @@ import net.walterbarnes.sourcebot.command.CommandHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.logging.Logger;
 
 public class InputThread implements Runnable
 {
-	private static final Logger logger = Logger.getLogger(InputThread.class.getName());
-
 	@Override
 	public void run()
 	{

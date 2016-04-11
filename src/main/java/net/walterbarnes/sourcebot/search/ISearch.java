@@ -18,6 +18,7 @@
 
 package net.walterbarnes.sourcebot.search;
 
+@SuppressWarnings ("unused")
 interface ISearch
 {
 	String getAction();

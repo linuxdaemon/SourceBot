@@ -23,14 +23,12 @@ import net.walterbarnes.sourcebot.cli.Cli;
 import net.walterbarnes.sourcebot.command.CommandHandler;
 import net.walterbarnes.sourcebot.config.Configuration;
 import net.walterbarnes.sourcebot.crash.CrashReport;
-import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.thread.InputThread;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
 import org.scribe.exceptions.OAuthConnectionException;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,7 +39,6 @@ import java.util.logging.Logger;
 
 public class SourceBot
 {
-	private static final String CLASS_NAME = SourceBot.class.getName();
 
 	/**
 	 * Static link to current SourceBot instance
@@ -54,15 +51,12 @@ public class SourceBot
 	 * Default config file name, in the future, this may be overridden via command line arguments
 	 */
 	public final String confName = "SourceBot.json";
+	public final Map<String, SearchThread> threads = new HashMap<>();
 	private final Logger logger = Logger.getLogger(SourceBot.class.getName());
-
+	private final InputThread inputThread = new InputThread();
 	public volatile boolean running = true;
-
 	public Thread currentThread;
-	public InputThread inputThread = new InputThread();
 	public Tumblr client;
-	public Map<String, SearchThread> threads = new HashMap<>();
-
 	/**
 	 * Default configuration directory, can be overridden via command-line arguments
 	 */
@@ -140,9 +134,9 @@ public class SourceBot
 		}
 	}
 
-	private void run() throws InvalidBlogNameException, SQLException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException
+	private void run() throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException
 	{
-		Driver driver = (Driver) Class.forName("org.postgresql.Driver").newInstance();
+		Class.forName("org.postgresql.Driver").newInstance();
 
 		Configuration apiCat = conf.getCategory("api", new JsonObject());
 		Configuration consumerCat = apiCat.getCategory("consumer", new JsonObject());
@@ -167,6 +161,8 @@ public class SourceBot
 
 		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
+
+		this.conn = conn;
 
 		Thread botThread = new Thread()
 		{

@@ -30,10 +30,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@SuppressWarnings ("UnusedReturnValue")
 public class BlogConfig
 {
 	private static final Logger logger = Logger.getLogger(BlogConfig.class.getName());
-	private final PreparedStatement getBId;
+	@SuppressWarnings ("FieldCanBeLocal")
 	private final String id;
 	private final PreparedStatement addPosts;
 	private final PreparedStatement addStats;
@@ -41,8 +42,6 @@ public class BlogConfig
 	private final PreparedStatement getSI;
 	private final PreparedStatement getSE;
 	private final PreparedStatement getPosts;
-	private final Connection conn;
-	private final String url;
 	private List<SearchExclusion> exclusions = new ArrayList<>();
 	private long exclusionsQTime = 0;
 	private List<SearchInclusion> inclusions = new ArrayList<>();
@@ -52,9 +51,7 @@ public class BlogConfig
 
 	public BlogConfig(Connection conn, String url) throws SQLException
 	{
-		this.conn = conn;
-		this.url = url;
-		getBId = conn.prepareStatement("SELECT id FROM blogs WHERE url = ?");
+		PreparedStatement getBId = conn.prepareStatement("SELECT id FROM blogs WHERE url = ?");
 		getBId.setString(1, url);
 		ResultSet rs = getBId.executeQuery();
 		rs.next();

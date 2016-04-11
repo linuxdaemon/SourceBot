@@ -42,6 +42,7 @@ public class PostCache implements Iterable
 		return true;
 	}
 
+	@SuppressWarnings ("UnusedReturnValue")
 	public boolean remove(long postId)
 	{
 		for (Post p : posts.keySet())
@@ -67,6 +68,7 @@ public class PostCache implements Iterable
 		}
 	}
 
+	@SuppressWarnings ("unused")
 	public int size()
 	{
 		return posts.size();

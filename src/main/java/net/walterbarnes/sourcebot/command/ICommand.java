@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.command;
 
-public interface ICommand
+interface ICommand
 {
 	void run(String... args);
 }

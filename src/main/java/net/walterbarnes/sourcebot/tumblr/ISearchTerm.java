@@ -29,6 +29,7 @@ public interface ISearchTerm
 {
 	PostCache getCache();
 
+	@SuppressWarnings ("unused")
 	String getSearchTerm();
 
 	@SuppressWarnings ("Duplicates")

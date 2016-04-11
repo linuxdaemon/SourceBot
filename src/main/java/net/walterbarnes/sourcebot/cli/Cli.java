@@ -23,15 +23,13 @@ import net.walterbarnes.sourcebot.SourceBot;
 import org.apache.commons.cli.*;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Cli
 {
 	private static final Logger logger = Logger.getLogger(Cli.class.getName());
+	private final Options options = new Options();
 	private String[] args = null;
-	private Options options = new Options();
 
 	public Cli(String[] args)
 	{
@@ -45,7 +43,7 @@ public class Cli
 	{
 		CommandLineParser parser = new DefaultParser();
 
-		CommandLine cmd = null;
+		CommandLine cmd;
 		try
 		{
 			cmd = parser.parse(options, args);
@@ -73,15 +71,7 @@ public class Cli
 
 	private void install()
 	{
-		try
-		{
-			Install.install(SourceBot.getCurrentBot().confDir.getAbsolutePath(), SourceBot.getCurrentBot().confName);
-			System.exit(0);
-		}
-		catch (IOException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			System.exit(1);
-		}
+		Install.install(SourceBot.getCurrentBot().confDir.getAbsolutePath(), SourceBot.getCurrentBot().confName);
+		System.exit(0);
 	}
 }

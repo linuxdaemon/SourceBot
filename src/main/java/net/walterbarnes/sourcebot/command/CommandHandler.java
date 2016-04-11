@@ -31,7 +31,8 @@ public class CommandHandler
 		registerCommand("purge", new CommandPurge());
 	}
 
-	public boolean registerCommand(String identifier, ICommand cmd)
+	@SuppressWarnings ("UnusedReturnValue")
+	private boolean registerCommand(String identifier, ICommand cmd)
 	{
 		if (!commandMap.keySet().contains(identifier))
 		{

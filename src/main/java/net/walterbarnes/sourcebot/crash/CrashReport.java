@@ -19,13 +19,11 @@
 package net.walterbarnes.sourcebot.crash;
 
 import net.walterbarnes.sourcebot.reference.Constants;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -41,11 +39,10 @@ public class CrashReport
 	 */
 	private final String description;
 	/**
-	 * The Throwable that is the "cause" for this crash and Crash Report.
+	 * The {@link Throwable} that is the "cause" for this crash and Crash Report.
 	 */
 	private final Throwable cause;
-	private final CrashReportCategory rootCategory = new CrashReportCategory(this, "System Details");
-	private final List<CrashReportCategory> crashReportSections = new ArrayList<>();
+	private final CrashReportCategory rootCategory = new CrashReportCategory("System Details");
 	private StackTraceElement[] stacktrace = new StackTraceElement[0];
 	/**
 	 * File of crash report.
@@ -119,7 +116,7 @@ public class CrashReport
 		stringbuilder.append(this.description);
 		stringbuilder.append("\n\n");
 		stringbuilder.append(this.getCauseStackTraceOrString());
-		stringbuilder.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
+		stringbuilder.append("\n\nA detailed walk through of the error, its code path and all known details is as follows:\n");
 
 		for (int i = 0; i < 87; ++i)
 		{
@@ -132,7 +129,7 @@ public class CrashReport
 	}
 
 	/**
-	 * Gets the stack trace of the Throwable that caused this crash report, or if that fails, the cause .toString().
+	 * Gets the stack trace of the {@link Throwable} that caused this crash report, or if that fails, the cause .toString().
 	 */
 	public String getCauseStackTraceOrString()
 	{
@@ -191,15 +188,10 @@ public class CrashReport
 	}
 
 	/**
-	 * Gets the various sections of the crash report into the given StringBuilder
+	 * Gets the various sections of the crash report into the given {@link StringBuilder}
 	 */
 	public void getSectionsInStringBuilder(StringBuilder stringBuilder)
 	{
-		if ((this.stacktrace == null || this.stacktrace.length <= 0) && this.crashReportSections.size() > 0)
-		{
-			this.stacktrace = ArrayUtils.subarray(this.crashReportSections.get(0).getStackTrace(), 0, 1);
-		}
-
 		if (this.stacktrace.length > 0)
 		{
 			stringBuilder.append("-- Head --\n");
@@ -213,12 +205,6 @@ public class CrashReport
 			}
 
 			stringBuilder.append("\n");
-		}
-
-		for (CrashReportCategory crashReportSection : this.crashReportSections)
-		{
-			crashReportSection.appendToStringBuilder(stringBuilder);
-			stringBuilder.append("\n\n");
 		}
 
 		this.rootCategory.appendToStringBuilder(stringBuilder);

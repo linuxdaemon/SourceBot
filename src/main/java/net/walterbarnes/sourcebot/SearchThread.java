@@ -21,7 +21,6 @@ package net.walterbarnes.sourcebot;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.config.BlogConfig;
-import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.tumblr.*;
@@ -40,15 +39,13 @@ public class SearchThread implements Runnable
 	private static final Logger logger = Logger.getLogger(SearchThread.class.getName());
 	public final BlogConfig blog;
 	private final Tumblr client;
-	private final Connection conn;
 	private final String url;
 	private final Map<String, ISearchTerm> terms = new HashMap<>();
 
-	SearchThread(Tumblr client, String url, Connection conn) throws InvalidBlogNameException, SQLException
+	SearchThread(Tumblr client, String url, Connection conn) throws SQLException
 	{
 		this.url = url;
 		this.client = client;
-		this.conn = conn;
 		this.blog = new BlogConfig(conn, url);
 	}
 

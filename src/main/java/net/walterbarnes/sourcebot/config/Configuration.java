@@ -38,11 +38,11 @@ public class Configuration
 {
 	private static final Logger logger = Logger.getLogger(Configuration.class.getName());
 	private final JsonParser parser = new JsonParser();
+	private final Map<String, Configuration> children = new TreeMap<>();
 	private File file = null;
 	private Configuration parent = null;
 	private JsonObject json;
 	private boolean changed = false;
-	private Map<String, Configuration> children = new TreeMap<>();
 
 	private Configuration(JsonObject json, Configuration parent)
 	{
@@ -50,7 +50,7 @@ public class Configuration
 		this.parent = parent;
 	}
 
-	public Configuration(String configPath, String fileName) throws IOException
+	public Configuration(String configPath, String fileName)
 	{
 		File configDir = new File(configPath);
 		if (!configDir.exists())
@@ -116,6 +116,8 @@ public class Configuration
 		}
 		FileReader fr = new FileReader(this.file);
 		json = parser.parse(fr).getAsJsonObject();
+
+		resetChangedState();
 	}
 
 	public boolean exists()
@@ -152,6 +154,7 @@ public class Configuration
 		json.add(key, new JsonPrimitive(val));
 	}
 
+	@SuppressWarnings ("ResultOfMethodCallIgnored")
 	public void save()
 	{
 		if (parent != null && parent != this)

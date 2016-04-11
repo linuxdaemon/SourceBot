@@ -24,7 +24,6 @@ import com.tumblr.jumblr.exceptions.JumblrException;
 import net.walterbarnes.sourcebot.config.Configuration;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -33,11 +32,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+@SuppressWarnings ({"UnusedReturnValue", "SameReturnValue"})
 public class Install
 {
 	private static final Logger logger = Logger.getLogger(Install.class.getName());
 	
-	public static boolean install(String path, String name) throws IOException
+	public static boolean install(String path, String name)
 	{
 		Configuration conf = new Configuration(path, name);
 		Configuration apiCat = conf.getCategory("api", new JsonObject());

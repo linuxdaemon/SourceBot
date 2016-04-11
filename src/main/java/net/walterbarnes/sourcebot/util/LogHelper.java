@@ -32,13 +32,12 @@ public class LogHelper
 	private static final String logFileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date()) +
 			"-SourceBot.log";
 	private static final String logsDir = "logs";
-	private static Logger logger;
+	private static final Logger logger = Logger.getLogger(LogHelper.class.getName());
 
 	public static void init()
 	{
 		try
 		{
-			logger = Logger.getLogger("net.walterbarnes.sourcebot");
 			File dir = new File(logsDir);
 			if (!(dir.exists() && dir.isDirectory()))
 			{
@@ -59,10 +58,5 @@ public class LogHelper
 			e.printStackTrace();
 			System.exit(0);
 		}
-	}
-
-	public static Logger getLogger()
-	{
-		return logger;
 	}
 }
