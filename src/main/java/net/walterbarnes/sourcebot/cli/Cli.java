@@ -18,105 +18,70 @@
 
 package net.walterbarnes.sourcebot.cli;
 
-import java.io.Console;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.regex.Pattern;
+import net.walterbarnes.sourcebot.Install;
+import net.walterbarnes.sourcebot.SourceBot;
+import org.apache.commons.cli.*;
 
-@SuppressWarnings ({"WeakerAccess", "ClassWithoutLogger", "PublicMethodWithoutLogging", "SameParameterValue"})
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Cli
 {
-	private static final Console console = System.console();
+	private static final Logger logger = Logger.getLogger(Cli.class.getName());
+	private String[] args = null;
+	private Options options = new Options();
 
-	public static String prompt(String title, Pattern valid, String def)
+	public Cli(String[] args)
 	{
-		String s = prompt(title, valid);
-		if (s.trim().isEmpty())
+		this.args = args;
+
+		options.addOption(null, "install", false, "Initial install");
+		options.addOption("c", "config", true, "Path to config file (Default: ~/.sourcebot)");
+	}
+
+	public void parse()
+	{
+		CommandLineParser parser = new DefaultParser();
+
+		CommandLine cmd = null;
+		try
 		{
-			return def;
-		}
-		return s;
-	}
+			cmd = parser.parse(options, args);
 
-	public static String prompt(String title, Pattern valid)
-	{
-		String l;
-		printf(title);
-		while (!valid.matcher(l = readLine()).matches())
+			if (cmd.hasOption('c'))
+			{
+				setConfigDir(cmd.getOptionValue('c'));
+			}
+			if (cmd.hasOption("install"))
+			{
+				install();
+			}
+		}
+		catch (ParseException e)
 		{
-			System.out.println("Invalid Value!!");
-			System.out.print(title);
+			e.printStackTrace();
 		}
-		return l;
 	}
 
-	public static void printf(String format, Object... args)
+	private void setConfigDir(String dir)
 	{
-		if (console == null)
-		{ System.out.print(String.format(format, (java.lang.Object[]) args)); }
-		else
-		{ console.printf(format, (java.lang.Object[]) args); }
+		SourceBot.getCurrentBot().confDir = new File(dir);
+		logger.info(String.format("Set config dir to %s", SourceBot.getCurrentBot().confDir.getAbsolutePath()));
 	}
 
-	public static String readLine()
+	private void install()
 	{
-		if (console != null)
-		{ return console.readLine(); }
-		Scanner s = new Scanner(System.in);
-		return s.nextLine();
-	}
-
-	public static int promptInt(String title, int def)
-	{
-		String l = prompt(title, Pattern.compile(" ?[0-9]*"));
-		return l.isEmpty() || l.equals(" ") ? def : Integer.parseInt(l);
-	}
-
-	public static boolean promptYesNo(String title)
-	{
-		Pattern affirm = Pattern.compile("[Yy ]?");
-		String l = prompt(title, Pattern.compile("[YyNn ]?"));
-		return affirm.matcher(l).matches();
-	}
-
-	public static String promptList(String title, Map<String, String> opts)
-	{
-		LinkedList<String> l = new LinkedList<>();
-		printf("%s%n", title);
-		for (Map.Entry<String, String> entry : opts.entrySet())
+		try
 		{
-			l.add(entry.getValue());
-			printf("%d) %s%n", l.size(), entry.getKey());
+			Install.install(SourceBot.getCurrentBot().confDir.getAbsolutePath(), SourceBot.getCurrentBot().confName);
+			System.exit(0);
 		}
-		int i = promptInt("Type?: ");
-		while (i > l.size())
+		catch (IOException e)
 		{
-			printf("Invalid Option");
-			i = promptInt("Type?: ");
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			System.exit(1);
 		}
-		return l.get(i - 1);
-	}
-
-	public static int promptInt(String title)
-	{
-		return Integer.parseInt(prompt(title, Pattern.compile("[0-9]+")));
-	}
-
-	public static String password(String title, Pattern valid)
-	{
-		printf(title);
-		String p;
-		while (!valid.matcher(p = readPassword()).matches())
-		{
-			printf("Invalid Value!!%n");
-			printf(title);
-		}
-		return p;
-	}
-
-	public static String readPassword()
-	{
-		return console == null ? readLine() : new String(console.readPassword());
 	}
 }
