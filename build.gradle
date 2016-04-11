@@ -16,7 +16,7 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//import org.apache.tools.ant.filters.ReplaceTokens
+import org.apache.tools.ant.filters.ReplaceTokens
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -54,11 +54,11 @@ dependencies {
 }
 
 jar {
-    //filter(ReplaceTokens, tokens: [VERSION: version])
     manifest {
         attributes('Main-Class': mainClassName
         )
     }
     baseName = rootProject.name
     version = version
+    filter(ReplaceTokens, tokens: [VERSION: version])
 }
