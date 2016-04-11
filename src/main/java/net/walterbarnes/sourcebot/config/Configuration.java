@@ -164,10 +164,7 @@ public class Configuration
 		{
 			if (file.getParentFile() != null)
 			{
-				if (!file.getParentFile().mkdirs())
-				{
-					throw new RuntimeException("Unable to save config file");
-				}
+				file.getParentFile().mkdirs();
 			}
 
 			if (!file.exists() && !file.createNewFile())

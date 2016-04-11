@@ -74,14 +74,12 @@ public class SourceBot
 
 	public static void main(String[] args)
 	{
-		// Set instance to variable, for access from a static context
-		SourceBot sb = new SourceBot();
 		try
 		{
 			// Initialize and configure the root logger
 			LogHelper.init();
 
-			Thread t = new Thread(sb.inputThread, "Console Input Handler");
+			Thread t = new Thread(currentBot.inputThread, "Console Input Handler");
 			t.setDaemon(true);
 			t.start();
 
@@ -89,33 +87,33 @@ public class SourceBot
 			new Cli(args).parse();
 
 			// Check existence of config directory
-			if (!sb.confDir.exists())
+			if (!currentBot.confDir.exists())
 			{
 				// Attempt to create the directory
-				if (!sb.confDir.mkdirs())
+				if (!currentBot.confDir.mkdirs())
 				{
 					throw new RuntimeException("Unable to create config dir");
 				}
 			}
 
 			// Create config instance
-			sb.conf = new Configuration(sb.confDir.getAbsolutePath(), sb.confName);
+			currentBot.conf = new Configuration(currentBot.confDir.getAbsolutePath(), currentBot.confName);
 
 			// If the config file doesn't exists, run the install process
-			if (!sb.conf.exists())
+			if (!currentBot.conf.exists())
 			{
-				Install.install(sb.confDir.getAbsolutePath(), sb.confName);
+				Install.install(currentBot.confDir.getAbsolutePath(), currentBot.confName);
 				System.exit(0);
 			}
 
 			// Load/read config
-			sb.conf.init();
+			currentBot.conf.init();
 
 			// Start new user command handler
-			sb.commandHandler = new CommandHandler();
+			currentBot.commandHandler = new CommandHandler();
 
 			// Run main thread
-			sb.run();
+			currentBot.run();
 		}
 		catch (Throwable throwable)
 		{
@@ -124,19 +122,19 @@ public class SourceBot
 		finally
 		{
 			// Shutdown sequence
-			if (sb.currentThread != null)
+			if (currentBot.currentThread != null)
 			{
-				sb.currentThread.interrupt();
+				currentBot.currentThread.interrupt();
 			}
-			if (sb.conn != null)
+			if (currentBot.conn != null)
 			{
 				try
 				{
-					sb.conn.close();
+					currentBot.conn.close();
 				}
 				catch (SQLException e)
 				{
-					sb.logger.warning("Error occurred on closing connection to database");
+					currentBot.logger.warning("Error occurred on closing connection to database");
 				}
 			}
 		}
