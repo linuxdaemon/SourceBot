@@ -62,6 +62,16 @@ jar {
     version = version
 }
 
+processResources {
+    from(sourceSets.main.resources.srcDirs) {
+        include 'sbversion.properties'
+        expand 'version': project.version
+    }
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'sbversion.properties'
+    }
+}
+
 task wrapper(type: Wrapper) {
     gradleVersion = '2.12'
 }

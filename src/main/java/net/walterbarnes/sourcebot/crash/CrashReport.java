@@ -281,7 +281,7 @@ public class CrashReport
 	{
 		public String call()
 		{
-			return Constants.VERSION;
+			return Constants.version;
 		}
 	}
 }

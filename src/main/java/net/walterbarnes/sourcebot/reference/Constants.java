@@ -18,7 +18,33 @@
 
 package net.walterbarnes.sourcebot.reference;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Constants
 {
-	public static final String VERSION = "@VERSION@";
+	private static final Logger logger = Logger.getLogger(Constants.class.getName());
+	public static String version;
+
+	public Constants()
+	{
+		InputStream input = getClass().getResourceAsStream("/sbversion.properties");
+		Properties properties = new Properties();
+		if (input != null)
+		{
+			try
+			{
+				properties.load(input);
+			}
+			catch (IOException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+			}
+		}
+
+		version = properties.getProperty("sbbuild.version.number", "missing");
+	}
 }
