@@ -19,8 +19,9 @@
 package net.walterbarnes.sourcebot;
 
 import com.google.gson.JsonObject;
+import net.walterbarnes.sourcebot.cli.Cli;
 import net.walterbarnes.sourcebot.command.CommandHandler;
-import net.walterbarnes.sourcebot.config.Config;
+import net.walterbarnes.sourcebot.config.Configuration;
 import net.walterbarnes.sourcebot.crash.CrashReport;
 import net.walterbarnes.sourcebot.exception.InvalidBlogNameException;
 import net.walterbarnes.sourcebot.thread.InputThread;
@@ -32,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +68,7 @@ public class SourceBot
 	 */
 	public File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 
-	private Config conf;
+	private Configuration conf;
 	private Connection conn;
 	private CommandHandler commandHandler;
 
@@ -85,13 +85,8 @@ public class SourceBot
 			t.setDaemon(true);
 			t.start();
 
-			// Check if there is an argument to set the config directory, otherwise, use the default
-			// TODO should probably use a keyword argument to allow for more options
-			if (args.length > 0)
-			{
-				sb.confDir = new File(args[0]);
-				sb.logger.info(String.format("Set config dir to %s", sb.confDir.getAbsolutePath()));
-			}
+			// Parse and handle command line arguments
+			new Cli(args).parse();
 
 			// Check existence of config directory
 			if (!sb.confDir.exists())
@@ -103,17 +98,23 @@ public class SourceBot
 				}
 			}
 
-			// TODO this is technically redundant and could be optimized
-			File jsonFile = new File(sb.confDir, sb.confName);
+			// Create config instance
+			sb.conf = new Configuration(sb.confDir.getAbsolutePath(), sb.confName);
 
-			if (Arrays.asList(args).contains("install") || !jsonFile.exists())
+			// If the config file doesn't exists, run the install process
+			if (!sb.conf.exists())
 			{
 				Install.install(sb.confDir.getAbsolutePath(), sb.confName);
 				System.exit(0);
 			}
 
-			sb.conf = new Config(sb.confDir.getAbsolutePath(), sb.confName);
-			sb.getCommandHandler();
+			// Load/read config
+			sb.conf.init();
+
+			// Start new user command handler
+			sb.commandHandler = new CommandHandler();
+
+			// Run main thread
 			sb.run();
 		}
 		catch (Throwable throwable)
@@ -141,29 +142,15 @@ public class SourceBot
 		}
 	}
 
-	/**
-	 * Gets the current bots CommandHandler instance, or creates one if none is set
-	 *
-	 * @return the CommandHandler instance
-	 */
-	public CommandHandler getCommandHandler()
-	{
-		if (commandHandler == null)
-		{
-			commandHandler = new CommandHandler();
-		}
-		return commandHandler;
-	}
-
 	private void run() throws InvalidBlogNameException, SQLException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException
 	{
 		Driver driver = (Driver) Class.forName("org.postgresql.Driver").newInstance();
 
-		Config apiCat = conf.getCategory("api", new JsonObject());
-		Config consumerCat = apiCat.getCategory("consumer", new JsonObject());
-		Config tokenCat = apiCat.getCategory("token", new JsonObject());
+		Configuration apiCat = conf.getCategory("api", new JsonObject());
+		Configuration consumerCat = apiCat.getCategory("consumer", new JsonObject());
+		Configuration tokenCat = apiCat.getCategory("token", new JsonObject());
 
-		Config dbCat = conf.getCategory("db", new JsonObject());
+		Configuration dbCat = conf.getCategory("db", new JsonObject());
 		String consumerKey = consumerCat.getString("key", "");
 		String consumerSecret = consumerCat.getString("secret", "");
 		String token = tokenCat.getString("key", "");
@@ -176,9 +163,9 @@ public class SourceBot
 		String dbUser = dbCat.getString("user", "");
 		String dbPass = dbCat.getString("pass", "");
 		String dbName = dbCat.getString("db_name", "");
-		conf.save();
+		if (conf.hasChanged()) conf.save();
 
-		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
+		this.conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
 
 		Thread botThread = new Thread()
@@ -280,5 +267,19 @@ public class SourceBot
 	public static SourceBot getCurrentBot()
 	{
 		return currentBot;
+	}
+
+	/**
+	 * Gets the current bots CommandHandler instance, or creates one if none is set
+	 *
+	 * @return the CommandHandler instance
+	 */
+	public CommandHandler getCommandHandler()
+	{
+		if (commandHandler == null)
+		{
+			commandHandler = new CommandHandler();
+		}
+		return commandHandler;
 	}
 }

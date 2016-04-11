@@ -18,10 +18,10 @@
 
 package net.walterbarnes.sourcebot;
 
+import com.github.OnyxFoxDevelopment.cli.Prompt;
 import com.google.gson.JsonObject;
 import com.tumblr.jumblr.exceptions.JumblrException;
-import net.walterbarnes.sourcebot.cli.Cli;
-import net.walterbarnes.sourcebot.config.Config;
+import net.walterbarnes.sourcebot.config.Configuration;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 
 import java.io.IOException;
@@ -33,16 +33,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-class Install
+public class Install
 {
 	private static final Logger logger = Logger.getLogger(Install.class.getName());
 	
-	static boolean install(String path, String name) throws IOException
+	public static boolean install(String path, String name) throws IOException
 	{
-		Config conf = new Config(path, name);
-		Config apiCat = conf.getCategory("api", new JsonObject());
-		Config consumerCat = apiCat.getCategory("consumer", new JsonObject());
-		Config tokenCat = apiCat.getCategory("tokan", new JsonObject());
+		Configuration conf = new Configuration(path, name);
+		Configuration apiCat = conf.getCategory("api", new JsonObject());
+		Configuration consumerCat = apiCat.getCategory("consumer", new JsonObject());
+		Configuration tokenCat = apiCat.getCategory("tokan", new JsonObject());
 
 		int failCount = 0;
 		boolean validOauth = false;
@@ -56,22 +56,22 @@ class Install
 				String tokenSecret = tokenCat.getString("secret", "");
 				if (consumerKey.isEmpty())
 				{
-					consumerKey = Cli.prompt("[Tumblr API] Consumer Key: ", Pattern.compile("[0-9A-Za-z]+"));
+					consumerKey = Prompt.prompt("[Tumblr API] Consumer Key: ", Pattern.compile("[0-9A-Za-z]+"));
 					consumerCat.setString("key", consumerKey);
 				}
 				if (consumerSecret.isEmpty())
 				{
-					consumerSecret = Cli.prompt("[Tumblr API] Consumer Secret: ", Pattern.compile("[0-9A-Za-z]+"));
+					consumerSecret = Prompt.prompt("[Tumblr API] Consumer Secret: ", Pattern.compile("[0-9A-Za-z]+"));
 					consumerCat.setString("secret", consumerSecret);
 				}
 				if (token.isEmpty())
 				{
-					token = Cli.prompt("[Tumblr API] Token: ", Pattern.compile("[0-9A-Za-z]+"));
+					token = Prompt.prompt("[Tumblr API] Token: ", Pattern.compile("[0-9A-Za-z]+"));
 					tokenCat.setString("key", token);
 				}
 				if (tokenSecret.isEmpty())
 				{
-					tokenSecret = Cli.prompt("[Tumblr API] Token Secret: ", Pattern.compile("[0-9A-Za-z]+"));
+					tokenSecret = Prompt.prompt("[Tumblr API] Token Secret: ", Pattern.compile("[0-9A-Za-z]+"));
 					tokenCat.setString("secret", tokenSecret);
 				}
 				Tumblr tumblr = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
@@ -92,14 +92,14 @@ class Install
 		return true;
 	}
 
-	private static boolean installDb(Config config)
+	private static boolean installDb(Configuration config)
 	{
-		Config dbCat = config.getCategory("db", new JsonObject());
-		String dbHost = Cli.prompt("[Database] Hostname[localhost]: ", Pattern.compile(".+"), "localhost");
-		String dbPort = Cli.prompt("[Database] Port[5432]: ", Pattern.compile(".+"), "5432");
-		String dbUser = Cli.prompt("[Database] Username[sourcebot]: ", Pattern.compile("[^ ]+"), "sourcebot");
-		String dbPass = Cli.password("[Database] Password: ", Pattern.compile(".+"));
-		String dbName = Cli.prompt("[Database] Database Name[sourcebot]: ", Pattern.compile(".*"), "sourcebot");
+		Configuration dbCat = config.getCategory("db", new JsonObject());
+		String dbHost = Prompt.prompt("[Database] Hostname[localhost]: ", Pattern.compile(".+"), "localhost");
+		String dbPort = Prompt.prompt("[Database] Port[5432]: ", Pattern.compile(".+"), "5432");
+		String dbUser = Prompt.prompt("[Database] Username[sourcebot]: ", Pattern.compile("[^ ]+"), "sourcebot");
+		String dbPass = Prompt.password("[Database] Password: ", Pattern.compile(".+"));
+		String dbName = Prompt.prompt("[Database] Database Name[sourcebot]: ", Pattern.compile(".*"), "sourcebot");
 		dbCat.setString("host", dbHost);
 		dbCat.setString("port", dbPort);
 		dbCat.setString("user", dbUser);

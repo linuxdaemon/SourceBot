@@ -28,17 +28,29 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @SuppressWarnings ("SameParameterValue")
-public class Config
+public class Configuration
 {
+	private static final Logger logger = Logger.getLogger(Configuration.class.getName());
 	private final JsonParser parser = new JsonParser();
 	private File file = null;
-	private Config parent = null;
+	private Configuration parent = null;
 	private JsonObject json;
+	private boolean changed = false;
+	private Map<String, Configuration> children = new TreeMap<>();
 
-	public Config(String configPath, String fileName) throws IOException
+	private Configuration(JsonObject json, Configuration parent)
+	{
+		this.json = json;
+		this.parent = parent;
+	}
+
+	public Configuration(String configPath, String fileName) throws IOException
 	{
 		File configDir = new File(configPath);
 		if (!configDir.exists())
@@ -49,6 +61,10 @@ public class Config
 			}
 		}
 		this.file = new File(configDir, fileName);
+	}
+
+	public void init() throws IOException
+	{
 		try
 		{
 			load();
@@ -69,14 +85,21 @@ public class Config
 
 	private void load() throws IOException
 	{
+		if (parent != null && parent != this)
+		{
+			return;
+		}
+
 		if (!file.canRead())
 		{
 			throw new RuntimeException("Unable to read config file, invalid permissions");
 		}
+
 		if (!file.canWrite())
 		{
 			throw new RuntimeException("Unable to write to config file, invalid permissions");
 		}
+
 		if (!file.exists())
 		{
 			if (!file.createNewFile())
@@ -89,24 +112,29 @@ public class Config
 			pjw.endObject();
 			pjw.close();
 			fw.close();
+			children.clear();
 		}
 		FileReader fr = new FileReader(this.file);
 		json = parser.parse(fr).getAsJsonObject();
 	}
 
-	private Config(JsonObject json, Config parent)
+	public boolean exists()
 	{
-		this.json = json;
-		this.parent = parent;
+		return this.file.exists();
 	}
 
-	public Config getCategory(String key, JsonObject def)
+	public Configuration getCategory(String key, JsonObject def)
 	{
 		if (!json.has(key))
 		{
 			json.add(key, def);
+			changed = true;
 		}
-		return new Config(json.getAsJsonObject(key), this);
+		if (!children.containsKey(key))
+		{
+			children.put(key, new Configuration(json.getAsJsonObject(key), this));
+		}
+		return children.get(key);
 	}
 
 	public String getString(String key, String def)
@@ -114,6 +142,7 @@ public class Config
 		if (!json.has(key))
 		{
 			json.add(key, new JsonPrimitive(def));
+			changed = true;
 		}
 		return json.get(key).getAsString();
 	}
@@ -123,18 +152,60 @@ public class Config
 		json.add(key, new JsonPrimitive(val));
 	}
 
-	public void save() throws IOException
+	public void save()
 	{
-		if (parent == null)
-		{
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			FileWriter fw = new FileWriter(this.file);
-			fw.append(gson.toJson(json));
-			fw.close();
-		}
-		else
+		if (parent != null && parent != this)
 		{
 			parent.save();
+			return;
+		}
+
+		try
+		{
+			if (file.getParentFile() != null)
+			{
+				if (!file.getParentFile().mkdirs())
+				{
+					throw new RuntimeException("Unable to save config file");
+				}
+			}
+
+			if (!file.exists() && !file.createNewFile())
+			{
+				throw new RuntimeException("Unable to save config file");
+			}
+
+			if (file.canWrite())
+			{
+				Gson gson = new GsonBuilder().setPrettyPrinting().create();
+				FileWriter fw = new FileWriter(this.file);
+				fw.append(gson.toJson(json));
+				fw.close();
+			}
+		}
+		catch (IOException e)
+		{
+			logger.severe("Unable to save configuration file");
+			logger.log(Level.SEVERE, e.getMessage(), e);
+		}
+	}
+
+	public boolean hasChanged()
+	{
+		if (changed) return true;
+		for (Configuration child : children.values())
+		{
+			if (child.hasChanged()) return true;
+		}
+		return false;
+	}
+
+	private void resetChangedState()
+	{
+		changed = false;
+		for (Configuration child : children.values())
+		{
+			child.resetChangedState();
 		}
 	}
 }

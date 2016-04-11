@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 @SuppressWarnings ({"WeakerAccess", "unused"})
 public class Tumblr extends JumblrClient
 {
-	public static final Logger logger = Logger.getLogger(Tumblr.class.getName());
+	private static final Logger logger = Logger.getLogger(Tumblr.class.getName());
 
 	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret)
 	{
