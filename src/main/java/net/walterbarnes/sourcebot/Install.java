@@ -42,7 +42,7 @@ public class Install
 		Configuration conf = new Configuration(path, name);
 		Configuration apiCat = conf.getCategory("api", new JsonObject());
 		Configuration consumerCat = apiCat.getCategory("consumer", new JsonObject());
-		Configuration tokenCat = apiCat.getCategory("tokan", new JsonObject());
+		Configuration tokenCat = apiCat.getCategory("token", new JsonObject());
 
 		int failCount = 0;
 		boolean validOauth = false;

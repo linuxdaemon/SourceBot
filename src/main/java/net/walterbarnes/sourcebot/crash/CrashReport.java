@@ -43,7 +43,7 @@ public class CrashReport
 	 */
 	private final Throwable cause;
 	private final CrashReportCategory rootCategory = new CrashReportCategory("System Details");
-	private StackTraceElement[] stacktrace = new StackTraceElement[0];
+	private final StackTraceElement[] stacktrace = new StackTraceElement[0];
 	/**
 	 * File of crash report.
 	 */

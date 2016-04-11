@@ -98,16 +98,16 @@ public class Tumblr extends JumblrClient
 	}
 
 	/**
-	 * Retrives a blogs drafts
+	 * Retrieves a blogs drafts id {@code id}
 	 *
 	 * @param blogName Blog to retrieve posts from
-	 * @param before   Retrieve posts before this id
+	 * @param id   Retrieve posts before this id
 	 * @return A List of posts from the blogs drafts
 	 */
-	public List<Post> blogDraftPosts(String blogName, long before)
+	public List<Post> blogDraftPosts(String blogName, long id)
 	{
 		Map<String, Object> params = new HashMap<>();
-		params.put("before_id", before);
+		params.put("before_id", id);
 		return blogDraftPosts(blogName, params);
 	}
 

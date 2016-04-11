@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+@SuppressWarnings ("WeakerAccess")
 public class CrashReportCategory
 {
 	private final String categoryName;
 	private final List<CrashReportCategory.Entry> sections = new ArrayList<>();
-	private final StackTraceElement[] stackTrace = new StackTraceElement[0];
 
 	public CrashReportCategory(@SuppressWarnings ("SameParameterValue") String categoryName)
 	{
@@ -82,11 +82,6 @@ public class CrashReportCategory
 			stringBuilder.append(": ");
 			stringBuilder.append(entry.getContent());
 		}
-	}
-
-	public StackTraceElement[] getStackTrace()
-	{
-		return this.stackTrace;
 	}
 
 	static class Entry
