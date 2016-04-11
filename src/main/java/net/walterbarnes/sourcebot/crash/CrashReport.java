@@ -18,16 +18,24 @@
 
 package net.walterbarnes.sourcebot.crash;
 
-import net.walterbarnes.sourcebot.util.LogHelper;
+import net.walterbarnes.sourcebot.reference.Constants;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @SuppressWarnings ({"WeakerAccess", "SameParameterValue"})
 public class CrashReport
 {
+	private static final Logger logger = Logger.getLogger(CrashReport.class.getName());
 	/**
 	 * Description of the crash report.
 	 */
@@ -36,7 +44,9 @@ public class CrashReport
 	 * The Throwable that is the "cause" for this crash and Crash Report.
 	 */
 	private final Throwable cause;
-	private final StackTraceElement[] stacktrace = new StackTraceElement[0];
+	private final CrashReportCategory rootCategory = new CrashReportCategory(this, "System Details");
+	private final List crashReportSections = new ArrayList();
+	private StackTraceElement[] stacktrace = new StackTraceElement[0];
 	/**
 	 * File of crash report.
 	 */
@@ -46,8 +56,82 @@ public class CrashReport
 	{
 		this.description = description;
 		this.cause = cause;
+		this.populateEnvironment();
 	}
+	
+	private void populateEnvironment()
+	{
+		this.rootCategory.addCrashSectionCallable("SourceBot Version", new Callable()
+		{
+			public String call()
+			{
+				return Constants.VERSION;
+			}
+		});
+		this.rootCategory.addCrashSectionCallable("Operating System", new Callable()
+		{
+			public String call()
+			{
+				return System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version");
+			}
+		});
+		this.rootCategory.addCrashSectionCallable("Java Version", new Callable()
+		{
+			public String call()
+			{
+				return System.getProperty("java.version") + ", " + System.getProperty("java.vendor");
+			}
+		});
+		this.rootCategory.addCrashSectionCallable("Java VM Version", new Callable()
+		{
+			public String call()
+			{
+				return System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor");
+			}
+		});
+		this.rootCategory.addCrashSectionCallable("Memory", new Callable()
+		{
+			public String call()
+			{
+				Runtime runtime = Runtime.getRuntime();
+				long i = runtime.maxMemory();
+				long j = runtime.totalMemory();
+				long k = runtime.freeMemory();
+				long l = i / 1024L / 1024L;
+				long i1 = j / 1024L / 1024L;
+				long j1 = k / 1024L / 1024L;
+				return k + " bytes (" + j1 + " MB) / " + j + " bytes (" + i1 + " MB) up to " + i + " bytes (" + l + " MB)";
+			}
+		});
+		this.rootCategory.addCrashSectionCallable("JVM Flags", new Callable()
+		{
+			public String call()
+			{
+				RuntimeMXBean runtimemxbean = ManagementFactory.getRuntimeMXBean();
+				List list = runtimemxbean.getInputArguments();
+				int i = 0;
+				StringBuilder stringbuilder = new StringBuilder();
 
+				for (Object aList : list)
+				{
+					String s = (String) aList;
+
+					if (s.startsWith("-X"))
+					{
+						if (i++ > 0)
+						{
+							stringbuilder.append(" ");
+						}
+
+						stringbuilder.append(s);
+					}
+				}
+
+				return String.format("%d total; %s", i, stringbuilder.toString());
+			}
+		});
+	}
+	
 	public File getFile()
 	{
 		return this.crashReportFile;
@@ -77,7 +161,7 @@ public class CrashReport
 			}
 			catch (Throwable throwable)
 			{
-				LogHelper.getLogger().log(Level.SEVERE, "Could not save crash report to " + p_147149_1_, throwable);
+				logger.log(Level.SEVERE, "Could not save crash report to " + p_147149_1_, throwable);
 				return false;
 			}
 		}
@@ -174,6 +258,11 @@ public class CrashReport
 	 */
 	public void getSectionsInStringBuilder(StringBuilder stringBuilder)
 	{
+		if ((this.stacktrace == null || this.stacktrace.length <= 0) && this.crashReportSections.size() > 0)
+		{
+			this.stacktrace = ArrayUtils.subarray(((CrashReportCategory) this.crashReportSections.get(0)).getStackTrace(), 0, 1);
+		}
+
 		if (this.stacktrace.length > 0)
 		{
 			stringBuilder.append("-- Head --\n");
@@ -188,5 +277,14 @@ public class CrashReport
 
 			stringBuilder.append("\n");
 		}
+
+		for (Object crashReportSection : this.crashReportSections)
+		{
+			CrashReportCategory crashreportcategory = (CrashReportCategory) crashReportSection;
+			crashreportcategory.appendToStringBuilder(stringBuilder);
+			stringBuilder.append("\n\n");
+		}
+
+		this.rootCategory.appendToStringBuilder(stringBuilder);
 	}
 }

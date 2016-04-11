@@ -1,11 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'application'
-
-group 'net.walterbarnes'
-mainClassName = group + ".sourcebot.SourceBot"
-version '0.2'
-
 /*
  * Copyright (c) 2016.
  * This file is part of SourceBot.
@@ -23,6 +15,15 @@ version '0.2'
  * You should have received a copy of the GNU General Public License
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+import org.apache.tools.ant.filters.ReplaceTokens
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'application'
+
+group 'net.walterbarnes'
+mainClassName = group + ".sourcebot.SourceBot"
+version '0.2'
 
 // If TeamCity is running this build, lets set the version info
 def buildNum = '0'
@@ -51,6 +52,7 @@ dependencies {
 }
 
 jar {
+    filter(ReplaceTokens, tokens: ['clientId': 'test'])
     manifest {
         attributes('Main-Class': mainClassName
         )

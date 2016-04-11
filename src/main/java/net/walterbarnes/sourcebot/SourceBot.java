@@ -79,6 +79,9 @@ public class SourceBot
 			// Initialize and configure the root logger
 			LogHelper.init();
 
+			// Start new user command handler
+			currentBot.commandHandler = new CommandHandler();
+
 			Thread t = new Thread(currentBot.inputThread, "Console Input Handler");
 			t.setDaemon(true);
 			t.start();
@@ -108,9 +111,6 @@ public class SourceBot
 
 			// Load/read config
 			currentBot.conf.init();
-
-			// Start new user command handler
-			currentBot.commandHandler = new CommandHandler();
 
 			// Run main thread
 			currentBot.run();
@@ -163,7 +163,9 @@ public class SourceBot
 		String dbName = dbCat.getString("db_name", "");
 		if (conf.hasChanged()) conf.save();
 
-		this.conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
+		logger.info(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName));
+
+		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
 
 		Thread botThread = new Thread()
@@ -210,7 +212,6 @@ public class SourceBot
 									logger.info("Took " + (System.currentTimeMillis() - start) + " ms");
 								}
 							}
-							//Thread.sleep(1000);
 						}
 						catch (OAuthConnectionException e)
 						{
@@ -222,9 +223,9 @@ public class SourceBot
 						}
 					}
 				}
-				catch (SQLException e)
+				catch (Throwable throwable)
 				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
+					displayCrashReport(new CrashReport("Unexpected error", throwable));
 				}
 			}
 		};
@@ -274,10 +275,6 @@ public class SourceBot
 	 */
 	public CommandHandler getCommandHandler()
 	{
-		if (commandHandler == null)
-		{
-			commandHandler = new CommandHandler();
-		}
 		return commandHandler;
 	}
 }
