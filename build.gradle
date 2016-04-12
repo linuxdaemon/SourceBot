@@ -48,7 +48,7 @@ repositories {
 
 dependencies {
     testCompile 'junit:junit:4.11'
-    compile 'com.github.onyxfoxdevelopment:OFlib:0.2.12'
+    compile 'com.github.onyxfoxdevelopment:OFlib:0.2.16'
     compile 'com.tumblr:jumblr:0.0.12-SNAPSHOT'
     compile 'org.postgresql:postgresql:9.4.1208.jre7'
     compile 'commons-cli:commons-cli:1.3'

@@ -22,6 +22,7 @@ import com.github.onyxfoxdevelopment.collections.CollectionHelper;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.config.BlogConfig;
+import net.walterbarnes.sourcebot.search.PostComparator;
 import net.walterbarnes.sourcebot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.tumblr.*;
@@ -220,86 +221,18 @@ public class SearchThread implements Runnable
 		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
 	}
 
-	private List<Post> selectPosts(Collection<Post> posts, String method, int n)
+	private List<Post> selectPosts(Collection<Post> posts, String method, int n) throws InstantiationException, IllegalAccessException
 	{
 		switch (method)
 		{
 			case "top":
-				return getTopPosts(posts, n);
+				return (List<Post>) CollectionHelper.cutMaxLen(CollectionHelper.sortByCompare(posts, PostComparator.NoteCount.class, true), n);
 
 			case "recent":
-				return sortTimestamp(posts, n);
+				return (List<Post>) CollectionHelper.cutMaxLen(CollectionHelper.sortByCompare(posts, PostComparator.Timestamp.class, true), n);
 
 			default:
-				return sortTimestamp(posts, n);
+				return (List<Post>) CollectionHelper.cutMaxLen(CollectionHelper.sortByCompare(posts, PostComparator.Timestamp.class, true), n);
 		}
-	}
-
-	/**
-	 * Selects the top posts from a set by their note count
-	 *
-	 * @param posts Set to sort
-	 * @param n     Number of top posts to select
-	 * @return Top n posts from set
-	 */
-	private static ArrayList<Post> getTopPosts(Collection<Post> posts, int n)
-	{
-		int moves = 0;
-		boolean firstRun = true;
-		List<Post> p = new ArrayList<>(posts);
-		while (firstRun || moves > 0)
-		{
-			moves = 0;
-			firstRun = false;
-			for (int i = 1; i < p.size(); i++)
-			{
-				Post a = p.get(i - 1);
-				Post b = p.get(i);
-
-				if (a.getNoteCount() < b.getNoteCount())
-				{
-					p.set(i - 1, b);
-					p.set(i, a);
-					moves++;
-				}
-			}
-		}
-		return new ArrayList<>(p.subList(0, n - 1));
-	}
-
-	/**
-	 * Sorts a set of Tumblr Posts by their timestamp
-	 *
-	 * @param posts Set to sort
-	 * @param n     Number of posts to return
-	 * @return Sorted List of posts
-	 */
-	private static ArrayList<Post> sortTimestamp(Collection<Post> posts, int n)
-	{
-		int moves = 0;
-		boolean firstRun = true;
-		List<Post> p = new ArrayList<>(posts);
-		while (firstRun || moves > 0)
-		{
-			moves = 0;
-			firstRun = false;
-			for (int i = 1; i < p.size(); i++)
-			{
-				Post a = p.get(i - 1);
-				Post b = p.get(i);
-
-				if (a.getTimestamp() < b.getTimestamp())
-				{
-					p.set(i - 1, b);
-					p.set(i, a);
-					moves++;
-				}
-			}
-		}
-		if (n > p.size())
-		{
-			return new ArrayList<>(p);
-		}
-		return new ArrayList<>(p.subList(0, n - 1));
 	}
 }
