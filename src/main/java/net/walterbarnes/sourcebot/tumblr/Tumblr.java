@@ -101,7 +101,7 @@ public class Tumblr extends JumblrClient
 	 * Retrieves a blogs drafts id {@code id}
 	 *
 	 * @param blogName Blog to retrieve posts from
-	 * @param id   Retrieve posts before this id
+	 * @param id       Retrieve posts before this id
 	 * @return A List of posts from the blogs drafts
 	 */
 	public List<Post> blogDraftPosts(String blogName, long id)

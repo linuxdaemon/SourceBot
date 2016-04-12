@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot;
 
-import com.github.OnyxFoxDevelopment.collections.CollectionHelper;
+import com.github.onyxfoxdevelopment.collections.CollectionHelper;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.config.BlogConfig;

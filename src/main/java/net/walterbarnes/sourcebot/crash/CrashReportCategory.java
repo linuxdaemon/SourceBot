@@ -51,7 +51,7 @@ public class CrashReportCategory
 	/**
 	 * Adds a {@link CrashReport} section with the given name with the given value (converted .toString())
 	 *
-	 * @param title Crash section title
+	 * @param title   Crash section title
 	 * @param content Crash section content
 	 */
 	private void addCrashSection(String title, Object content)
@@ -62,7 +62,7 @@ public class CrashReportCategory
 	/**
 	 * Adds a {@link CrashReport} section with the given name with the given {@link Throwable}
 	 *
-	 * @param title Crash section title
+	 * @param title     Crash section title
 	 * @param throwable Error to report
 	 */
 	public void addCrashSectionThrowable(String title, Throwable throwable)

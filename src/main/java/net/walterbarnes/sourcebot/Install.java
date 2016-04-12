@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot;
 
-import com.github.OnyxFoxDevelopment.cli.Prompt;
+import com.github.onyxfoxdevelopment.cli.Prompt;
 import com.google.gson.JsonObject;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import net.walterbarnes.sourcebot.config.Configuration;
