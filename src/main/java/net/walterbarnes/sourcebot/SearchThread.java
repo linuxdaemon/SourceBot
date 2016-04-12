@@ -197,11 +197,11 @@ public class SearchThread implements Runnable
 								}
 								catch (JumblrException e)
 								{
-									if (failCount > 10) break loop;
 									rbd = false;
 									hasPosted = false;
 									failCount++;
 									logger.log(Level.SEVERE, e.getMessage(), e);
+									if (failCount > 10) break loop;
 									Thread.sleep(1000);
 								}
 							}

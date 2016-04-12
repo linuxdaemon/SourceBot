@@ -78,17 +78,9 @@ public class BlogTerm implements ISearchTerm
 
 		Map<Post, String> out = new HashMap<>();
 
-		for (Object obj : cache)
+		for (Post p : cache)
 		{
-			if (obj instanceof Post)
-			{
-				Post p = (Post) obj;
-				out.put(p, rule.getFullTerm());
-			}
-			else
-			{
-				throw new RuntimeException("Non-post object in post cache");
-			}
+			out.put(p, rule.getFullTerm());
 		}
 
 		logger.info("Searching blog " + term);
@@ -127,12 +119,10 @@ public class BlogTerm implements ISearchTerm
 							if (!post.getTags().contains(rt)) continue loop;
 						}
 					}
-					else
+					for (String tag : tagBlacklist)
 					{
-						for (String tag : tagBlacklist)
-						{
-							if (post.getTags().contains(tag)) continue loop;
-						}
+						if (post.getTags().contains(tag) && (rule.getRequiredTags() == null ||
+								!Arrays.asList(rule.getRequiredTags()).contains(tag))) { continue loop; }
 					}
 
 					if (cache.addPost(post)) out.put(post, rule.getFullTerm());

@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class PostCache implements Iterable
+public class PostCache implements Iterable<Post>
 {
 	private final Map<Post, Long> posts = new LinkedHashMap<>();
 	private final long cacheLife;
@@ -75,7 +75,7 @@ public class PostCache implements Iterable
 	}
 
 	@Override
-	public Iterator iterator()
+	public Iterator<Post> iterator()
 	{
 		return posts.keySet().iterator();
 	}
