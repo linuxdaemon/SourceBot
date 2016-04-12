@@ -19,7 +19,7 @@
 package net.walterbarnes.sourcebot.tumblr;
 
 import com.tumblr.jumblr.exceptions.JumblrException;
-import com.tumblr.jumblr.types.Post;
+import com.tumblr.jumblr.types.*;
 import net.walterbarnes.sourcebot.config.BlogConfig;
 import net.walterbarnes.sourcebot.search.SearchInclusion;
 
@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 public class BlogTerm implements ISearchTerm
 {
 	private static final Logger logger = Logger.getLogger(BlogTerm.class.getName());
+	private static final String type = "blog";
 
 	private final String term;
 	private final Tumblr client;
@@ -57,7 +58,7 @@ public class BlogTerm implements ISearchTerm
 	@Override
 	public String getSearchTerm()
 	{
-		return "blog:" + term;
+		return type + ":" + term;
 	}
 
 	@SuppressWarnings ("Duplicates")
@@ -83,7 +84,7 @@ public class BlogTerm implements ISearchTerm
 			out.put(p, rule.getFullTerm());
 		}
 
-		logger.info("Searching blog " + term);
+		logger.info(String.format("Searching %s %s", type, term));
 		while (out.size() < postNum)
 		{
 			HashMap<String, Object> options = new HashMap<>();
@@ -108,30 +109,91 @@ public class BlogTerm implements ISearchTerm
 			{
 				searched++;
 				postCount++;
-				if (Arrays.asList(types).contains(post.getType().getValue()))
-				{
-					if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+				if (!Arrays.asList(types).contains(post.getType().getValue())) continue;
 
-					if (rule.getRequiredTags() != null)
+				if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+
+				if (rule.getRequiredTags() != null)
+				{
+					for (String rt : rule.getRequiredTags())
 					{
-						for (String rt : rule.getRequiredTags())
+						if (!post.getTags().contains(rt)) continue loop;
+					}
+				}
+
+				for (String tag : tagBlacklist)
+				{
+					if (rule.getRequiredTags() != null && Arrays.asList(rule.getRequiredTags()).contains(tag))
+					{
+						continue;
+					}
+
+					if (post instanceof TextPost)
+					{
+						TextPost p = (TextPost) post;
+						if (p.getTitle().contains(tag) || p.getBody().contains(tag)) continue loop;
+					}
+					else if (post instanceof PhotoPost)
+					{
+						PhotoPost p = (PhotoPost) post;
+						if (p.getCaption().contains(tag)) continue loop;
+					}
+					else if (post instanceof QuotePost)
+					{
+						QuotePost p = (QuotePost) post;
+						if (p.getSource().contains(tag) || p.getText().contains(tag)) continue loop;
+					}
+					else if (post instanceof LinkPost)
+					{
+						LinkPost p = (LinkPost) post;
+						if (p.getTitle().contains(tag) || p.getDescription().contains(tag)) continue loop;
+					}
+					else if (post instanceof ChatPost)
+					{
+						ChatPost p = (ChatPost) post;
+						if (p.getTitle().contains(tag) || p.getBody().contains(tag)) continue loop;
+						for (Dialogue line : p.getDialogue())
 						{
-							if (!post.getTags().contains(rt)) continue loop;
+							if (line.getPhrase().contains(tag) || line.getLabel().contains(tag) || line.getName().contains(tag))
+							{ continue loop; }
 						}
 					}
-					for (String tag : tagBlacklist)
+					else if (post instanceof AudioPost)
 					{
-						if (post.getTags().contains(tag) && (rule.getRequiredTags() == null ||
-								!Arrays.asList(rule.getRequiredTags()).contains(tag))) { continue loop; }
+						AudioPost p = (AudioPost) post;
+						if (p.getCaption().contains(tag)) continue loop;
+					}
+					else if (post instanceof VideoPost)
+					{
+						VideoPost p = (VideoPost) post;
+						if (p.getCaption().contains(tag)) continue loop;
+					}
+					else if (post instanceof AnswerPost)
+					{
+						AnswerPost p = (AnswerPost) post;
+						if (p.getAnswer().contains(tag) || p.getQuestion().contains(tag)) continue loop;
+					}
+					else if (post instanceof PostcardPost)
+					{
+						PostcardPost p = (PostcardPost) post;
+						if (p.getBody().contains(tag)) continue loop;
 					}
 
-					if (cache.addPost(post)) out.put(post, rule.getFullTerm());
+					if (post.getTags().contains(tag))
+					{
+						if (rule.getRequiredTags() == null || !Arrays.asList(rule.getRequiredTags()).contains(tag))
+						{
+							continue loop;
+						}
+					}
 				}
+
+				if (cache.addPost(post)) out.put(post, rule.getFullTerm());
 			}
 		}
 		long end = System.currentTimeMillis() - start;
 
-		logger.info(String.format("Searched blog %s, selected %d posts out of %d searched (%f%%), took %d ms", term,
+		logger.info(String.format("Searched %s %s, selected %d posts out of %d searched (%f%%), took %d ms", type, term,
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
 		blog.addStat(rule.getType().toString(), term, (int) end, searched, out.size());

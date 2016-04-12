@@ -150,7 +150,8 @@ public class SearchThread implements Runnable
 
 							// If the user has it enabled for this blog, check if the post might be a spam posts
 							// TODO implement spam match rules
-							if (blog.getCheckBlog() && (client.blogPosts(post.getBlogName()).size() < 5 || client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")))
+							if (blog.getCheckBlog() && (client.blogPosts(post.getBlogName()).size() < 5 ||
+									client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")))
 							{
 								logger.info("Post may be spam, getting new post");
 								continue;
