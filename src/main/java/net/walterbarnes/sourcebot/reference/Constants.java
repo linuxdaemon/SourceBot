@@ -18,23 +18,24 @@
 
 package net.walterbarnes.sourcebot.reference;
 
+import com.google.gson.JsonObject;
+import net.walterbarnes.sourcebot.config.Configuration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Constants
+public final class Constants
 {
 	private static final Logger logger = Logger.getLogger(Constants.class.getName());
 	public static String version;
+	public static String consumerKey, consumerSecret;
+	public static String token, tokenSecret;
+	public static String webRoot;
 
-	static
-	{
-		new Constants();
-	}
-
-	public Constants()
+	private Constants(Configuration conf)
 	{
 		InputStream input = getClass().getResourceAsStream("/sbversion.properties");
 		Properties properties = new Properties();
@@ -51,5 +52,22 @@ public class Constants
 		}
 
 		version = properties.getProperty("sbbuild.version.number", "missing");
+
+		Configuration tumblrCat = conf.getCategory("tumblr", new JsonObject());
+
+		consumerKey = tumblrCat.getString("consumerKey", "missing");
+		consumerSecret = tumblrCat.getString("consumerSecret", "missing");
+
+		token = tumblrCat.getString("token", "missing");
+		tokenSecret = tumblrCat.getString("tokenSecret", "missing");
+
+		Configuration webCat = conf.getCategory("webapp", new JsonObject());
+
+		webRoot = webCat.getString("webRoot", "localhost");
+	}
+
+	public static void load(Configuration conf)
+	{
+		new Constants(conf);
 	}
 }

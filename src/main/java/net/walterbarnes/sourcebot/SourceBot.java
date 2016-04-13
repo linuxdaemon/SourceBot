@@ -23,9 +23,16 @@ import net.walterbarnes.sourcebot.cli.Cli;
 import net.walterbarnes.sourcebot.command.CommandHandler;
 import net.walterbarnes.sourcebot.config.Configuration;
 import net.walterbarnes.sourcebot.crash.CrashReport;
+import net.walterbarnes.sourcebot.reference.Constants;
 import net.walterbarnes.sourcebot.thread.InputThread;
 import net.walterbarnes.sourcebot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.util.LogHelper;
+import net.walterbarnes.sourcebot.web.ConfigServer;
+import net.walterbarnes.sourcebot.web.IndexHandler;
+import net.walterbarnes.sourcebot.web.auth.CallbackHandler;
+import net.walterbarnes.sourcebot.web.auth.ConnectHandler;
+import net.walterbarnes.sourcebot.web.blog.BlogManagerHandler;
+import net.walterbarnes.sourcebot.web.search.RuleManagerHandler;
 import org.scribe.exceptions.OAuthConnectionException;
 
 import java.io.File;
@@ -39,13 +46,10 @@ import java.util.logging.Logger;
 
 public class SourceBot
 {
-
 	/**
 	 * Static link to current SourceBot instance
 	 */
-	private static final SourceBot currentBot;
-
-	static {currentBot = new SourceBot();}
+	private static final SourceBot currentBot = new SourceBot();
 
 	/**
 	 * Default config file name, in the future, this may be overridden via command line arguments
@@ -106,6 +110,16 @@ public class SourceBot
 			// Load/read config
 			currentBot.conf.init();
 
+			Constants.load(currentBot.conf);
+
+			ConfigServer cs = new ConfigServer(8087, Constants.consumerKey, Constants.consumerSecret);
+			cs.addPage("/connect", new ConnectHandler(Constants.consumerKey, Constants.consumerSecret));
+			cs.addPage("/callback", new CallbackHandler());
+			cs.addPage("/rules", new RuleManagerHandler());
+			cs.addPage("/blogs", new BlogManagerHandler());
+			cs.addPage("/", new IndexHandler());
+			cs.start();
+
 			// Run main thread
 			currentBot.run();
 		}
@@ -138,23 +152,15 @@ public class SourceBot
 	{
 		Class.forName("org.postgresql.Driver").newInstance();
 
-		Configuration apiCat = conf.getCategory("api", new JsonObject());
-		Configuration consumerCat = apiCat.getCategory("consumer", new JsonObject());
-		Configuration tokenCat = apiCat.getCategory("token", new JsonObject());
+		this.client = new Tumblr(Constants.consumerKey, Constants.consumerSecret, Constants.token, Constants.tokenSecret);
 
 		Configuration dbCat = conf.getCategory("db", new JsonObject());
-		String consumerKey = consumerCat.getString("key", "");
-		String consumerSecret = consumerCat.getString("secret", "");
-		String token = tokenCat.getString("key", "");
-		String tokenSecret = tokenCat.getString("secret", "");
-
-		this.client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
 
 		String dbHost = dbCat.getString("host", "");
 		String dbPort = dbCat.getString("port", "");
 		String dbUser = dbCat.getString("user", "");
 		String dbPass = dbCat.getString("pass", "");
-		String dbName = dbCat.getString("db_name", "");
+		String dbName = dbCat.getString("dbName", "");
 		if (conf.hasChanged()) conf.save();
 
 		logger.info(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName));
