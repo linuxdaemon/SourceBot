@@ -47,7 +47,7 @@ public class SearchThread implements Runnable
 	{
 		this.url = url;
 		this.client = client;
-		this.blog = new BlogConfig(conn, url);
+		this.blog = new BlogConfig(client, conn, url);
 	}
 
 	@Override
@@ -56,16 +56,8 @@ public class SearchThread implements Runnable
 		try
 		{
 			// Check the blog's configured posting state and check if we need to post some more posts
-			if ((blog.getPostState().equals("draft") && client.getDrafts(url).size() < blog.getPostBuffer()) ||
-					(blog.getPostState().equals("queue") && client.getQueuedPosts(url).size() < blog.getPostBuffer()))
+			if (!blog.isPostBufFull())
 			{
-				// We can post in to the queue, but, without being an admin ont he blog, we can't accurately track the
-				// number of posts in the queue to know when to stop posting
-				if (blog.getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
-				{
-					logger.warning("Bot is not admin on '" + url + "', not running thread");
-				}
-
 				logger.info(String.format("[%s] %d posts in queue", url, client.getQueuedPosts(url).size()));
 				logger.info("Adding posts to queue");
 

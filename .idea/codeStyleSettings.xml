@@ -35,8 +35,6 @@
           <option name="KEEP_SIMPLE_BLOCKS_IN_ONE_LINE" value="true" />
           <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
           <option name="KEEP_SIMPLE_CLASSES_IN_ONE_LINE" value="true" />
-          <option name="IF_BRACE_FORCE" value="1" />
-          <option name="FOR_BRACE_FORCE" value="1" />
           <option name="SPACE_BEFORE_ANOTATION_PARAMETER_LIST" value="true" />
           <indentOptions>
             <option name="USE_TAB_CHARACTER" value="true" />

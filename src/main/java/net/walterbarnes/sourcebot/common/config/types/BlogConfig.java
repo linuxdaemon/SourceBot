@@ -20,6 +20,7 @@ package net.walterbarnes.sourcebot.common.config.types;
 
 import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
+import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -35,14 +36,15 @@ import java.util.logging.Logger;
 public class BlogConfig
 {
 	private static final Logger logger = Logger.getLogger(BlogConfig.class.getName());
-	@SuppressWarnings ("FieldCanBeLocal")
-	private final String id;
+
 	private final PreparedStatement addPosts;
 	private final PreparedStatement addStats;
 	private final PreparedStatement getConfig;
 	private final PreparedStatement getSI;
 	private final PreparedStatement getSE;
 	private final PreparedStatement getPosts;
+	private final Tumblr client;
+	private final String url;
 	private List<SearchExclusion> exclusions = new ArrayList<>();
 	private long exclusionsQTime = 0;
 	private List<SearchInclusion> inclusions = new ArrayList<>();
@@ -50,33 +52,34 @@ public class BlogConfig
 	private ResultSet configRs;
 	private long configQTime = 0;
 
-	public BlogConfig(@Nonnull Connection conn, @Nonnull String url) throws SQLException
+	public BlogConfig(Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
 	{
+		PreparedStatement getUrl = null;
 		ResultSet rs = null;
 		try
 		{
-			PreparedStatement getBId = conn.prepareStatement("SELECT id FROM blogs WHERE url = ?");
-			getBId.setString(1, url);
-			rs = getBId.executeQuery();
+			getUrl = connection.prepareStatement("SELECT url FROM blogs WHERE id = ?");
+			getUrl.setString(1, id);
+			rs = getUrl.executeQuery();
 			rs.next();
-			id = rs.getString("id");
-
-			getConfig = conn.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			this.url = rs.getString("url");
+			this.client = client;
+			getConfig = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getConfig.setString(1, id);
 
-			getSI = conn.prepareStatement("SELECT * FROM search_inclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			getSI = connection.prepareStatement("SELECT * FROM search_inclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getSI.setString(1, id);
 
-			getSE = conn.prepareStatement("SELECT * FROM search_exclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			getSE = connection.prepareStatement("SELECT * FROM search_exclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getSE.setString(1, id);
 
-			getPosts = conn.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			getPosts = connection.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getPosts.setString(1, id);
 
-			addPosts = conn.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			addPosts = connection.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			addPosts.setString(1, id);
 
-			addStats = conn.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			addStats = connection.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			addStats.setString(1, id);
 		}
 		finally
@@ -92,7 +95,71 @@ public class BlogConfig
 					logger.log(Level.SEVERE, e.getMessage(), e);
 				}
 			}
+			if (getUrl != null)
+			{
+				try
+				{
+					getUrl.close();
+				}
+				catch (SQLException e)
+				{
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
 		}
+	}
+
+	public boolean isPostBufFull()
+	{
+		if (getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
+		{
+			logger.warning("Bot is not admin on '" + url + "', not running thread");
+			return true;
+		}
+		return (getPostState().equals("draft") && client.getDrafts(url).size() < getPostBuffer()) ||
+				(getPostState().equals("queue") && client.getQueuedPosts(url).size() < getPostBuffer());
+	}
+
+	public String getPostState()
+	{
+		try
+		{
+			if (System.currentTimeMillis() - configQTime > 60000)
+			{
+				configRs = getConfig.executeQuery();
+				configQTime = System.currentTimeMillis();
+			}
+			configRs.beforeFirst();
+			if (configRs.next())
+			{ return configRs.getString("post_state"); }
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			return null;
+		}
+		return null;
+	}
+
+	public int getPostBuffer()
+	{
+		try
+		{
+			if (System.currentTimeMillis() - configQTime > 60000)
+			{
+				configRs = getConfig.executeQuery();
+				configQTime = System.currentTimeMillis();
+			}
+			configRs.beforeFirst();
+			if (configRs.next())
+			{ return configRs.getInt("post_buffer"); }
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			return 0;
+		}
+		return 0;
 	}
 
 	public boolean addStat(String type, String tag, int time, int searched, int selected) throws SQLException
@@ -224,27 +291,6 @@ public class BlogConfig
 		return null;
 	}
 
-	public String getPostState()
-	{
-		try
-		{
-			if (System.currentTimeMillis() - configQTime > 60000)
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getString("post_state"); }
-		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return null;
-		}
-		return null;
-	}
-
 	public String getPostComment()
 	{
 		try
@@ -301,27 +347,6 @@ public class BlogConfig
 			configRs.beforeFirst();
 			if (configRs.next())
 			{ return configRs.getInt("sample_size"); }
-		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return 0;
-		}
-		return 0;
-	}
-
-	public int getPostBuffer()
-	{
-		try
-		{
-			if (System.currentTimeMillis() - configQTime > 60000)
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getInt("post_buffer"); }
 		}
 		catch (SQLException e)
 		{

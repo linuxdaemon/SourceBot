@@ -19,26 +19,29 @@
 package net.walterbarnes.sourcebot.common.config;
 
 import net.walterbarnes.sourcebot.common.config.types.UserConfig;
+import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
-import javax.annotation.CheckForNull;
 import java.sql.*;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class DBConfig
+public class DB
 {
-	private static final Logger logger = Logger.getLogger(DBConfig.class.getName());
+	private static final Logger logger = Logger.getLogger(DB.class.getName());
 	private final String host;
 	private final int port;
 	private final String database;
 	private final String user;
 	private final String pass;
+	private Tumblr client;
 	private Driver driver;
 	private String scheme;
 	private Connection connection;
 
-	public DBConfig(String host, int port, String database, String user, String pass)
+	public DB(Tumblr client, String host, int port, String database, String user, String pass)
 	{
+		this.client = client;
 		this.host = host;
 		this.port = port;
 		this.database = database;
@@ -46,13 +49,13 @@ public class DBConfig
 		this.pass = pass;
 	}
 
-	public DBConfig setDriver(String classPath) throws ClassNotFoundException, IllegalAccessException, InstantiationException
+	public DB setDriver(String classPath) throws ClassNotFoundException, IllegalAccessException, InstantiationException
 	{
 		driver = (Driver) Class.forName(classPath).newInstance();
 		return this;
 	}
 
-	public DBConfig setScheme(String scheme)
+	public DB setScheme(String scheme)
 	{
 		this.scheme = scheme;
 		return this;
@@ -61,12 +64,11 @@ public class DBConfig
 	public void connect() throws SQLException
 	{
 		if (driver == null)
-		{ throw new IllegalStateException("Driver and scheme must be configured before a connection can be made"); }
+			throw new IllegalStateException("Driver and scheme must be configured before a connection can be made");
 		connection = DriverManager.getConnection(String.format("%s://%s:%s/%s", scheme, host, port, database), user, pass);
 	}
 
-	@CheckForNull
-	public UserConfig getUser(String name) throws SQLException
+	public Optional<UserConfig> getUserForName(String name) throws SQLException
 	{
 		PreparedStatement st = null;
 		ResultSet rs = null;
@@ -76,15 +78,63 @@ public class DBConfig
 			st.setString(1, name);
 			rs = st.executeQuery();
 			boolean firstRun = true;
-			UserConfig user = null;
+			Optional<UserConfig> user = Optional.empty();
 			while (rs.next())
 			{
 				if (!firstRun)
-				{ throw new IllegalStateException("Multiple users exist with name '" + name + "'"); }
+					throw new IllegalStateException("Multiple users exist with name '" + name + "'");
 				firstRun = false;
-				user = new UserConfig(connection, rs.getString("id"), rs.getString("name"), rs.getString("email"),
-						rs.getBoolean("is_email_verified"), rs.getInt("blog_allot"), rs.getBoolean("has_blog_limit"), rs.getBoolean("id_admin"));
+				user = Optional.of(new UserConfig(client, connection, rs.getString("id")));
 			}
+
+			return user;
+		}
+		finally
+		{
+			if (rs != null)
+			{
+				try
+				{
+					rs.close();
+				}
+				catch (SQLException e)
+				{
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
+			if (st != null)
+			{
+				try
+				{
+					st.close();
+				}
+				catch (SQLException e)
+				{
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
+		}
+	}
+
+	public Optional<UserConfig> getUserForId(String uid) throws SQLException
+	{
+		PreparedStatement st = null;
+		ResultSet rs = null;
+		try
+		{
+			st = connection.prepareStatement("SELECT * FROM users WHERE id = ?");
+			st.setString(1, uid);
+			rs = st.executeQuery();
+			boolean firstRun = true;
+			Optional<UserConfig> user = Optional.empty();
+			while (rs.next())
+			{
+				if (!firstRun)
+					throw new IllegalStateException("Multiple users exist with uid '" + uid + "'");
+				firstRun = false;
+				user = Optional.of(new UserConfig(client, connection, rs.getString("id")));
+			}
+
 			return user;
 		}
 		finally

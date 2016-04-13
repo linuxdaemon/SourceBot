@@ -50,7 +50,7 @@ public class InputThread implements Runnable
 					ch.executePendingCommands();
 				}
 			}
-			catch (InterruptedException ignored)
+			catch (InterruptedException e)
 			{
 				Thread.currentThread().interrupt();
 				break;

@@ -21,14 +21,14 @@ package net.walterbarnes.sourcebot.bot.search;
 public class SearchExclusion implements ISearch
 {
 	private final int id;
-	private final SearchType type;
+	private final SearchRule.SearchType type;
 	private final String term;
 	private final boolean active;
 
 	public SearchExclusion(int id, String type, String term, boolean active)
 	{
 		this.id = id;
-		this.type = SearchType.getType(type);
+		this.type = SearchRule.SearchType.getType(type);
 		this.term = term;
 		this.active = active;
 	}
@@ -40,7 +40,7 @@ public class SearchExclusion implements ISearch
 	}
 
 	@Override
-	public SearchType getType()
+	public SearchRule.SearchType getType()
 	{
 		return type;
 	}

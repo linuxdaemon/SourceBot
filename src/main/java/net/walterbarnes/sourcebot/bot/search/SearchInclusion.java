@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-public class SearchInclusion implements ISearch
+public class SearchInclusion extends SearchRule
 {
 	private final int id;
 	private final SearchType type;

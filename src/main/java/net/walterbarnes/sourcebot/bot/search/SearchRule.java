@@ -18,38 +18,41 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-public enum SearchType
+public abstract class SearchRule implements ISearch
 {
-	TAG("tag"),
-	BLOG("blog");
-
-	private final String name;
-
-	SearchType(String name)
+	public enum SearchType
 	{
-		this.name = name;
-	}
+		TAG("tag"),
+		BLOG("blog");
 
-	public static SearchType getType(String name)
-	{
-		for (SearchType type : SearchType.values())
+		private final String name;
+
+		SearchType(String name)
 		{
-			if (type.getName().equals(name))
-			{
-				return type;
-			}
+			this.name = name;
 		}
-		return null;
-	}
 
-	public String getName()
-	{
-		return name;
-	}
+		public static SearchType getType(String name)
+		{
+			for (SearchType type : SearchType.values())
+			{
+				if (type.getName().equals(name))
+				{
+					return type;
+				}
+			}
+			return null;
+		}
 
-	@Override
-	public String toString()
-	{
-		return name;
+		public String getName()
+		{
+			return name;
+		}
+
+		@Override
+		public String toString()
+		{
+			return name;
+		}
 	}
 }

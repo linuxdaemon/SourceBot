@@ -23,7 +23,7 @@ interface ISearch
 {
 	String getAction();
 
-	SearchType getType();
+	SearchRule.SearchType getType();
 
 	String getTerm();
 
