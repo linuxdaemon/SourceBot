@@ -50,11 +50,11 @@ dependencies {
     testCompile 'junit:junit:4.11'
     compile 'com.github.onyxfoxdevelopment:OFlib:0.2.16'
     compile 'com.tumblr:jumblr:0.0.12-SNAPSHOT'
-    compile 'org.postgresql:postgresql:9.4.1208.jre7'
+    compile 'org.postgresql:postgresql:9.4.1208'
     compile 'commons-cli:commons-cli:1.3'
-    compile 'org.eclipse.jetty.aggregate:jetty-all:9.3.7.v20160115'
+    compile 'org.eclipse.jetty:jetty-server:9.3.7.v20160115'
     compile 'org.slf4j:slf4j-simple:1.7.21'
-    copmile 'com.j2html:j2html:0.7'
+    compile 'com.j2html:j2html:0.7'
 }
 
 //noinspection GroovyAssignabilityCheck
