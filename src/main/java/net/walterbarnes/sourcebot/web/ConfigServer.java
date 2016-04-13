@@ -35,15 +35,11 @@ import java.util.Map;
 
 public class ConfigServer extends Server
 {
-	private final String consumerKey;
-	private final String consumerSecret;
-	private Map<String, AbstractHandler> pages = new HashMap<>();
+	private final Map<String, AbstractHandler> pages = new HashMap<>();
 
-	public ConfigServer(int port, String consumerKey, String consumerSecret)
+	public ConfigServer(int port)
 	{
 		super(port);
-		this.consumerKey = consumerKey;
-		this.consumerSecret = consumerSecret;
 		// Specify the Session ID Manager
 		HashSessionIdManager idManager = new HashSessionIdManager();
 		setSessionIdManager(idManager);

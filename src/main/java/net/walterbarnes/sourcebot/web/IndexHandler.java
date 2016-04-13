@@ -41,6 +41,5 @@ public class IndexHandler extends AbstractHandler
 			baseRequest.setHandled(true);
 			return;
 		}
-
 	}
 }

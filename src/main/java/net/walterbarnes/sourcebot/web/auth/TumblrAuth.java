@@ -19,13 +19,13 @@
 package net.walterbarnes.sourcebot.web.auth;
 
 import com.tumblr.jumblr.exceptions.JumblrException;
-import net.walterbarnes.sourcebot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import javax.servlet.http.HttpSession;
 
 public class TumblrAuth
 {
-	private HttpSession session;
+	private final HttpSession session;
 	private Tumblr client;
 
 	public TumblrAuth(HttpSession session)
@@ -46,7 +46,7 @@ public class TumblrAuth
 					String consumerSecret = (String) session.getAttribute("consumerSecret");
 					String token = (String) session.getAttribute("token");
 					String tokenSecret = (String) session.getAttribute("tokenSecret");
-					Tumblr client = new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
+					new Tumblr(consumerKey, consumerSecret, token, tokenSecret);
 					return true;
 				}
 				catch (JumblrException e)

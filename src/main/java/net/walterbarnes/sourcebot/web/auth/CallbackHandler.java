@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.web.auth;
 
-import net.walterbarnes.sourcebot.reference.Constants;
+import net.walterbarnes.sourcebot.common.reference.Constants;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.scribe.builder.ServiceBuilder;
@@ -67,7 +67,7 @@ public class CallbackHandler extends AbstractHandler
 			{
 				session.setAttribute("lastPage", "/");
 			}
-			response.sendRedirect(Constants.webRoot + session.getAttribute("lastPage"));
+			response.sendRedirect(Constants.getWebRoot() + session.getAttribute("lastPage"));
 			response.setStatus(HttpServletResponse.SC_OK);
 		}
 		catch (Exception e)
