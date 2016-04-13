@@ -44,8 +44,11 @@ public class InputThread implements Runnable
 					Thread.sleep(200);
 				}
 				input = br.readLine();
-				ch.addPendingCommand(input);
-				ch.executePendingCommands();
+				if (input != null && !input.isEmpty())
+				{
+					ch.addPendingCommand(input);
+					ch.executePendingCommands();
+				}
 			}
 			catch (InterruptedException ignored)
 			{
