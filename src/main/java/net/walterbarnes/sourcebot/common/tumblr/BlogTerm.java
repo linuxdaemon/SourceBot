@@ -20,10 +20,9 @@ package net.walterbarnes.sourcebot.common.tumblr;
 
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
-import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.bot.search.SearchRule;
 
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,111 +32,34 @@ import java.util.logging.Logger;
 public class BlogTerm extends SearchTerm
 {
 	private static final Logger logger = Logger.getLogger(BlogTerm.class.getName());
-	private static final String type = "blog";
 
-	public BlogTerm(String term, Tumblr client, BlogConfig blog)
+	public BlogTerm(String term)
 	{
-		super(term, client, blog);
+		super(term, SearchRule.SearchType.BLOG);
 	}
 
 	@Override
-	public PostCache getCache()
+	public List<Post> getPostSet()
 	{
-		return cache;
-	}
+		Map<String, Object> options = new HashMap<>();
 
-	@Override
-	public String getSearchTerm()
-	{
-		return type + ":" + term;
-	}
-
-	@Override
-	public Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, SearchInclusion rule) throws SQLException
-	{
-		List<Long> postBlacklist = blog.getPosts();
-
-		int postNum = lastPostCount > 0 ? lastPostCount : (rule.getSampleSize() == 0 ? blog.getSampleSize() : rule.getSampleSize());
-		String[] types = rule.getPostType() == null ? blog.getPostType() : rule.getPostType();
-
-		lastTime = System.currentTimeMillis() / 1000;
-		searched = 0;
-
-		long start = System.currentTimeMillis();
-
-		cache.validate();
-
-		Map<Post, String> out = new HashMap<>();
-
-		for (Post p : cache)
+		options.put("offset", searched);
+		List<Post> posts = new ArrayList<>();
+		try
 		{
-			out.put(p, rule.getFullTerm());
+			posts.addAll(getClient().blogPosts(getTerm(), options));
 		}
-
-		logger.info(String.format("Searching %s %s", type, term));
-		while (out.size() < postNum)
+		catch (JumblrException e)
 		{
-			Map<String, Object> options = new HashMap<>();
-
-			options.put("offset", searched);
-
-			List<Post> posts;
-			try
-			{
-				posts = client.blogPosts(term, options);
-			}
-			catch (JumblrException e)
-			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				continue;
-			}
-
-			searched += posts.size();
-
-			if (posts.size() == 0 || posts.isEmpty()) break;
-			filterPosts(out, posts, postBlacklist, tagBlacklist, blogBlacklist, rule);
-//			loop:
-//			for (Post post : posts)
-//			{
-//				if (post.getTimestamp() < lastTime) lastTime = post.getTimestamp();
-//				if (!Arrays.asList(types).contains(post.getType().getValue())) continue;
-//
-//				if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-//
-//				if (rule.getRequiredTags() != null)
-//				{
-//					for (String rt : rule.getRequiredTags())
-//					{
-//						if (!post.getTags().contains(rt)) continue loop;
-//					}
-//				}
-//
-//				for (String tag : tagBlacklist)
-//				{
-//					if (rule.getRequiredTags() != null && Arrays.asList(rule.getRequiredTags()).contains(tag))
-//					{
-//						continue;
-//					}
-//					if (postContains(post, tag)) continue loop;
-//					if (post.getTags().contains(tag))
-//					{
-//						if (rule.getRequiredTags() == null || !Arrays.asList(rule.getRequiredTags()).contains(tag))
-//						{
-//							continue loop;
-//						}
-//					}
-//				}
-//
-//				if (cache.addPost(post)) out.put(post, rule.getFullTerm());
-//			}
+			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
-		long end = System.currentTimeMillis() - start;
-
-		logger.info(String.format("Searched %s %s, selected %d posts out of %d searched (%f%%), took %d ms", type, term,
-				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
-
-		blog.addStat(rule.getType().toString(), term, (int) end, searched, out.size());
-		lastPostCount = out.size();
-		return out;
+		searched += posts.size();
+		posts.stream().forEach(post -> {
+			if (post.getTimestamp() > lastTime)
+			{
+				lastTime = post.getTimestamp();
+			}
+		});
+		return posts;
 	}
 }

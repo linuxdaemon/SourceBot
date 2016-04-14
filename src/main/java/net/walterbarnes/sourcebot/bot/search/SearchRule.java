@@ -18,19 +18,21 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-public class SearchRule implements ISearch
+public class SearchRule implements ISearchRule
 {
 	private final int id;
 	private final SearchType type;
 	private final String term;
 	private final boolean active;
+	private long modified;
 
-	SearchRule(int id, SearchType type, String term, boolean active)
+	SearchRule(int id, String blogId, SearchType type, String term, boolean active, long modified)
 	{
 		this.id = id;
 		this.type = type;
 		this.term = term;
 		this.active = active;
+		this.modified = modified;
 	}
 
 	@Override
@@ -61,6 +63,12 @@ public class SearchRule implements ISearch
 	public boolean isActive()
 	{
 		return active;
+	}
+
+	@Override
+	public long getModified()
+	{
+		return modified;
 	}
 
 	public enum SearchType
@@ -100,7 +108,7 @@ public class SearchRule implements ISearch
 		}
 	}
 
-	enum RuleAction
+	public enum RuleAction
 	{
 		INCLUDE,
 		EXCLUDE,

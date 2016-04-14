@@ -18,6 +18,12 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
+import net.walterbarnes.sourcebot.common.tumblr.BlogTerm;
+import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.common.tumblr.TagTerm;
+
+import java.util.Optional;
+
 public class SearchInclusion extends SearchRule
 {
 	private final String[] requiredTags;
@@ -25,10 +31,10 @@ public class SearchInclusion extends SearchRule
 	private final String postSelect;
 	private final int sampleSize;
 
-	public SearchInclusion(int id, String type, String term, String[] requiredTags, String[] postType, String postSelect,
-						   int sampleSize, boolean active)
+	public SearchInclusion(int id, String blogId, String type, String term, String[] requiredTags, String[] postType, String postSelect,
+						   int sampleSize, boolean active, long modified)
 	{
-		super(id, SearchType.getType(type), term, active);
+		super(id, blogId, SearchType.getType(type), term, active, modified);
 		this.requiredTags = requiredTags == null ? null : requiredTags.clone();
 		this.postType = postType == null ? null : postType.clone();
 		this.postSelect = postSelect;
@@ -59,5 +65,18 @@ public class SearchInclusion extends SearchRule
 	public int getSampleSize()
 	{
 		return sampleSize;
+	}
+
+	public Optional<SearchTerm> getSearchTerm()
+	{
+		if (getType() == SearchType.TAG)
+		{
+			return Optional.of(new TagTerm(getTerm()));
+		}
+		else if (getType() == SearchType.BLOG)
+		{
+			return Optional.of(new BlogTerm(getTerm()));
+		}
+		return Optional.empty();
 	}
 }

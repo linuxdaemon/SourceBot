@@ -20,7 +20,6 @@ package net.walterbarnes.sourcebot.common.tumblr;
 
 import com.tumblr.jumblr.types.Post;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,8 +57,7 @@ public class PostCache implements Iterable<Post>
 
 	public void validate()
 	{
-		ArrayList<Post> set = new ArrayList<>(posts.keySet());
-		set.stream().filter(key -> System.currentTimeMillis() - posts.get(key) > cacheLife).forEachOrdered(posts::remove);
+		posts.keySet().stream().filter(key -> System.currentTimeMillis() - posts.get(key) > cacheLife).forEachOrdered(posts::remove);
 	}
 
 	@SuppressWarnings ("unused")

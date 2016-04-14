@@ -61,7 +61,7 @@ public class UserConfig
 
 	public String getName()
 	{
-		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}
@@ -122,12 +122,11 @@ public class UserConfig
 				}
 			}
 		}
-
 	}
 
 	public String getEmail()
 	{
-		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}
@@ -136,7 +135,7 @@ public class UserConfig
 
 	public boolean isEmailVerified()
 	{
-		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}
@@ -145,7 +144,7 @@ public class UserConfig
 
 	public int getBlogAllot()
 	{
-		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}
@@ -154,7 +153,7 @@ public class UserConfig
 
 	public boolean hasBlogLimit()
 	{
-		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}
@@ -215,7 +214,7 @@ public class UserConfig
 
 	public boolean isAdmin()
 	{
-		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}

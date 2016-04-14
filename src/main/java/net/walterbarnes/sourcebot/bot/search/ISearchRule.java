@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-interface ISearch
+interface ISearchRule
 {
 	SearchRule.SearchType getType();
 
@@ -29,6 +29,8 @@ interface ISearch
 	int getId();
 
 	boolean isActive();
+
+	long getModified();
 
 	default SearchRule.RuleAction getAction()
 	{

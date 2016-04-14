@@ -24,6 +24,7 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.bot.search.PostComparator;
 import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
+import net.walterbarnes.sourcebot.bot.search.SearchRule;
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.common.tumblr.*;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +34,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @SuppressWarnings ("SameParameterValue")
 public class SearchThread implements Runnable
@@ -64,60 +66,47 @@ public class SearchThread implements Runnable
 				// A map of all the posts we pull from the tags/blogs, linked with their search terms
 				Map<Post, String> postMap = new HashMap<>();
 
-				// Load all inclusion rules from the database
-				List<SearchInclusion> inclusions = blog.getInclusions();
-				logger.info(String.format("[%s] %d Search inclusions loaded.", url, inclusions.size()));
+				// Load all search rules from the database
+				List<SearchRule> rules = blog.getSearchRules().stream().filter(SearchRule::isActive)
+						.collect(Collectors.toList());
+				logger.info(String.format("%d search rules loaded.", rules.size()));
 
-				// Load all exclusion rules from the database
-				List<SearchExclusion> exclusions = blog.getExclusions();
-				logger.info(String.format("[%s] %d search exclusions loaded.", url, exclusions.size()));
+				List<SearchExclusion> exclusions = rules.stream()
+						.filter(rule -> rule.getAction() == SearchRule.RuleAction.EXCLUDE)
+						.map(rule -> (SearchExclusion) rule).collect(Collectors.toList());
 
-				List<String> tagBlacklist = new ArrayList<>();
-				List<String> blogBlacklist = new ArrayList<>();
+				List<SearchInclusion> inclusions = rules.stream()
+						.filter(rule -> rule.getAction() == SearchRule.RuleAction.INCLUDE)
+						.map(rule -> (SearchInclusion) rule).collect(Collectors.toList());
 
-				for (SearchExclusion exclusion : exclusions)
-				{
-					if (exclusion.isActive())
-					{
-						switch (exclusion.getType())
-						{
-							case TAG:
-								tagBlacklist.add(exclusion.getTerm());
-								break;
-							case BLOG:
-								blogBlacklist.add(exclusion.getTerm());
-								break;
-						}
-					}
-				}
+				List<String> tagBlacklist = exclusions.stream()
+						.filter(rule -> rule.getType() == SearchRule.SearchType.TAG)
+						.map(SearchExclusion::getTerm).collect(Collectors.toList());
+
+				List<String> blogBlacklist = exclusions.stream()
+						.filter(rule -> rule.getType() == SearchRule.SearchType.BLOG)
+						.map(SearchExclusion::getTerm).collect(Collectors.toList());
 
 				List<Post> posts = new ArrayList<>();
 
+				// Load all inclusions in to the terms map
+
+				inclusions.stream().filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.TAG).forEach(rule -> {
+					terms.put(rule.getFullTerm(), new TagTerm(rule.getTerm()));
+				});
+
+				inclusions.stream().filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.BLOG).forEach(rule -> {
+					terms.put(rule.getFullTerm(), new BlogTerm(rule.getTerm()));
+				});
+
 				for (SearchInclusion inclusion : inclusions)
 				{
-					if (inclusion.isActive())
-					{
-						String term = inclusion.getTerm();
-						logger.info(String.format("Getting posts from %s: %s", inclusion.getType().getName(), term));
-						if (!terms.containsKey(inclusion.getFullTerm()))
-						{
-							switch (inclusion.getType())
-							{
-								case TAG:
-									terms.put(inclusion.getFullTerm(), new TagTerm(term, client, blog));
-									break;
+					logger.info(String.format("Getting posts from %s: %s", inclusion.getType().getName(), inclusion.getTerm()));
 
-								case BLOG:
-									terms.put(inclusion.getFullTerm(), new BlogTerm(term, client, blog));
-									break;
-							}
-						}
-						SearchTerm t = terms.get(inclusion.getFullTerm());
-
-						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion);
-						postMap.putAll(p);
-						posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() != null ? inclusion.getPostSelect() : blog.getPostSelect(), 50));
-					}
+					SearchTerm t = terms.get(inclusion.getFullTerm());
+					Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion);
+					postMap.putAll(p);
+					posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() != null ? inclusion.getPostSelect() : blog.getPostSelect(), 50));
 				}
 
 				boolean hasPosted = false;

@@ -20,13 +20,12 @@ package net.walterbarnes.sourcebot.common.config.types;
 
 import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
+import net.walterbarnes.sourcebot.bot.search.SearchRule;
+import net.walterbarnes.sourcebot.common.config.DB;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import javax.annotation.Nonnull;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -45,14 +44,18 @@ public class BlogConfig
 	private final PreparedStatement getPosts;
 	private final Tumblr client;
 	private final String url;
-	private List<SearchExclusion> exclusions = new ArrayList<>();
+	private final List<SearchRule> rules = new ArrayList<>();
+	private final Connection connection;
+	private final String id;
+	private long rulesQTime = 0;
+	private List<SearchRule> exclusions = new ArrayList<>();
 	private long exclusionsQTime = 0;
-	private List<SearchInclusion> inclusions = new ArrayList<>();
+	private List<SearchRule> inclusions = new ArrayList<>();
 	private long inclusionsQTime = 0;
 	private ResultSet configRs;
 	private long configQTime = 0;
-
-	public BlogConfig(Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
+	
+	public BlogConfig(@Nonnull Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
 	{
 		PreparedStatement getUrl = null;
 		ResultSet rs = null;
@@ -64,6 +67,8 @@ public class BlogConfig
 			rs.next();
 			this.url = rs.getString("url");
 			this.client = client;
+			this.connection = connection;
+			this.id = id;
 			getConfig = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getConfig.setString(1, id);
 
@@ -124,7 +129,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -145,7 +150,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -209,7 +214,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -232,7 +237,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -253,7 +258,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -274,7 +279,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -295,7 +300,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -316,7 +321,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -339,7 +344,7 @@ public class BlogConfig
 	{
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > 60000)
+			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 			{
 				configRs = getConfig.executeQuery();
 				configQTime = System.currentTimeMillis();
@@ -356,24 +361,48 @@ public class BlogConfig
 		return 0;
 	}
 
-	public List<SearchExclusion> getExclusions() throws SQLException
+	public List<SearchRule> getSearchRules() throws SQLException
 	{
+		PreparedStatement getRules = null;
 		ResultSet rs = null;
 		try
 		{
-			if (System.currentTimeMillis() - exclusionsQTime > 60000)
+			if (System.currentTimeMillis() - rulesQTime > DB.getCacheTime())
 			{
-				rs = getSE.executeQuery();
-				List<SearchExclusion> out = new ArrayList<>();
+				List<SearchRule> out = new ArrayList<>();
+				getRules = connection.prepareStatement("SELECT 'include' AS action,* FROM search_inclusions WHERE blog_id = ? UNION ALL SELECT 'exclude' AS action,id,blog_id,type,term,NULL,NULL,NULL,NULL,active,modified FROM search_exclusions WHERE blog_id = ? ORDER BY term");
+				getRules.setString(1, id);
+				getRules.setString(2, id);
+				rs = getRules.executeQuery();
 				while (rs.next())
 				{
-					out.add(new SearchExclusion(rs.getInt("id"), rs.getString("type"), rs.getString("term"),
-							rs.getBoolean("active")));
+					String action = rs.getString("action");
+					int id = rs.getInt("id");
+					String blogId = rs.getString("blog_id");
+					String type = rs.getString("type");
+					String term = rs.getString("term");
+					String[] requiredTags = rs.getArray("required_tags") != null ? (String[]) rs.getArray("required_tags").getArray() : null;
+					String[] postType = rs.getArray("post_type") != null ? (String[]) rs.getArray("post_type").getArray() : null;
+					String postSelect = rs.getString("post_select");
+					int sample = rs.getInt("sample_size");
+					boolean active = rs.getBoolean("active");
+					Timestamp modified = rs.getTimestamp("modified");
+					switch (action)
+					{
+						case "include":
+							out.add(new SearchInclusion(id, blogId, type, term, requiredTags, postType, postSelect, sample, active, modified.getTime()));
+							break;
+						case "exclude":
+							out.add(new SearchExclusion(id, blogId, type, term, active, modified.getTime()));
+							break;
+						default:
+							throw new RuntimeException(String.format("Unknown search rule in database, id '%s_%s'", action, id));
+					}
 				}
-				exclusionsQTime = System.currentTimeMillis();
-				return (exclusions = out);
+				rules.clear();
+				rules.addAll(out);
 			}
-			return exclusions;
+			return rules;
 		}
 		finally
 		{
@@ -388,42 +417,11 @@ public class BlogConfig
 					logger.log(Level.SEVERE, e.getMessage(), e);
 				}
 			}
-		}
-	}
-
-	public List<SearchInclusion> getInclusions() throws SQLException
-	{
-		ResultSet rs = null;
-		try
-		{
-			if (System.currentTimeMillis() - inclusionsQTime > 60000)
-			{
-				rs = getSI.executeQuery();
-				List<SearchInclusion> out = new ArrayList<>();
-				while (rs.next())
-				{
-					int incId = rs.getInt("id");
-					String type = rs.getString("type");
-					String term = rs.getString("term");
-					String[] required_tags = rs.getArray("required_tags") != null ? (String[]) rs.getArray("required_tags").getArray() : null;
-					String[] postType = rs.getArray("post_type") != null ? (String[]) rs.getArray("post_type").getArray() : null;
-					String postSelect = rs.getString("post_select");
-					int sample = rs.getInt("sample_size");
-					boolean active = rs.getBoolean("active");
-					out.add(new SearchInclusion(incId, type, term, required_tags, postType, postSelect, sample, active));
-				}
-				inclusionsQTime = System.currentTimeMillis();
-				return (inclusions = out);
-			}
-			return inclusions;
-		}
-		finally
-		{
-			if (rs != null)
+			if (getRules != null)
 			{
 				try
 				{
-					rs.close();
+					getRules.close();
 				}
 				catch (SQLException e)
 				{
