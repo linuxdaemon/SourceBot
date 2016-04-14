@@ -26,7 +26,9 @@ import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchRule;
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
-import net.walterbarnes.sourcebot.common.tumblr.*;
+import net.walterbarnes.sourcebot.common.tumblr.ISearchTerm;
+import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -43,7 +45,7 @@ public class SearchThread implements Runnable
 	public final BlogConfig blog;
 	private final Tumblr client;
 	private final String url;
-	private final Map<String, SearchTerm> terms = new HashMap<>();
+	private final Map<String, Optional<SearchTerm>> terms = new HashMap<>();
 
 	SearchThread(Tumblr client, String url, Connection conn) throws SQLException
 	{
@@ -92,21 +94,21 @@ public class SearchThread implements Runnable
 				// Load all inclusions in to the terms map
 
 				inclusions.stream()
-						.filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.TAG)
-						.forEach(rule -> terms.put(rule.getFullTerm(), new TagTerm(rule.getTerm())));
-
-				inclusions.stream()
 						.filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.BLOG)
-						.forEach(rule -> terms.put(rule.getFullTerm(), new BlogTerm(rule.getTerm())));
+						.forEach(rule -> terms.put(rule.getFullTerm(), rule.getSearchTerm()));
 
 				for (SearchInclusion inclusion : inclusions)
 				{
-					logger.info(String.format("Getting posts from %s: %s", inclusion.getType().getName(), inclusion.getTerm()));
+					Optional<SearchTerm> optT = terms.get(inclusion.getFullTerm());
+					if (optT.isPresent())
+					{
+						logger.info(String.format("Getting posts from %s: %s", inclusion.getType().getName(), inclusion.getTerm()));
 
-					SearchTerm t = terms.get(inclusion.getFullTerm());
-					Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion);
-					postMap.putAll(p);
-					posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() != null ? inclusion.getPostSelect() : blog.getPostSelect(), 50));
+						ISearchTerm t = optT.get();
+						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion);
+						postMap.putAll(p);
+						posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() != null ? inclusion.getPostSelect() : blog.getPostSelect(), 50));
+					}
 				}
 
 				boolean hasPosted = false;
@@ -184,15 +186,11 @@ public class SearchThread implements Runnable
 									failCount++;
 									logger.log(Level.SEVERE, e.getMessage(), e);
 									if (failCount > 10) break loop;
-									Thread.sleep(1000);
+									Thread.sleep(500);
 								}
 							}
 							String val = postMap.get(post);
-							logger.info(val);
-							logger.info(terms.toString());
-							ISearchTerm t = terms.get(val);
-							PostCache c = t.getCache();
-							c.remove(post.getId());
+							terms.get(val).ifPresent(t -> t.getCache().remove(post.getId()));
 							blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 						}
 					}
@@ -200,10 +198,8 @@ public class SearchThread implements Runnable
 			}
 		}
 		catch (InterruptedException ignored) {}
-		catch (RuntimeException e)
-		{
-			throw new RuntimeException(e);
-		}
+		// Make sure Runtime exceptions aren't swallowed
+		catch (RuntimeException e) { throw new RuntimeException(e); }
 		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
 	}
 

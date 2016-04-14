@@ -18,11 +18,14 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
+import com.tumblr.jumblr.types.Post;
+import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.common.tumblr.BlogTerm;
+import net.walterbarnes.sourcebot.common.tumblr.PostUtil;
 import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
 import net.walterbarnes.sourcebot.common.tumblr.TagTerm;
 
-import java.util.Optional;
+import java.util.*;
 
 public class SearchInclusion extends SearchRule
 {
@@ -31,10 +34,10 @@ public class SearchInclusion extends SearchRule
 	private final String postSelect;
 	private final int sampleSize;
 
-	public SearchInclusion(int id, String blogId, String type, String term, String[] requiredTags, String[] postType, String postSelect,
+	public SearchInclusion(BlogConfig blog, int id, String blogId, String type, String term, String[] requiredTags, String[] postType, String postSelect,
 						   int sampleSize, boolean active, long modified)
 	{
-		super(id, blogId, SearchType.getType(type), term, active, modified);
+		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
 		this.requiredTags = requiredTags == null ? null : requiredTags.clone();
 		this.postType = postType == null ? null : postType.clone();
 		this.postSelect = postSelect;
@@ -45,16 +48,6 @@ public class SearchInclusion extends SearchRule
 	public RuleAction getAction()
 	{
 		return RuleAction.INCLUDE;
-	}
-
-	public String[] getRequiredTags()
-	{
-		return requiredTags == null ? null : requiredTags.clone();
-	}
-
-	public String[] getPostType()
-	{
-		return postType == null ? null : postType.clone();
 	}
 
 	public String getPostSelect()
@@ -78,5 +71,55 @@ public class SearchInclusion extends SearchRule
 			return Optional.of(new BlogTerm(getTerm()));
 		}
 		return Optional.empty();
+	}
+
+	public Map<Post, String> filterPosts(List<Post> posts, List<Long> postBlacklist, List<String> tagBlacklist, List<String> blogBlacklist, SearchTerm searchTerm)
+	{
+		Map<Post, String> out = new HashMap<>();
+		String[] types = getPostType() == null ? getBlog().getPostType() : getPostType();
+		loop:
+		for (Post post : posts)
+		{
+			if (post.getTimestamp() < searchTerm.lastTime) searchTerm.lastTime = post.getTimestamp();
+			if (!Arrays.asList(types).contains(post.getType().getValue())) continue;
+
+			if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
+
+			if (getRequiredTags() != null)
+			{
+				for (String rt : getRequiredTags())
+				{
+					if (!post.getTags().contains(rt)) continue loop;
+				}
+			}
+
+			for (String tag : tagBlacklist)
+			{
+				if (getRequiredTags() != null && Arrays.asList(getRequiredTags()).contains(tag))
+				{
+					continue;
+				}
+				if (PostUtil.postContains(post, tag)) continue loop;
+				if (post.getTags().contains(tag))
+				{
+					if (getRequiredTags() == null || !Arrays.asList(getRequiredTags()).contains(tag))
+					{
+						continue loop;
+					}
+				}
+			}
+			if (searchTerm.getCache().addPost(post)) out.put(post, getFullTerm());
+		}
+		return out;
+	}
+
+	public String[] getPostType()
+	{
+		return postType == null ? null : postType.clone();
+	}
+
+	public String[] getRequiredTags()
+	{
+		return requiredTags == null ? null : requiredTags.clone();
 	}
 }

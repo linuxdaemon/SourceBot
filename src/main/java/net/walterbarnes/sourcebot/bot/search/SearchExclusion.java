@@ -18,11 +18,13 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
+import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
+
 public class SearchExclusion extends SearchRule
 {
-	public SearchExclusion(int id, String blogId, String type, String term, boolean active, long modified)
+	public SearchExclusion(BlogConfig blog, int id, String blogId, String type, String term, boolean active, long modified)
 	{
-		super(id, blogId, SearchType.getType(type), term, active, modified);
+		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
 	}
 
 	@Override

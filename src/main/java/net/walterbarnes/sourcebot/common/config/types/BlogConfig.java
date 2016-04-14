@@ -378,10 +378,10 @@ public class BlogConfig
 					switch (action)
 					{
 						case "include":
-							out.add(new SearchInclusion(id, blogId, type, term, requiredTags, postType, postSelect, sample, active, modified.getTime()));
+							out.add(new SearchInclusion(this, id, blogId, type, term, requiredTags, postType, postSelect, sample, active, modified.getTime()));
 							break;
 						case "exclude":
-							out.add(new SearchExclusion(id, blogId, type, term, active, modified.getTime()));
+							out.add(new SearchExclusion(this, id, blogId, type, term, active, modified.getTime()));
 							break;
 						default:
 							throw new RuntimeException(String.format("Unknown search rule in database, id '%s_%s'", action, id));

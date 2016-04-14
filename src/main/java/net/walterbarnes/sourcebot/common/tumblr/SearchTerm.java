@@ -18,13 +18,12 @@
 
 package net.walterbarnes.sourcebot.common.tumblr;
 
-import com.tumblr.jumblr.types.*;
+import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchRule;
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,7 @@ public abstract class SearchTerm implements ISearchTerm
 	private final PostCache cache = new PostCache(120 * 60 * 1000);
 	private final String term;
 	private final SearchRule.SearchType type;
-	long lastTime;
+	public long lastTime;
 	int searched;
 	private int lastPostCount = 0;
 	private Tumblr client;
@@ -87,7 +86,7 @@ public abstract class SearchTerm implements ISearchTerm
 			List<Post> posts = getPostSet();
 
 			if (posts.size() == 0 || posts.isEmpty()) break;
-			filterPosts(out, posts, postBlacklist, tagBlacklist, blogBlacklist, rule);
+			out.putAll(rule.filterPosts(posts, postBlacklist, tagBlacklist, blogBlacklist, this));
 		}
 		long end = System.currentTimeMillis() - start;
 
@@ -110,102 +109,6 @@ public abstract class SearchTerm implements ISearchTerm
 	}
 
 	public abstract List<Post> getPostSet();
-
-	void filterPosts(Map<Post, String> out, List<Post> posts, List<Long> postBlacklist, List<String> tagBlacklist, List<String> blogBlacklist, SearchInclusion rule)
-	{
-		String[] types = rule.getPostType() == null ? blog.getPostType() : rule.getPostType();
-		loop:
-		for (Post post : posts)
-		{
-			if (post.getTimestamp() < lastTime) lastTime = post.getTimestamp();
-			if (!Arrays.asList(types).contains(post.getType().getValue())) continue;
-
-			if (blogBlacklist.contains(post.getBlogName()) || postBlacklist.contains(post.getId())) continue;
-
-			if (rule.getRequiredTags() != null)
-			{
-				for (String rt : rule.getRequiredTags())
-				{
-					if (!post.getTags().contains(rt)) continue loop;
-				}
-			}
-
-			for (String tag : tagBlacklist)
-			{
-				if (rule.getRequiredTags() != null && Arrays.asList(rule.getRequiredTags()).contains(tag))
-				{
-					continue;
-				}
-				if (postContains(post, tag)) continue loop;
-				if (post.getTags().contains(tag))
-				{
-					if (rule.getRequiredTags() == null || !Arrays.asList(rule.getRequiredTags()).contains(tag))
-					{
-						continue loop;
-					}
-				}
-			}
-			if (cache.addPost(post)) out.put(post, rule.getFullTerm());
-		}
-	}
-
-	// Will look in to fixing the instanceof chain later, but with how the posts are done, I don't think it will be possible
-	@SuppressWarnings ("ChainOfInstanceofChecks")
-	private static boolean postContains(Post post, String s)
-	{
-		boolean found = false;
-		if (post instanceof TextPost)
-		{
-			TextPost p = (TextPost) post;
-			if (p.getTitle().contains(s) || p.getBody().contains(s)) found = true;
-		}
-		else if (post instanceof PhotoPost)
-		{
-			PhotoPost p = (PhotoPost) post;
-			if (p.getCaption().contains(s)) found = true;
-		}
-		else if (post instanceof QuotePost)
-		{
-			QuotePost p = (QuotePost) post;
-			if (p.getSource().contains(s) || p.getText().contains(s)) found = true;
-		}
-		else if (post instanceof LinkPost)
-		{
-			LinkPost p = (LinkPost) post;
-			if (p.getTitle().contains(s) || p.getDescription().contains(s)) found = true;
-		}
-		else if (post instanceof ChatPost)
-		{
-			ChatPost p = (ChatPost) post;
-			if (p.getTitle().contains(s) || p.getBody().contains(s)) found = true;
-			for (Dialogue line : p.getDialogue())
-			{
-				if (line.getPhrase().contains(s) || line.getLabel().contains(s) || line.getName().contains(s))
-					found = true;
-			}
-		}
-		else if (post instanceof AudioPost)
-		{
-			AudioPost p = (AudioPost) post;
-			if (p.getCaption().contains(s)) found = true;
-		}
-		else if (post instanceof VideoPost)
-		{
-			VideoPost p = (VideoPost) post;
-			if (p.getCaption().contains(s)) found = true;
-		}
-		else if (post instanceof AnswerPost)
-		{
-			AnswerPost p = (AnswerPost) post;
-			if (p.getAnswer().contains(s) || p.getQuestion().contains(s)) found = true;
-		}
-		else if (post instanceof PostcardPost)
-		{
-			PostcardPost p = (PostcardPost) post;
-			if (p.getBody().contains(s)) found = true;
-		}
-		return found;
-	}
 
 	public SearchRule.SearchType getType()
 	{

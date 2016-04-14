@@ -18,6 +18,8 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
+import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
+
 public class SearchRule implements ISearchRule
 {
 	private final int id;
@@ -26,9 +28,11 @@ public class SearchRule implements ISearchRule
 	private final String term;
 	private final boolean active;
 	private final long modified;
+	private BlogConfig blog;
 
-	SearchRule(int id, String blogId, SearchType type, String term, boolean active, long modified)
+	SearchRule(BlogConfig blog, int id, String blogId, SearchType type, String term, boolean active, long modified)
 	{
+		this.blog = blog;
 		this.id = id;
 		this.blogId = blogId;
 		this.type = type;
@@ -76,6 +80,11 @@ public class SearchRule implements ISearchRule
 	public String getBlogId()
 	{
 		return blogId;
+	}
+
+	public BlogConfig getBlog()
+	{
+		return blog;
 	}
 
 	public enum SearchType
