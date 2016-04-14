@@ -33,12 +33,12 @@ import java.util.logging.Logger;
 public abstract class SearchTerm implements ISearchTerm
 {
 	private static final Logger logger = Logger.getLogger(SearchTerm.class.getName());
-	final PostCache cache = new PostCache(120 * 60 * 1000);
+	private final PostCache cache = new PostCache(120 * 60 * 1000);
 	private final String term;
 	private final SearchRule.SearchType type;
 	long lastTime;
 	int searched;
-	int lastPostCount = 0;
+	private int lastPostCount = 0;
 	private Tumblr client;
 	private BlogConfig blog;
 
@@ -149,6 +149,8 @@ public abstract class SearchTerm implements ISearchTerm
 		}
 	}
 
+	// Will look in to fixing the instanceof chain later, but with how the posts are done, I don't think it will be possible
+	@SuppressWarnings ("ChainOfInstanceofChecks")
 	private static boolean postContains(Post post, String s)
 	{
 		boolean found = false;
@@ -179,7 +181,7 @@ public abstract class SearchTerm implements ISearchTerm
 			for (Dialogue line : p.getDialogue())
 			{
 				if (line.getPhrase().contains(s) || line.getLabel().contains(s) || line.getName().contains(s))
-				{ found = true; }
+					found = true;
 			}
 		}
 		else if (post instanceof AudioPost)

@@ -56,7 +56,7 @@ public class CrashReport
 		this.cause = cause;
 		this.populateEnvironment();
 	}
-	
+
 	private void populateEnvironment()
 	{
 		this.rootCategory.addCrashSectionCallable("SourceBot Version", new GetVersion());
@@ -66,7 +66,60 @@ public class CrashReport
 		this.rootCategory.addCrashSectionCallable("Memory", new GetMemory());
 		this.rootCategory.addCrashSectionCallable("JVM Flags", new GetJVMFlags());
 	}
+
+	/**
+	 * Displays a crash report and saves it to a file
+	 *
+	 * @param crashReport Report to display
+	 */
+	public static void displayCrashReport(CrashReport crashReport)
+	{
+		File file1 = new File(".", "crash-reports");
+		File file2 = new File(file1, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss"))
+				.format(new Date()) + ".txt");
+		System.out.println(crashReport.getCompleteReport());
+
+		if (crashReport.getFile() != null)
+		{
+			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + crashReport.getFile());
+		}
+		else if (crashReport.saveToFile(file2))
+		{
+			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + file2.getAbsolutePath());
+		}
+		else
+		{
+			System.out.println("#@?@# Bot crashed! Crash report could not be saved. #@?@#");
+		}
+	}
 	
+	/**
+	 * Gets the complete report with headers, stack trace, and different sections as a string.
+	 */
+	public String getCompleteReport()
+	{
+		StringBuilder stringbuilder = new StringBuilder();
+		stringbuilder.append("---- SourceBot Crash Report ----\n");
+		stringbuilder.append("\n\n");
+		stringbuilder.append("Time: ");
+		stringbuilder.append((new SimpleDateFormat()).format(new Date()));
+		stringbuilder.append("\n");
+		stringbuilder.append("Description: ");
+		stringbuilder.append(this.description);
+		stringbuilder.append("\n\n");
+		stringbuilder.append(this.getCauseStackTraceOrString());
+		stringbuilder.append("\n\nA detailed walk through of the error, its code path and all known details is as follows:\n");
+
+		for (int i = 0; i < 87; ++i)
+		{
+			stringbuilder.append("-");
+		}
+
+		stringbuilder.append("\n\n");
+		this.getSectionsInStringBuilder(stringbuilder);
+		return stringbuilder.toString();
+	}
+
 	public File getFile()
 	{
 		return this.crashReportFile;
@@ -120,33 +173,6 @@ public class CrashReport
 				}
 			}
 		}
-	}
-
-	/**
-	 * Gets the complete report with headers, stack trace, and different sections as a string.
-	 */
-	public String getCompleteReport()
-	{
-		StringBuilder stringbuilder = new StringBuilder();
-		stringbuilder.append("---- SourceBot Crash Report ----\n");
-		stringbuilder.append("\n\n");
-		stringbuilder.append("Time: ");
-		stringbuilder.append((new SimpleDateFormat()).format(new Date()));
-		stringbuilder.append("\n");
-		stringbuilder.append("Description: ");
-		stringbuilder.append(this.description);
-		stringbuilder.append("\n\n");
-		stringbuilder.append(this.getCauseStackTraceOrString());
-		stringbuilder.append("\n\nA detailed walk through of the error, its code path and all known details is as follows:\n");
-
-		for (int i = 0; i < 87; ++i)
-		{
-			stringbuilder.append("-");
-		}
-
-		stringbuilder.append("\n\n");
-		this.getSectionsInStringBuilder(stringbuilder);
-		return stringbuilder.toString();
 	}
 
 	/**

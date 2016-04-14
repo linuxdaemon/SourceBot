@@ -72,7 +72,7 @@ public class Tumblr extends JumblrClient
 	{
 		int offset = 0;
 		List<Post> queue;
-		ArrayList<Post> out = new ArrayList<>();
+		List<Post> out = new ArrayList<>();
 		while ((queue = blogQueuedPosts(blogName, offset)).size() > 0)
 			for (Post post : queue)
 			{
@@ -93,7 +93,7 @@ public class Tumblr extends JumblrClient
 	{
 		long before = 0;
 		List<Post> drafts;
-		ArrayList<Post> out = new ArrayList<>();
+		List<Post> out = new ArrayList<>();
 		while ((drafts = blogDraftPosts(blogName, before)).size() > 0)
 			for (Post post : drafts)
 			{
@@ -120,7 +120,7 @@ public class Tumblr extends JumblrClient
 	public List<Post> getBlogPosts(String blogName)
 	{
 		List<Post> posts;
-		ArrayList<Post> out = new ArrayList<>();
+		List<Post> out = new ArrayList<>();
 		while ((posts = blogPosts(blogName, out.size())).size() > 0)
 			out.addAll(posts);
 		return out;

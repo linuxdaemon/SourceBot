@@ -39,8 +39,6 @@ public class BlogConfig
 	private final PreparedStatement addPosts;
 	private final PreparedStatement addStats;
 	private final PreparedStatement getConfig;
-	private final PreparedStatement getSI;
-	private final PreparedStatement getSE;
 	private final PreparedStatement getPosts;
 	private final Tumblr client;
 	private final String url;
@@ -48,10 +46,6 @@ public class BlogConfig
 	private final Connection connection;
 	private final String id;
 	private long rulesQTime = 0;
-	private List<SearchRule> exclusions = new ArrayList<>();
-	private long exclusionsQTime = 0;
-	private List<SearchRule> inclusions = new ArrayList<>();
-	private long inclusionsQTime = 0;
 	private ResultSet configRs;
 	private long configQTime = 0;
 	
@@ -71,12 +65,6 @@ public class BlogConfig
 			this.id = id;
 			getConfig = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getConfig.setString(1, id);
-
-			getSI = connection.prepareStatement("SELECT * FROM search_inclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			getSI.setString(1, id);
-
-			getSE = connection.prepareStatement("SELECT * FROM search_exclusions WHERE blog_id = ?::UUID ORDER BY id", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			getSE.setString(1, id);
 
 			getPosts = connection.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			getPosts.setString(1, id);
@@ -401,6 +389,7 @@ public class BlogConfig
 				}
 				rules.clear();
 				rules.addAll(out);
+				rulesQTime = System.currentTimeMillis();
 			}
 			return rules;
 		}

@@ -91,13 +91,13 @@ public class SearchThread implements Runnable
 
 				// Load all inclusions in to the terms map
 
-				inclusions.stream().filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.TAG).forEach(rule -> {
-					terms.put(rule.getFullTerm(), new TagTerm(rule.getTerm()));
-				});
+				inclusions.stream()
+						.filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.TAG)
+						.forEach(rule -> terms.put(rule.getFullTerm(), new TagTerm(rule.getTerm())));
 
-				inclusions.stream().filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.BLOG).forEach(rule -> {
-					terms.put(rule.getFullTerm(), new BlogTerm(rule.getTerm()));
-				});
+				inclusions.stream()
+						.filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.BLOG)
+						.forEach(rule -> terms.put(rule.getFullTerm(), new BlogTerm(rule.getTerm())));
 
 				for (SearchInclusion inclusion : inclusions)
 				{

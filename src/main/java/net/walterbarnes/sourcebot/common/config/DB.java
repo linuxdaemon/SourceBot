@@ -30,13 +30,13 @@ import java.util.logging.Logger;
 public class DB
 {
 	private static final Logger logger = Logger.getLogger(DB.class.getName());
-	private static long cacheTime = TimeUnit.MINUTES.toMillis(10);
+	private static final long cacheTime = TimeUnit.MINUTES.toMillis(10);
 	private final String host;
 	private final int port;
 	private final String database;
 	private final String user;
 	private final String pass;
-	private Tumblr client;
+	private final Tumblr client;
 	private Driver driver;
 	private String scheme;
 	private Connection connection;

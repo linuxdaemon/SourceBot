@@ -37,8 +37,6 @@ import org.scribe.exceptions.OAuthConnectionException;
 
 import java.io.File;
 import java.sql.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -125,7 +123,7 @@ public class SourceBot
 		}
 		catch (Throwable throwable)
 		{
-			displayCrashReport(new CrashReport("Unexpected error", throwable));
+			CrashReport.displayCrashReport(new CrashReport("Unexpected error", throwable));
 		}
 		finally
 		{
@@ -226,7 +224,7 @@ public class SourceBot
 				}
 				catch (Throwable throwable)
 				{
-					displayCrashReport(new CrashReport("Unexpected error", throwable));
+					CrashReport.displayCrashReport(new CrashReport("Unexpected error", throwable));
 				}
 				finally
 				{
@@ -246,32 +244,6 @@ public class SourceBot
 			}
 		};
 		botThread.start();
-	}
-
-	/**
-	 * Displays a crash report and saves it to a file
-	 *
-	 * @param crashReport Report to display
-	 */
-	private static void displayCrashReport(CrashReport crashReport)
-	{
-		File file1 = new File(".", "crash-reports");
-		File file2 = new File(file1, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss"))
-				.format(new Date()) + ".txt");
-		System.out.println(crashReport.getCompleteReport());
-
-		if (crashReport.getFile() != null)
-		{
-			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + crashReport.getFile());
-		}
-		else if (crashReport.saveToFile(file2))
-		{
-			System.out.println("#@!@# Bot crashed! Crash report saved to: #@!@# " + file2.getAbsolutePath());
-		}
-		else
-		{
-			System.out.println("#@?@# Bot crashed! Crash report could not be saved. #@?@#");
-		}
 	}
 
 	/**
