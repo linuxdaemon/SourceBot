@@ -26,6 +26,7 @@ import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchRule;
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.common.tumblr.BlogUtil;
 import net.walterbarnes.sourcebot.common.tumblr.ISearchTerm;
 import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
@@ -34,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -134,7 +136,8 @@ public class SearchThread implements Runnable
 							// If the user has it enabled for this blog, check if the post might be a spam posts
 							// TODO implement spam match rules
 							if (blog.getCheckBlog() && (client.blogPosts(post.getBlogName()).size() < 5 ||
-									client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")))
+									client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")
+									|| !BlogUtil.olderThan(client, post.getBlogName(), TimeUnit.DAYS.toSeconds(60))))
 							{
 								logger.info("Post may be spam, getting new post");
 								continue;
