@@ -34,12 +34,6 @@ public class SearchRule implements ISearch
 	}
 
 	@Override
-	public RuleAction getAction()
-	{
-		return RuleAction.UNKNOWN;
-	}
-
-	@Override
 	public SearchType getType()
 	{
 		return type;

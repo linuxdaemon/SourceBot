@@ -18,11 +18,8 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-@SuppressWarnings ("unused")
 interface ISearch
 {
-	SearchRule.RuleAction getAction();
-
 	SearchRule.SearchType getType();
 
 	String getTerm();
@@ -32,5 +29,10 @@ interface ISearch
 	int getId();
 
 	boolean isActive();
+
+	default SearchRule.RuleAction getAction()
+	{
+		return SearchRule.RuleAction.UNKNOWN;
+	}
 }
 

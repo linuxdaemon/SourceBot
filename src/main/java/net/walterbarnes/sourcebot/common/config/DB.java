@@ -23,12 +23,14 @@ import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import java.sql.*;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DB
 {
 	private static final Logger logger = Logger.getLogger(DB.class.getName());
+	private static long cacheTime = TimeUnit.MINUTES.toMillis(10);
 	private final String host;
 	private final int port;
 	private final String database;
@@ -47,6 +49,11 @@ public class DB
 		this.database = database;
 		this.user = user;
 		this.pass = pass;
+	}
+
+	public static long getCacheTime()
+	{
+		return cacheTime;
 	}
 
 	public DB setDriver(String classPath) throws ClassNotFoundException, IllegalAccessException, InstantiationException
@@ -74,7 +81,7 @@ public class DB
 		ResultSet rs = null;
 		try
 		{
-			st = connection.prepareStatement("SELECT * FROM users WHERE name = ?");
+			st = connection.prepareStatement("SELECT id FROM users WHERE name = ?");
 			st.setString(1, name);
 			rs = st.executeQuery();
 			boolean firstRun = true;
@@ -122,7 +129,7 @@ public class DB
 		ResultSet rs = null;
 		try
 		{
-			st = connection.prepareStatement("SELECT * FROM users WHERE id = ?");
+			st = connection.prepareStatement("SELECT id FROM users WHERE id = ?");
 			st.setString(1, uid);
 			rs = st.executeQuery();
 			boolean firstRun = true;

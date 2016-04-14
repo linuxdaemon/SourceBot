@@ -19,6 +19,7 @@
 package net.walterbarnes.sourcebot.common.config.types;
 
 import com.tumblr.jumblr.types.Blog;
+import net.walterbarnes.sourcebot.common.config.DB;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,17 +45,13 @@ public class UserConfig
 	private int blogAllot;
 	private boolean hasBlogLimit;
 	private boolean isAdmin;
+	private long queryTime = 0;
 
 	public UserConfig(Tumblr client, Connection connection, String id)
 	{
 		this.client = client;
 		this.connection = connection;
 		this.id = id;
-	}
-
-	public Connection getConnection()
-	{
-		return connection;
 	}
 
 	public String getId()
@@ -64,26 +61,103 @@ public class UserConfig
 
 	public String getName()
 	{
+		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		{
+			loadUserData();
+		}
 		return name;
+	}
+
+	private void loadUserData()
+	{
+		PreparedStatement getData = null;
+		ResultSet resultSet = null;
+		try
+		{
+			getData = connection.prepareStatement("SELECT name,email,is_email_verified,blog_allot,has_blog_limit,is_admin FROM users WHERE id = ?");
+			getData.setString(1, id);
+			resultSet = getData.executeQuery();
+			boolean firstRun = true;
+			while (resultSet.next())
+			{
+				if (!firstRun)
+					throw new RuntimeException("Database error occurred, multiple users exist with uid '" + id + "'");
+				firstRun = false;
+				name = resultSet.getString("name");
+				email = resultSet.getString("email");
+				isEmailVerified = resultSet.getBoolean("is_email_verified");
+				blogAllot = resultSet.getInt("blog_allot");
+				hasBlogLimit = resultSet.getBoolean("has_blog_limit");
+				isAdmin = resultSet.getBoolean("is_admin");
+			}
+			queryTime = System.currentTimeMillis();
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database error occurred, exiting...");
+		}
+		finally
+		{
+			if (resultSet != null)
+			{
+				try
+				{
+					resultSet.close();
+				}
+				catch (SQLException e)
+				{
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
+			if (getData != null)
+			{
+				try
+				{
+					getData.close();
+				}
+				catch (SQLException e)
+				{
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+			}
+		}
+
 	}
 
 	public String getEmail()
 	{
+		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		{
+			loadUserData();
+		}
 		return email;
 	}
 
 	public boolean isEmailVerified()
 	{
+		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		{
+			loadUserData();
+		}
 		return isEmailVerified;
 	}
 
 	public int getBlogAllot()
 	{
+		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		{
+			loadUserData();
+		}
 		return blogAllot;
 	}
 
 	public boolean hasBlogLimit()
 	{
+		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		{
+			loadUserData();
+		}
 		return hasBlogLimit;
 	}
 
@@ -141,6 +215,10 @@ public class UserConfig
 
 	public boolean isAdmin()
 	{
+		if (queryTime < System.currentTimeMillis() - DB.getCacheTime())
+		{
+			loadUserData();
+		}
 		return isAdmin;
 	}
 }
