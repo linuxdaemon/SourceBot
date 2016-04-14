@@ -21,7 +21,7 @@ package net.walterbarnes.sourcebot.bot.search;
 @SuppressWarnings ("unused")
 interface ISearch
 {
-	String getAction();
+	SearchRule.RuleAction getAction();
 
 	SearchRule.SearchType getType();
 

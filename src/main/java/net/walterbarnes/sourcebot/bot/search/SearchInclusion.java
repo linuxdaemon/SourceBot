@@ -20,62 +20,25 @@ package net.walterbarnes.sourcebot.bot.search;
 
 public class SearchInclusion extends SearchRule
 {
-	private final int id;
-	private final SearchType type;
-	private final String term;
 	private final String[] requiredTags;
 	private final String[] postType;
 	private final String postSelect;
 	private final int sampleSize;
-	private final boolean active;
 
 	public SearchInclusion(int id, String type, String term, String[] requiredTags, String[] postType, String postSelect,
 						   int sampleSize, boolean active)
 	{
-		this.id = id;
-		this.type = SearchType.getType(type);
-		this.term = term;
+		super(id, SearchType.getType(type), term, active);
 		this.requiredTags = requiredTags == null ? null : requiredTags.clone();
 		this.postType = postType == null ? null : postType.clone();
 		this.postSelect = postSelect;
 		this.sampleSize = sampleSize;
-		this.active = active;
 	}
 
 	@Override
-	public String getAction()
+	public RuleAction getAction()
 	{
-		return "include";
-	}
-
-	@Override
-	public SearchType getType()
-	{
-		return type;
-	}
-
-	@Override
-	public String getTerm()
-	{
-		return term;
-	}
-
-	@Override
-	public String getFullTerm()
-	{
-		return String.format("%s:%s", this.type, this.term);
-	}
-
-	@Override
-	public int getId()
-	{
-		return id;
-	}
-
-	@Override
-	public boolean isActive()
-	{
-		return active;
+		return RuleAction.INCLUDE;
 	}
 
 	public String[] getRequiredTags()

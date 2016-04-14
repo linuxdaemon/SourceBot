@@ -18,12 +18,62 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-public abstract class SearchRule implements ISearch
+public class SearchRule implements ISearch
 {
+	private final int id;
+	private final SearchType type;
+	private final String term;
+	private final boolean active;
+
+	SearchRule(int id, SearchType type, String term, boolean active)
+	{
+		this.id = id;
+		this.type = type;
+		this.term = term;
+		this.active = active;
+	}
+
+	@Override
+	public RuleAction getAction()
+	{
+		return RuleAction.UNKNOWN;
+	}
+
+	@Override
+	public SearchType getType()
+	{
+		return type;
+	}
+
+	@Override
+	public String getTerm()
+	{
+		return term;
+	}
+
+	@Override
+	public String getFullTerm()
+	{
+		return String.format("%s:%s", this.type, this.term);
+	}
+
+	@Override
+	public int getId()
+	{
+		return id;
+	}
+
+	@Override
+	public boolean isActive()
+	{
+		return active;
+	}
+
 	public enum SearchType
 	{
 		TAG("tag"),
-		BLOG("blog");
+		BLOG("blog"),
+		UNKNOWN("unknown");
 
 		private final String name;
 
@@ -41,7 +91,7 @@ public abstract class SearchRule implements ISearch
 					return type;
 				}
 			}
-			return null;
+			return UNKNOWN;
 		}
 
 		public String getName()
@@ -54,5 +104,12 @@ public abstract class SearchRule implements ISearch
 		{
 			return name;
 		}
+	}
+
+	enum RuleAction
+	{
+		INCLUDE,
+		EXCLUDE,
+		UNKNOWN
 	}
 }

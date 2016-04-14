@@ -18,54 +18,16 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-public class SearchExclusion implements ISearch
+public class SearchExclusion extends SearchRule
 {
-	private final int id;
-	private final SearchRule.SearchType type;
-	private final String term;
-	private final boolean active;
-
 	public SearchExclusion(int id, String type, String term, boolean active)
 	{
-		this.id = id;
-		this.type = SearchRule.SearchType.getType(type);
-		this.term = term;
-		this.active = active;
+		super(id, SearchType.getType(type), term, active);
 	}
 
 	@Override
-	public String getAction()
+	public RuleAction getAction()
 	{
-		return "exclude";
-	}
-
-	@Override
-	public SearchRule.SearchType getType()
-	{
-		return type;
-	}
-
-	@Override
-	public String getTerm()
-	{
-		return term;
-	}
-
-	@Override
-	public String getFullTerm()
-	{
-		return String.format("%s:%s", type, term);
-	}
-
-	@Override
-	public int getId()
-	{
-		return id;
-	}
-
-	@Override
-	public boolean isActive()
-	{
-		return active;
+		return RuleAction.EXCLUDE;
 	}
 }
