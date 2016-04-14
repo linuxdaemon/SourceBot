@@ -244,9 +244,8 @@ public class CrashReport
 		{
 			stringBuilder.append("-- Head --\n");
 			stringBuilder.append("Stacktrace:\n");
-			StackTraceElement[] astacktraceelement = this.stacktrace;
 
-			for (StackTraceElement stacktraceelement : astacktraceelement)
+			for (StackTraceElement stacktraceelement : this.stacktrace)
 			{
 				stringBuilder.append("\t").append("at ").append(stacktraceelement.toString());
 				stringBuilder.append("\n");

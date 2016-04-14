@@ -71,7 +71,7 @@ public class Configuration
 		catch (Throwable e)
 		{
 			File fileBak = new File(file.getAbsolutePath() + "_" +
-					new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".errored");
+					new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".error");
 			Logger logger = Logger.getLogger(SourceBot.class.getName());
 			logger.warning("Encountered an error while loading configuration, generating new config");
 			if (!file.renameTo(fileBak))

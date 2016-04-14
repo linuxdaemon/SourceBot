@@ -113,17 +113,17 @@ public class Install
 		catch (IllegalAccessException e)
 		{
 			logger.severe("Unable to Access MySQL Driver Classes, Exiting...");
-			throw new RuntimeException("Unable to install SourceBot, Database error occured");
+			throw new RuntimeException("Unable to install SourceBot, Database error occurred");
 		}
 		catch (InstantiationException e)
 		{
 			logger.severe("Unable to Instantiate MySQL Driver, Exiting...");
-			throw new RuntimeException("Unable to install SourceBot, Database error occured");
+			throw new RuntimeException("Unable to install SourceBot, Database error occurred");
 		}
 		catch (ClassNotFoundException e)
 		{
 			logger.severe("Unable to load MySQL Driver, Exiting...");
-			throw new RuntimeException("Unable to install SourceBot, Database error occured");
+			throw new RuntimeException("Unable to install SourceBot, Database error occurred");
 		}
 		logger.info("Connecting to Database Server...");
 		Connection conn = null;
