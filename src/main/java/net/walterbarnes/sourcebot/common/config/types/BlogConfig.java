@@ -27,7 +27,9 @@ import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 import javax.annotation.Nonnull;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,77 +38,51 @@ public class BlogConfig
 {
 	private static final Logger logger = Logger.getLogger(BlogConfig.class.getName());
 
-	private final PreparedStatement addPosts;
-	private final PreparedStatement addStats;
-	private final PreparedStatement getConfig;
-	private final PreparedStatement getPosts;
 	private final Tumblr client;
 	private final String url;
 	private final List<SearchRule> rules = new ArrayList<>();
 	private final Connection connection;
 	private final String id;
 	private long rulesQTime = 0;
-	private ResultSet configRs;
 	private long configQTime = 0;
+	private Map<String, Object> config = new HashMap<>();
 
 	public BlogConfig(@Nonnull Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
 	{
-		PreparedStatement getUrl = null;
-		ResultSet rs = null;
-		try
+		this.id = id;
+		this.client = client;
+		this.connection = connection;
+
+		try (PreparedStatement getUrl = connection.prepareStatement("SELECT url FROM blogs WHERE id = ?"))
 		{
-			getUrl = connection.prepareStatement("SELECT url FROM blogs WHERE id = ?");
 			getUrl.setString(1, id);
-			rs = getUrl.executeQuery();
-			rs.next();
-			this.url = rs.getString("url");
-			this.client = client;
-			this.connection = connection;
-			this.id = id;
-			getConfig = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			getConfig.setString(1, id);
-
-			getPosts = connection.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			getPosts.setString(1, id);
-
-			addPosts = connection.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			addPosts.setString(1, id);
-
-			addStats = connection.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?::UUID, ?, ?, ?, ?, ?)", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			addStats.setString(1, id);
-		}
-		finally
-		{
-			if (rs != null)
+			try (ResultSet rs = getUrl.executeQuery())
 			{
-				try
+				boolean firstRun = true;
+				String url = "";
+
+				while (rs.next())
 				{
-					rs.close();
+					if (!firstRun)
+						throw new RuntimeException("Multiple blogs exist with that blog id '" + id + "'");
+					firstRun = false;
+					url = rs.getString("url");
 				}
-				catch (SQLException e)
+
+				if (url.isEmpty())
 				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
+					throw new RuntimeException("No blogs exist with blog id '" + id + "'");
 				}
-			}
-			if (getUrl != null)
-			{
-				try
-				{
-					getUrl.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
+				this.url = url;
 			}
 		}
 	}
-	
+
 	public Tumblr getClient()
 	{
 		return client;
 	}
-
+	
 	public boolean isPostBufFull()
 	{
 		if (getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
@@ -120,238 +96,177 @@ public class BlogConfig
 
 	public String getPostState()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getString("post_state"); }
+			loadConfig();
 		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return null;
-		}
-		return null;
+		return String.valueOf(config.get("post_state"));
 	}
 
 	private int getPostBuffer()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
+			loadConfig();
+		}
+		return (int) config.get("post_buffer");
+	}
+
+	private void loadConfig()
+	{
+		try (PreparedStatement st = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?"))
+		{
+			st.setString(1, id);
+			try (ResultSet rs = st.executeQuery())
 			{
-				configRs = getConfig.executeQuery();
+				boolean firstRun = true;
+				while (rs.next())
+				{
+					if (!firstRun)
+						throw new RuntimeException("Multiple blogs exists with id '" + id + "'");
+					firstRun = false;
+					config.clear();
+					config.put("url", rs.getString("url"));
+					config.put("blog_check_active", rs.getBoolean("blog_check_active"));
+					config.put("sample_size", rs.getInt("sample_size"));
+					config.put("post_type", rs.getArray("post_type"));
+					config.put("post_select", rs.getString("post_select"));
+					config.put("post_state", rs.getString("post_state"));
+					config.put("post_buffer", rs.getInt("post_buffer"));
+					config.put("post_comment", rs.getString("post_comment"));
+					config.put("post_tags", rs.getArray("post_tags"));
+					config.put("preserve_tags", rs.getBoolean("preserve_tags"));
+					config.put("active", rs.getBoolean("active"));
+					config.put("adm_active", rs.getBoolean("adm_active"));
+				}
 				configQTime = System.currentTimeMillis();
 			}
-			configRs.beforeFirst();
-			if (configRs.next())
-				return configRs.getInt("post_buffer");
 		}
 		catch (SQLException e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
-			return 0;
 		}
-		return 0;
 	}
 
 	public boolean addStat(String type, String tag, int time, int searched, int selected) throws SQLException
 	{
-		addStats.setString(2, type);
-		addStats.setString(3, tag);
-		addStats.setInt(4, time);
-		addStats.setInt(5, searched);
-		addStats.setInt(6, selected);
-		return addStats.execute();
+		try (PreparedStatement addStats = connection.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?::UUID, ?, ?, ?, ?, ?)"))
+		{
+			addStats.setString(1, id);
+			addStats.setString(2, type);
+			addStats.setString(3, tag);
+			addStats.setInt(4, time);
+			addStats.setInt(5, searched);
+			addStats.setInt(6, selected);
+			return addStats.execute();
+		}
 	}
 
 	public boolean addPost(String type, long id, long rbId, String tag, String blogName) throws SQLException
 	{
-		addPosts.setString(2, type);
-		addPosts.setLong(3, id);
-		addPosts.setLong(4, rbId);
-		addPosts.setString(5, tag);
-		addPosts.setString(6, blogName);
-		return addPosts.execute();
+		try (PreparedStatement addPosts = connection.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?::UUID, ?, ?, ?, ?, ?)"))
+		{
+			addPosts.setString(1, this.id);
+			addPosts.setString(2, type);
+			addPosts.setLong(3, id);
+			addPosts.setLong(4, rbId);
+			addPosts.setString(5, tag);
+			addPosts.setString(6, blogName);
+			return addPosts.execute();
+		}
 	}
 
 	public List<Long> getPosts() throws SQLException
 	{
-		ResultSet rs = null;
-		try
+		List<Long> out = new ArrayList<>();
+		try (PreparedStatement getPosts = connection.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID"))
 		{
-			List<Long> out = new ArrayList<>();
-			rs = getPosts.executeQuery();
-			while (rs.next()) out.add(rs.getLong("post_id"));
-			return out;
-		}
-		finally
-		{
-			if (rs != null)
+			getPosts.setString(1, this.id);
+			try (ResultSet rs = getPosts.executeQuery())
 			{
-				try {rs.close();}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
+				while (rs.next()) out.add(rs.getLong("post_id"));
 			}
 		}
+		return out;
 	}
 
 	public String[] getPostType()
 	{
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
+		{
+			loadConfig();
+		}
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{
-				return (String[]) configRs.getArray("post_type").getArray();
-			}
+			return (String[]) ((Array) config.get("post_type")).getArray();
 		}
 		catch (SQLException e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
 			return new String[0];
 		}
-		return new String[0];
 	}
 
 	public boolean getCheckBlog()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getBoolean("blog_check_active"); }
+			loadConfig();
 		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return false;
-		}
-		return false;
+		return (boolean) config.get("blog_check_active");
 	}
 
 	public boolean getPreserveTags()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getBoolean("preserve_tags"); }
+			loadConfig();
 		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return false;
-		}
-		return false;
+		return (boolean) config.get("preserve_tags");
 	}
 
 	public String getPostSelect()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getString("post_select"); }
+			loadConfig();
 		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return null;
-		}
-		return null;
+		return String.valueOf(config.get("post_select"));
 	}
 
 	public String getPostComment()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getString("post_comment"); }
+			loadConfig();
 		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return null;
-		}
-		return null;
+		return String.valueOf(config.get("post_comment"));
 	}
 
 	public String[] getPostTags()
 	{
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
+		{
+			loadConfig();
+		}
 		try
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{
-				return (String[]) configRs.getArray("post_tags").getArray();
-			}
+			return (String[]) ((Array) config.get("post_tags")).getArray();
 		}
 		catch (SQLException e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
 			return new String[0];
 		}
-		return new String[0];
 	}
 
 	public int getSampleSize()
 	{
-		try
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
-			{
-				configRs = getConfig.executeQuery();
-				configQTime = System.currentTimeMillis();
-			}
-			configRs.beforeFirst();
-			if (configRs.next())
-			{ return configRs.getInt("sample_size"); }
+			loadConfig();
 		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return 0;
-		}
-		return 0;
+		return (int) config.get("sample_size");
 	}
 
 	public List<SearchRule> getSearchRules() throws SQLException
