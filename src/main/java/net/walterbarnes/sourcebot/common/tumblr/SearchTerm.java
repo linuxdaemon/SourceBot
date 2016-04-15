@@ -27,19 +27,20 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public abstract class SearchTerm implements ISearchTerm
 {
 	private static final Logger logger = Logger.getLogger(SearchTerm.class.getName());
-	private final PostCache cache = new PostCache(120 * 60 * 1000);
+	private final PostCache cache = new PostCache(TimeUnit.HOURS.toSeconds(2));
 	private final String term;
 	private final SearchRule.SearchType type;
 	public long lastTime;
 	int searched;
 	private int lastPostCount = 0;
-	private Tumblr client;
-	private BlogConfig blog;
+	private Tumblr client = null;
+	private BlogConfig blog = null;
 
 	SearchTerm(String term, SearchRule.SearchType type)
 	{
@@ -62,6 +63,10 @@ public abstract class SearchTerm implements ISearchTerm
 	@Override
 	public Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, SearchInclusion rule) throws SQLException
 	{
+		if (client == null && blog == null)
+		{
+			throw new IllegalStateException("The blog and client must be set before posts can be searched");
+		}
 		List<Long> postBlacklist = getBlog().getPosts();
 
 		int postNum = lastPostCount > 0 ? lastPostCount : (rule.getSampleSize() == 0 ? getBlog().getSampleSize() : rule.getSampleSize());
@@ -103,30 +108,32 @@ public abstract class SearchTerm implements ISearchTerm
 		return blog;
 	}
 
-	void setBlog(BlogConfig blog)
+	public SearchTerm setBlog(BlogConfig blog)
 	{
 		this.blog = blog;
+		return this;
 	}
 
 	public abstract List<Post> getPostSet();
 
-	public SearchRule.SearchType getType()
+	private SearchRule.SearchType getType()
 	{
 		return type;
 	}
 
-	public String getTerm()
+	String getTerm()
 	{
 		return term;
 	}
 
-	public Tumblr getClient()
+	Tumblr getClient()
 	{
 		return client;
 	}
 
-	void setClient(Tumblr client)
+	public SearchTerm setClient(Tumblr client)
 	{
 		this.client = client;
+		return this;
 	}
 }

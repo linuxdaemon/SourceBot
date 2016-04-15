@@ -20,12 +20,13 @@ package net.walterbarnes.sourcebot.bot.search;
 
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
-import net.walterbarnes.sourcebot.common.tumblr.BlogTerm;
 import net.walterbarnes.sourcebot.common.tumblr.PostUtil;
 import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
-import net.walterbarnes.sourcebot.common.tumblr.TagTerm;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SearchInclusion extends SearchRule
 {
@@ -58,19 +59,6 @@ public class SearchInclusion extends SearchRule
 	public int getSampleSize()
 	{
 		return sampleSize;
-	}
-
-	public Optional<SearchTerm> getSearchTerm()
-	{
-		if (getType() == SearchType.TAG)
-		{
-			return Optional.of(new TagTerm(getTerm()));
-		}
-		else if (getType() == SearchType.BLOG)
-		{
-			return Optional.of(new BlogTerm(getTerm()));
-		}
-		return Optional.empty();
 	}
 
 	public Map<Post, String> filterPosts(List<Post> posts, List<Long> postBlacklist, List<String> tagBlacklist, List<String> blogBlacklist, SearchTerm searchTerm)
@@ -113,12 +101,12 @@ public class SearchInclusion extends SearchRule
 		return out;
 	}
 
-	public String[] getPostType()
+	private String[] getPostType()
 	{
 		return postType == null ? null : postType.clone();
 	}
 
-	public String[] getRequiredTags()
+	private String[] getRequiredTags()
 	{
 		return requiredTags == null ? null : requiredTags.clone();
 	}

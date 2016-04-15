@@ -73,6 +73,7 @@ public class SearchThread implements Runnable
 				// Load all search rules from the database
 				List<SearchRule> rules = blog.getSearchRules().stream().filter(SearchRule::isActive)
 						.collect(Collectors.toList());
+
 				logger.info(String.format("%d search rules loaded.", rules.size()));
 
 				List<SearchExclusion> exclusions = rules.stream()
@@ -99,17 +100,17 @@ public class SearchThread implements Runnable
 						.filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.BLOG)
 						.forEach(rule -> terms.put(rule.getFullTerm(), rule.getSearchTerm()));
 
-				for (SearchInclusion inclusion : inclusions)
+				for (SearchInclusion rule : inclusions)
 				{
-					Optional<SearchTerm> optT = terms.get(inclusion.getFullTerm());
+					Optional<SearchTerm> optT = terms.get(rule.getFullTerm());
 					if (optT.isPresent())
 					{
-						logger.info(String.format("Getting posts from %s: %s", inclusion.getType().getName(), inclusion.getTerm()));
+						logger.info(String.format("Getting posts from %s: %s", rule.getType().getName(), rule.getTerm()));
 
 						ISearchTerm t = optT.get();
-						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, inclusion);
+						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, rule);
 						postMap.putAll(p);
-						posts.addAll(selectPosts(p.keySet(), inclusion.getPostSelect() != null ? inclusion.getPostSelect() : blog.getPostSelect(), 50));
+						posts.addAll(selectPosts(p.keySet(), rule.getPostSelect() != null ? rule.getPostSelect() : blog.getPostSelect(), 50));
 					}
 				}
 
@@ -135,8 +136,8 @@ public class SearchThread implements Runnable
 
 							// If the user has it enabled for this blog, check if the post might be a spam posts
 							// TODO implement spam match rules
-							if (blog.getCheckBlog() && (client.blogPosts(post.getBlogName()).size() < 5 ||
-									client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")
+							if (blog.getCheckBlog() && (client.blogPosts(post.getBlogName()).size() < 5
+									|| client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")
 									|| !BlogUtil.olderThan(client, post.getBlogName(), TimeUnit.DAYS.toSeconds(60))))
 							{
 								logger.info("Post may be spam, getting new post");

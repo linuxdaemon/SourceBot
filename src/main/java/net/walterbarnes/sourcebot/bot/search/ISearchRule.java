@@ -18,6 +18,10 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
+import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
+
+import java.util.Optional;
+
 interface ISearchRule
 {
 	SearchRule.SearchType getType();
@@ -25,6 +29,8 @@ interface ISearchRule
 	String getTerm();
 
 	String getFullTerm();
+
+	Optional<SearchTerm> getSearchTerm();
 
 	int getId();
 

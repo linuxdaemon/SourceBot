@@ -48,7 +48,7 @@ public class BlogConfig
 	private long rulesQTime = 0;
 	private ResultSet configRs;
 	private long configQTime = 0;
-	
+
 	public BlogConfig(@Nonnull Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
 	{
 		PreparedStatement getUrl = null;
@@ -100,6 +100,11 @@ public class BlogConfig
 				}
 			}
 		}
+	}
+	
+	public Tumblr getClient()
+	{
+		return client;
 	}
 
 	public boolean isPostBufFull()

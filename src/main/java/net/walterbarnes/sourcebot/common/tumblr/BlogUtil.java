@@ -27,7 +27,6 @@ public class BlogUtil
 	public static boolean olderThan(Tumblr client, String url, long time)
 	{
 		List<Post> posts;
-		client.blogInfo(url).getPostCount();
 		int offset = 0;
 		while ((posts = client.blogPosts(url, offset + client.blogInfo(url).getPostCount() - 1)).size() > 0)
 		{

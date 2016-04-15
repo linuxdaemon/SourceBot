@@ -19,6 +19,11 @@
 package net.walterbarnes.sourcebot.bot.search;
 
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.common.tumblr.BlogTerm;
+import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.common.tumblr.TagTerm;
+
+import java.util.Optional;
 
 public class SearchRule implements ISearchRule
 {
@@ -57,6 +62,20 @@ public class SearchRule implements ISearchRule
 	public String getFullTerm()
 	{
 		return String.format("%s:%s", this.type, this.term);
+	}
+
+	@Override
+	public Optional<SearchTerm> getSearchTerm()
+	{
+		if (type == SearchType.TAG)
+		{
+			return Optional.of(new TagTerm(getTerm()).setBlog(blog).setClient(blog.getClient()));
+		}
+		else if (type == SearchType.BLOG)
+		{
+			return Optional.of(new BlogTerm(getTerm()).setBlog(blog).setClient(blog.getClient()));
+		}
+		return Optional.empty();
 	}
 
 	@Override
