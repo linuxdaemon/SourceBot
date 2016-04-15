@@ -26,7 +26,9 @@ import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import javax.annotation.Nonnull;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,14 +38,22 @@ public class BlogConfig
 	private static final Logger logger = Logger.getLogger(BlogConfig.class.getName());
 
 	private final Tumblr client;
-	private final String url;
 	private final Collection<SearchRule> rules = new ArrayList<>();
 	private final Connection connection;
 	private final String id;
+	private String url;
 	private long rulesQTime = 0;
 	private long configQTime = 0;
-	private Map<String, Object> config = new HashMap<>();
 	private boolean active;
+	private boolean blogCheckActive;
+	private int sampleSize;
+	private String[] postType;
+	private String postSelect;
+	private String postState;
+	private int postBuffer;
+	private String postComment;
+	private String[] postTags;
+	private boolean preserveTags;
 	private boolean admActive;
 
 	public BlogConfig(@Nonnull Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
@@ -99,7 +109,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return String.valueOf(config.get("post_state"));
+		return String.valueOf(this.postState);
 	}
 
 	private int getPostBuffer()
@@ -108,7 +118,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return (int) config.get("post_buffer");
+		return this.postBuffer;
 	}
 
 	private void loadConfig()
@@ -124,19 +134,22 @@ public class BlogConfig
 					if (!firstRun)
 						throw new RuntimeException("Multiple blogs exists with id '" + id + "'");
 					firstRun = false;
-					config.clear();
-					config.put("url", rs.getString("url"));
-					config.put("blog_check_active", rs.getBoolean("blog_check_active"));
-					config.put("sample_size", rs.getInt("sample_size"));
-					config.put("post_type", rs.getArray("post_type"));
-					config.put("post_select", rs.getString("post_select"));
-					config.put("post_state", rs.getString("post_state"));
-					config.put("post_buffer", rs.getInt("post_buffer"));
-					config.put("post_comment", rs.getString("post_comment"));
-					config.put("post_tags", rs.getArray("post_tags"));
-					config.put("preserve_tags", rs.getBoolean("preserve_tags"));
-					config.put("active", rs.getBoolean("active"));
-					config.put("adm_active", rs.getBoolean("adm_active"));
+					this.url = rs.getString("url");
+					this.blogCheckActive = rs.getBoolean("blog_check_active");
+					this.sampleSize = rs.getInt("sample_size");
+					Array postType = rs.getArray("post_type");
+					try { this.postType = (String[]) postType.getArray(); }
+					catch (SQLException ignored) { this.postType = new String[0]; }
+					this.postSelect = rs.getString("post_select");
+					this.postState = rs.getString("post_state");
+					this.postBuffer = rs.getInt("post_buffer");
+					this.postComment = rs.getString("post_comment");
+					Array postTags = rs.getArray("post_tags");
+					try { this.postTags = (String[]) postTags.getArray(); }
+					catch (SQLException ignored) { this.postTags = new String[0]; }
+					this.preserveTags = rs.getBoolean("preserve_tags");
+					this.active = rs.getBoolean("active");
+					this.admActive = rs.getBoolean("adm_active");
 				}
 				configQTime = System.currentTimeMillis();
 			}
@@ -210,15 +223,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		try
-		{
-			return (String[]) ((Array) config.get("post_type")).getArray();
-		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return new String[0];
-		}
+		return this.postType.clone();
 	}
 
 	public boolean getCheckBlog()
@@ -227,7 +232,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return (boolean) config.get("blog_check_active");
+		return this.blogCheckActive;
 	}
 
 	public boolean getPreserveTags()
@@ -236,7 +241,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return (boolean) config.get("preserve_tags");
+		return this.preserveTags;
 	}
 
 	public String getPostSelect()
@@ -245,7 +250,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return String.valueOf(config.get("post_select"));
+		return String.valueOf(this.postSelect);
 	}
 
 	public String getPostComment()
@@ -254,7 +259,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return String.valueOf(config.get("post_comment"));
+		return String.valueOf(this.postComment);
 	}
 
 	public String[] getPostTags()
@@ -263,15 +268,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		try
-		{
-			return (String[]) ((Array) config.get("post_tags")).getArray();
-		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			return new String[0];
-		}
+		return this.postTags.clone();
 	}
 
 	public int getSampleSize()
@@ -280,7 +277,7 @@ public class BlogConfig
 		{
 			loadConfig();
 		}
-		return (int) config.get("sample_size");
+		return this.sampleSize;
 	}
 
 	public Collection<SearchRule> getSearchRules()
@@ -340,11 +337,19 @@ public class BlogConfig
 	
 	public boolean isActive()
 	{
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
+		{
+			loadConfig();
+		}
 		return active;
 	}
 
 	public boolean isAdmActive()
 	{
+		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())
+		{
+			loadConfig();
+		}
 		return admActive;
 	}
 }

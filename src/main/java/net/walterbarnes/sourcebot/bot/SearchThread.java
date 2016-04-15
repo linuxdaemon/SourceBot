@@ -151,7 +151,7 @@ public class SearchThread implements Runnable
 
 							Collection<String> rbTags = new ArrayList<>();
 
-							if (!(blog.getPostTags() == null || blog.getPostTags().length == 0))
+							if (blog.getPostTags().length > 0)
 							{
 								Collections.addAll(rbTags, blog.getPostTags());
 							}

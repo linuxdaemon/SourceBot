@@ -24,10 +24,7 @@ import com.tumblr.jumblr.exceptions.JumblrException;
 import net.walterbarnes.sourcebot.common.config.Configuration;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -127,15 +124,15 @@ public class Install
 		}
 		logger.info("Connecting to Database Server...");
 		Connection conn = null;
-		PreparedStatement createDb = null;
+		Statement createDb = null;
 		try
 		{
 			conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s", dbHost, dbPort), dbUser, dbPass);
 			logger.info("Connected to Server.");
 
 			logger.info("Creating Database if it doesn't exist...");
-			createDb = conn.prepareStatement(String.format("CREATE DATABASE IF NOT EXISTS %s;", dbName));
-			createDb.execute();
+			createDb = conn.createStatement();
+			createDb.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
 			logger.info("Done.");
 
 			logger.info("Disconnecting From Server...");
