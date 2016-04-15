@@ -26,10 +26,7 @@ import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import javax.annotation.Nonnull;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,12 +37,14 @@ public class BlogConfig
 
 	private final Tumblr client;
 	private final String url;
-	private final List<SearchRule> rules = new ArrayList<>();
+	private final Collection<SearchRule> rules = new ArrayList<>();
 	private final Connection connection;
 	private final String id;
 	private long rulesQTime = 0;
 	private long configQTime = 0;
 	private Map<String, Object> config = new HashMap<>();
+	private boolean active;
+	private boolean admActive;
 
 	public BlogConfig(@Nonnull Tumblr client, @Nonnull Connection connection, @Nonnull String id) throws SQLException
 	{
@@ -284,11 +283,11 @@ public class BlogConfig
 		return (int) config.get("sample_size");
 	}
 
-	public List<SearchRule> getSearchRules()
+	public Collection<SearchRule> getSearchRules()
 	{
 		if (System.currentTimeMillis() - rulesQTime > DB.getCacheTime())
 		{
-			List<SearchRule> out = new ArrayList<>();
+			Collection<SearchRule> out = new ArrayList<>();
 			try (PreparedStatement getRules = connection.prepareStatement("SELECT 'include' AS action,* FROM search_inclusions WHERE blog_id = ? UNION ALL SELECT 'exclude' AS action,id,blog_id,type,term,NULL,NULL,NULL,NULL,active,modified FROM search_exclusions WHERE blog_id = ? ORDER BY term"))
 			{
 				getRules.setString(1, id);
@@ -332,5 +331,20 @@ public class BlogConfig
 			}
 		}
 		return rules;
+	}
+
+	public String getUrl()
+	{
+		return url;
+	}
+	
+	public boolean isActive()
+	{
+		return active;
+	}
+
+	public boolean isAdmActive()
+	{
+		return admActive;
 	}
 }

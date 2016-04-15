@@ -24,8 +24,8 @@ import net.walterbarnes.sourcebot.common.tumblr.PostUtil;
 import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SearchInclusion extends SearchRule
@@ -61,7 +61,7 @@ public class SearchInclusion extends SearchRule
 		return sampleSize;
 	}
 
-	public Map<Post, String> filterPosts(List<Post> posts, List<Long> postBlacklist, List<String> tagBlacklist, List<String> blogBlacklist, SearchTerm searchTerm)
+	public Map<Post, String> filterPosts(Iterable<Post> posts, Collection<Long> postBlacklist, Iterable<String> tagBlacklist, Collection<String> blogBlacklist, SearchTerm searchTerm)
 	{
 		Map<Post, String> out = new HashMap<>();
 		String[] types = getPostType() == null ? getBlog().getPostType() : getPostType();

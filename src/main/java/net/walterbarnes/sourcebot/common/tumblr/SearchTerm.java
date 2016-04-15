@@ -114,8 +114,6 @@ public abstract class SearchTerm implements ISearchTerm
 		return this;
 	}
 
-	public abstract List<Post> getPostSet();
-
 	private SearchRule.SearchType getType()
 	{
 		return type;

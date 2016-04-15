@@ -19,14 +19,14 @@
 package net.walterbarnes.sourcebot.common.crash;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 
 @SuppressWarnings ("WeakerAccess")
 public class CrashReportCategory
 {
 	private final String categoryName;
-	private final List<CrashReportCategory.Entry> sections = new ArrayList<>();
+	private final Collection<Entry> sections = new ArrayList<>();
 
 	public CrashReportCategory(@SuppressWarnings ("SameParameterValue") String categoryName)
 	{

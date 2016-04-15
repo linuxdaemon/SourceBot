@@ -32,8 +32,6 @@ import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 import org.apache.commons.lang3.StringUtils;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -46,14 +44,12 @@ public class SearchThread implements Runnable
 	private static final Logger logger = Logger.getLogger(SearchThread.class.getName());
 	public final BlogConfig blog;
 	private final Tumblr client;
-	private final String url;
 	private final Map<String, Optional<SearchTerm>> terms = new HashMap<>();
 
-	SearchThread(Tumblr client, String url, Connection conn) throws SQLException
+	SearchThread(Tumblr client, BlogConfig blog)
 	{
-		this.url = url;
 		this.client = client;
-		this.blog = new BlogConfig(client, conn, url);
+		this.blog = blog;
 	}
 
 	@Override
@@ -64,7 +60,7 @@ public class SearchThread implements Runnable
 			// Check the blog's configured posting state and check if we need to post some more posts
 			if (!blog.isPostBufFull())
 			{
-				logger.info(String.format("[%s] %d posts in queue", url, client.getQueuedPosts(url).size()));
+				logger.info(String.format("[%s] %d posts in queue", blog.getUrl(), client.getQueuedPosts(blog.getUrl()).size()));
 				logger.info("Adding posts to queue");
 
 				// A map of all the posts we pull from the tags/blogs, linked with their search terms
@@ -92,7 +88,7 @@ public class SearchThread implements Runnable
 						.filter(rule -> rule.getType() == SearchRule.SearchType.BLOG)
 						.map(SearchExclusion::getTerm).collect(Collectors.toList());
 
-				List<Post> posts = new ArrayList<>();
+				Collection<Post> posts = new ArrayList<>();
 
 				// Load all inclusions in to the terms map
 
@@ -153,7 +149,7 @@ public class SearchThread implements Runnable
 								params.put("comment", blog.getPostComment());
 							}
 
-							List<String> rbTags = new ArrayList<>();
+							Collection<String> rbTags = new ArrayList<>();
 
 							if (!(blog.getPostTags() == null || blog.getPostTags().length == 0))
 							{
@@ -171,7 +167,7 @@ public class SearchThread implements Runnable
 							{
 								try
 								{
-									rb = post.reblog(url, params);
+									rb = post.reblog(blog.getUrl(), params);
 									if (rb != null)
 									{
 										rbd = true;
@@ -207,7 +203,7 @@ public class SearchThread implements Runnable
 		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
 	}
 
-	private List<Post> selectPosts(Collection<Post> posts, String method, int n) throws InstantiationException, IllegalAccessException
+	private Collection<Post> selectPosts(Collection<Post> posts, String method, int n) throws InstantiationException, IllegalAccessException
 	{
 		switch (method)
 		{

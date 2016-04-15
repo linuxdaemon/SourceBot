@@ -23,20 +23,15 @@ import net.walterbarnes.sourcebot.bot.command.CommandHandler;
 import net.walterbarnes.sourcebot.bot.thread.InputThread;
 import net.walterbarnes.sourcebot.common.cli.Cli;
 import net.walterbarnes.sourcebot.common.config.Configuration;
+import net.walterbarnes.sourcebot.common.config.DB;
+import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.common.crash.CrashReport;
 import net.walterbarnes.sourcebot.common.reference.Constants;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.common.util.LogHelper;
-import net.walterbarnes.sourcebot.web.ConfigServer;
-import net.walterbarnes.sourcebot.web.IndexHandler;
-import net.walterbarnes.sourcebot.web.auth.CallbackHandler;
-import net.walterbarnes.sourcebot.web.auth.ConnectHandler;
-import net.walterbarnes.sourcebot.web.blog.BlogManagerHandler;
-import net.walterbarnes.sourcebot.web.search.RuleManagerHandler;
-import org.scribe.exceptions.OAuthConnectionException;
 
 import java.io.File;
-import java.sql.*;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -65,7 +60,6 @@ public class SourceBot
 	public File confDir = new File(System.getProperty("user.home"), ".sourcebot");
 
 	private Configuration conf;
-	private Connection conn;
 	private CommandHandler commandHandler;
 
 	public static void main(String[] args)
@@ -110,13 +104,13 @@ public class SourceBot
 
 			Constants.load(currentBot.conf);
 
-			ConfigServer cs = new ConfigServer(8087);
-			cs.addPage("/connect", new ConnectHandler(Constants.getConsumerKey(), Constants.getConsumerSecret()));
-			cs.addPage("/callback", new CallbackHandler());
-			cs.addPage("/rules", new RuleManagerHandler());
-			cs.addPage("/blogs", new BlogManagerHandler());
-			cs.addPage("/", new IndexHandler());
-			cs.start();
+			//ConfigServer cs = new ConfigServer(8087);
+			//cs.addPage("/connect", new ConnectHandler(Constants.getConsumerKey(), Constants.getConsumerSecret()));
+			//cs.addPage("/callback", new CallbackHandler());
+			//cs.addPage("/rules", new RuleManagerHandler());
+			//cs.addPage("/blogs", new BlogManagerHandler());
+			//cs.addPage("/", new IndexHandler());
+			//cs.start();
 
 			// Run main thread
 			currentBot.run();
@@ -132,24 +126,11 @@ public class SourceBot
 			{
 				currentBot.currentThread.interrupt();
 			}
-			if (currentBot.conn != null)
-			{
-				try
-				{
-					currentBot.conn.close();
-				}
-				catch (SQLException e)
-				{
-					currentBot.logger.warning("Error occurred on closing connection to database");
-				}
-			}
 		}
 	}
 
-	private void run() throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException
+	private void run()
 	{
-		Class.forName("org.postgresql.Driver").newInstance();
-
 		this.client = new Tumblr(Constants.getConsumerKey(), Constants.getConsumerSecret(), Constants.getToken(), Constants.getTokenSecret());
 
 		Configuration dbCat = conf.getCategory("db", new JsonObject());
@@ -161,87 +142,61 @@ public class SourceBot
 		String dbName = dbCat.getString("dbName", "");
 		if (conf.hasChanged()) conf.save();
 
-		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
-				dbUser, dbPass);
-
-		Thread botThread = new Thread()
+		try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
 		{
-			public void run()
+			db.setDriver("org.postgresql.Driver");
+			db.setScheme("jdbc:postgresql");
+
+			Thread botThread = new Thread()
 			{
-				PreparedStatement getBlogs = null;
-				try
+				public void run()
 				{
-					getBlogs = conn.prepareStatement("SELECT url,active,adm_active FROM blogs ORDER BY id;",
-							ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-
-					ResultSet rs = getBlogs.executeQuery();
-
-					long queryTime = System.currentTimeMillis();
-
-					while (running)
-					{
-						try
-						{
-							if ((System.currentTimeMillis() - queryTime) > 60000)
-							{
-								rs = getBlogs.executeQuery();
-								queryTime = System.currentTimeMillis();
-							}
-
-							rs.beforeFirst();
-							while (rs.next() && running)
-							{
-								String url = rs.getString("url");
-								boolean active = rs.getBoolean("active");
-								boolean adm_active = rs.getBoolean("adm_active");
-								if (active && adm_active)
-								{
-									if (!threads.containsKey(url))
-									{
-										SearchThread bt = new SearchThread(client, url, conn);
-										threads.put(url, bt);
-									}
-									logger.fine("Running Thread for " + url);
-									long start = System.currentTimeMillis();
-									currentThread = new Thread(threads.get(url));
-									currentThread.start();
-									currentThread.join();
-									logger.fine("Took " + (System.currentTimeMillis() - start) + " ms");
-								}
-							}
-						}
-						catch (OAuthConnectionException e)
-						{
-							logger.log(Level.SEVERE, e.getMessage(), e);
-						}
-						catch (InterruptedException ignored)
-						{
-							Thread.currentThread().interrupt();
-						}
-					}
-				}
-				catch (Throwable throwable)
-				{
-					CrashReport.displayCrashReport(new CrashReport("Unexpected error", throwable));
-				}
-				finally
-				{
-
 					try
 					{
-						if (getBlogs != null)
+						while (running)
 						{
-							getBlogs.close();
+							try
+							{
+								for (BlogConfig blog : db.getAllBlogs())
+								{
+									if (!running)
+										break;
+									String url = blog.getUrl();
+									if (!threads.containsKey(url))
+									{
+										SearchThread st = new SearchThread(client, blog);
+										threads.put(url, st);
+									}
+									if (blog.isActive() && blog.isAdmActive())
+									{
+										logger.info("Running thread for " + url);
+										long start = System.currentTimeMillis();
+										currentThread = new Thread(threads.get(url));
+										currentThread.start();
+										currentThread.join();
+										logger.fine(String.format("Took %d ms", System.currentTimeMillis() - start));
+									}
+								}
+							}
+							catch (InterruptedException ignored)
+							{
+								Thread.currentThread().interrupt();
+							}
 						}
 					}
-					catch (SQLException e)
+					catch (Throwable throwable)
 					{
-						logger.log(Level.SEVERE, e.getMessage(), e);
+						CrashReport.displayCrashReport(new CrashReport("Error in search thread", throwable));
 					}
 				}
-			}
-		};
-		botThread.start();
+			};
+			botThread.start();
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database Error Occurred, exiting...");
+		}
 	}
 
 	/**

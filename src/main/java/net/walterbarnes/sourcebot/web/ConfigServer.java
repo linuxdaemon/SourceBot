@@ -20,6 +20,7 @@ package net.walterbarnes.sourcebot.web;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.SessionIdManager;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.session.HashSessionIdManager;
@@ -41,7 +42,7 @@ public class ConfigServer extends Server
 	{
 		super(port);
 		// Specify the Session ID Manager
-		HashSessionIdManager idManager = new HashSessionIdManager();
+		SessionIdManager idManager = new HashSessionIdManager();
 		setSessionIdManager(idManager);
 
 		// Sessions are bound to a context.

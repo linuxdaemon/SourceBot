@@ -24,13 +24,13 @@ import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class DB
+public class DB implements AutoCloseable
 {
 	private static final Logger logger = Logger.getLogger(DB.class.getName());
 	private static final long cacheTime = TimeUnit.MINUTES.toMillis(10);
@@ -59,9 +59,17 @@ public class DB
 		return cacheTime;
 	}
 
-	public DB setDriver(String classPath) throws ClassNotFoundException, IllegalAccessException, InstantiationException
+	public DB setDriver(String classPath)
 	{
-		driver = (Driver) Class.forName(classPath).newInstance();
+		try
+		{
+			driver = (Driver) Class.forName(classPath).newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Unable to start JDBC driver, exiting...");
+		}
 		return this;
 	}
 
@@ -120,9 +128,9 @@ public class DB
 		return user;
 	}
 
-	public List<BlogConfig> getAllBlogs()
+	public Iterable<BlogConfig> getAllBlogs()
 	{
-		List<BlogConfig> blogs = new ArrayList<>();
+		Collection<BlogConfig> blogs = new ArrayList<>();
 		try (
 				PreparedStatement st = connection.prepareStatement("SELECT id FROM blogs");
 				ResultSet rs = st.executeQuery())
@@ -137,5 +145,11 @@ public class DB
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
 		return blogs;
+	}
+
+	@Override
+	public void close() throws SQLException
+	{
+		connection.close();
 	}
 }

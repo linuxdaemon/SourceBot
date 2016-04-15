@@ -34,4 +34,6 @@ public interface ISearchTerm
 
 	@SuppressWarnings ("Duplicates")
 	Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, SearchInclusion rule) throws SQLException;
+
+	List<Post> getPostSet();
 }

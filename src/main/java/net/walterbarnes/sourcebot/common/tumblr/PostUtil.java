@@ -24,7 +24,7 @@ public class PostUtil
 {
 	// Will look in to fixing the instanceof chain later, but with how the posts are done, I don't think it will be possible
 	@SuppressWarnings ("ChainOfInstanceofChecks")
-	public static boolean postContains(Post post, String s)
+	public static boolean postContains(Post post, CharSequence s)
 	{
 		boolean found = false;
 		if (post instanceof TextPost)
