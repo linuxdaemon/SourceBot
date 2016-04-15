@@ -161,8 +161,6 @@ public class SourceBot
 		String dbName = dbCat.getString("dbName", "");
 		if (conf.hasChanged()) conf.save();
 
-		logger.info(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName));
-
 		final Connection conn = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 				dbUser, dbPass);
 
