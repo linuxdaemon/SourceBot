@@ -33,7 +33,7 @@ if (hasProperty("teamcity")) {
         println "teamcity.build.branch: " + teamcity['teamcity.build.branch']
         println "build.branch: " + teamcity['build.branch']
         println "sysProp: " + getProperty('teamcity')
-        println "project.ext: ${project.ext['teamcity.build.branch']}"
+        println "project.ext: ${project.ext}"
     }
     //noinspection GrUnresolvedAccess
     buildNum = teamcity["build.number"]
