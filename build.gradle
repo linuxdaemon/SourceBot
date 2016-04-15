@@ -24,6 +24,11 @@ group 'net.walterbarnes'
 mainClassName = group + ".sourcebot.SourceBot"
 version '0.2'
 
+def workingBranch = """git rev-parse --abbrev-ref HEAD""".execute().text.trim()
+if (!workingBranch.equals("master")) {
+    version = workingBranch + "-" + version
+}
+
 // If TeamCity is running this build, lets set the version info
 def buildNum = '0'
 if (hasProperty("teamcity")) {
