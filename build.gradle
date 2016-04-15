@@ -33,14 +33,18 @@ if (hasProperty("teamcity")) {
         println "teamcity.build.branch: " + teamcity['teamcity.build.branch']
         println "build.branch: " + teamcity['build.branch']
         println "sysProp: " + getProperty('teamcity')
-        println "project.ext: ${project.ext}"
+        //println "project.ext: ${project.ext}"
     }
     //noinspection GrUnresolvedAccess
     buildNum = teamcity["build.number"]
     println "##teamcity[buildNumber '" + version + "." + buildNum + "']"
 }
 version = version + "." + buildNum
-
+task printProperties << {
+    teamcity.each { key, val ->
+        println "##tc-property name='${key}' value='${val}'"
+    }
+}
 //noinspection GroovyUnusedAssignment
 sourceCompatibility = 1.8
 //noinspection GroovyUnusedAssignment
