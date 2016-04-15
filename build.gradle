@@ -27,8 +27,8 @@ version '0.2'
 // If TeamCity is running this build, lets set the version info
 def buildNum = '0'
 if (hasProperty("teamcity")) {
-    if (!teamcity['teamcity.build.branch.is_default']) {
-        version = teamcity['teamcity.build.branch'] + "-" + version
+    if (!teamcity['build.branch.is_default']) {
+        version = teamcity['build.branch'] + "-" + version
     }
     //noinspection GrUnresolvedAccess
     buildNum = teamcity["build.number"]
