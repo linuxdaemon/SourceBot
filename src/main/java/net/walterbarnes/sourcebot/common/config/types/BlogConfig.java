@@ -148,7 +148,7 @@ public class BlogConfig
 		}
 	}
 
-	public boolean addStat(String type, String tag, int time, int searched, int selected) throws SQLException
+	public boolean addStat(String type, String tag, int time, int searched, int selected)
 	{
 		try (PreparedStatement addStats = connection.prepareStatement("INSERT INTO search_stats (blog_id, type, term, search_time, searched, selected) VALUES (?::UUID, ?, ?, ?, ?, ?)"))
 		{
@@ -160,9 +160,14 @@ public class BlogConfig
 			addStats.setInt(6, selected);
 			return addStats.execute();
 		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database error occurred, exiting...");
+		}
 	}
 
-	public boolean addPost(String type, long id, long rbId, String tag, String blogName) throws SQLException
+	public boolean addPost(String type, long id, long rbId, String tag, String blogName)
 	{
 		try (PreparedStatement addPosts = connection.prepareStatement("INSERT INTO seen_posts (blog_id, search_type, post_id, rb_id, search_term, blog) VALUES (?::UUID, ?, ?, ?, ?, ?)"))
 		{
@@ -174,9 +179,14 @@ public class BlogConfig
 			addPosts.setString(6, blogName);
 			return addPosts.execute();
 		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database error occurred, exiting...");
+		}
 	}
 
-	public List<Long> getPosts() throws SQLException
+	public List<Long> getPosts()
 	{
 		List<Long> out = new ArrayList<>();
 		try (PreparedStatement getPosts = connection.prepareStatement("SELECT post_id FROM seen_posts WHERE blog_id = ?::UUID"))
@@ -186,6 +196,11 @@ public class BlogConfig
 			{
 				while (rs.next()) out.add(rs.getLong("post_id"));
 			}
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database error occurred, exiting...");
 		}
 		return out;
 	}
@@ -269,74 +284,53 @@ public class BlogConfig
 		return (int) config.get("sample_size");
 	}
 
-	public List<SearchRule> getSearchRules() throws SQLException
+	public List<SearchRule> getSearchRules()
 	{
-		PreparedStatement getRules = null;
-		ResultSet rs = null;
-		try
+		if (System.currentTimeMillis() - rulesQTime > DB.getCacheTime())
 		{
-			if (System.currentTimeMillis() - rulesQTime > DB.getCacheTime())
+			List<SearchRule> out = new ArrayList<>();
+			try (PreparedStatement getRules = connection.prepareStatement("SELECT 'include' AS action,* FROM search_inclusions WHERE blog_id = ? UNION ALL SELECT 'exclude' AS action,id,blog_id,type,term,NULL,NULL,NULL,NULL,active,modified FROM search_exclusions WHERE blog_id = ? ORDER BY term"))
 			{
-				List<SearchRule> out = new ArrayList<>();
-				getRules = connection.prepareStatement("SELECT 'include' AS action,* FROM search_inclusions WHERE blog_id = ? UNION ALL SELECT 'exclude' AS action,id,blog_id,type,term,NULL,NULL,NULL,NULL,active,modified FROM search_exclusions WHERE blog_id = ? ORDER BY term");
 				getRules.setString(1, id);
 				getRules.setString(2, id);
-				rs = getRules.executeQuery();
-				while (rs.next())
+				try (ResultSet rs = getRules.executeQuery())
 				{
-					String action = rs.getString("action");
-					int id = rs.getInt("id");
-					String blogId = rs.getString("blog_id");
-					String type = rs.getString("type");
-					String term = rs.getString("term");
-					String[] requiredTags = rs.getArray("required_tags") != null ? (String[]) rs.getArray("required_tags").getArray() : null;
-					String[] postType = rs.getArray("post_type") != null ? (String[]) rs.getArray("post_type").getArray() : null;
-					String postSelect = rs.getString("post_select");
-					int sample = rs.getInt("sample_size");
-					boolean active = rs.getBoolean("active");
-					Timestamp modified = rs.getTimestamp("modified");
-					switch (action)
+					while (rs.next())
 					{
-						case "include":
-							out.add(new SearchInclusion(this, id, blogId, type, term, requiredTags, postType, postSelect, sample, active, modified.getTime()));
-							break;
-						case "exclude":
-							out.add(new SearchExclusion(this, id, blogId, type, term, active, modified.getTime()));
-							break;
-						default:
-							throw new RuntimeException(String.format("Unknown search rule in database, id '%s_%s'", action, id));
+						String action = rs.getString("action");
+						int id = rs.getInt("id");
+						String blogId = rs.getString("blog_id");
+						String type = rs.getString("type");
+						String term = rs.getString("term");
+						String[] requiredTags = rs.getArray("required_tags") != null ? (String[]) rs.getArray("required_tags").getArray() : null;
+						String[] postType = rs.getArray("post_type") != null ? (String[]) rs.getArray("post_type").getArray() : null;
+						String postSelect = rs.getString("post_select");
+						int sample = rs.getInt("sample_size");
+						boolean active = rs.getBoolean("active");
+						Timestamp modified = rs.getTimestamp("modified");
+						switch (action)
+						{
+							case "include":
+								out.add(new SearchInclusion(this, id, blogId, type, term, requiredTags, postType, postSelect, sample, active, modified.getTime()));
+								break;
+							case "exclude":
+								out.add(new SearchExclusion(this, id, blogId, type, term, active, modified.getTime()));
+								break;
+							default:
+								throw new RuntimeException(String.format("Unknown search rule in database, id '%s_%s'", action, id));
+						}
 					}
-				}
-				rules.clear();
-				rules.addAll(out);
-				rulesQTime = System.currentTimeMillis();
-			}
-			return rules;
-		}
-		finally
-		{
-			if (rs != null)
-			{
-				try
-				{
-					rs.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
+					rules.clear();
+					rules.addAll(out);
+					rulesQTime = System.currentTimeMillis();
 				}
 			}
-			if (getRules != null)
+			catch (SQLException e)
 			{
-				try
-				{
-					getRules.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				throw new RuntimeException("Database error occurred, exiting...");
 			}
 		}
+		return rules;
 	}
 }
