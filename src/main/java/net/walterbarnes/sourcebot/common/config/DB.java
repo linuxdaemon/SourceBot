@@ -80,98 +80,44 @@ public class DB
 
 	public Optional<UserConfig> getUserForName(String name) throws SQLException
 	{
-		PreparedStatement st = null;
-		ResultSet rs = null;
-		try
+		Optional<UserConfig> user = Optional.empty();
+		try (PreparedStatement st = connection.prepareStatement("SELECT id FROM users WHERE name = ?"))
 		{
-			st = connection.prepareStatement("SELECT id FROM users WHERE name = ?");
 			st.setString(1, name);
-			rs = st.executeQuery();
-			boolean firstRun = true;
-			Optional<UserConfig> user = Optional.empty();
-			while (rs.next())
+			try (ResultSet rs = st.executeQuery())
 			{
-				if (!firstRun)
-					throw new IllegalStateException("Multiple users exist with name '" + name + "'");
-				firstRun = false;
-				user = Optional.of(new UserConfig(client, connection, rs.getString("id")));
-			}
-
-			return user;
-		}
-		finally
-		{
-			if (rs != null)
-			{
-				try
+				boolean firstRun = true;
+				while (rs.next())
 				{
-					rs.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
-			if (st != null)
-			{
-				try
-				{
-					st.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
+					if (!firstRun)
+						throw new IllegalStateException("Multiple users exist with name '" + name + "'");
+					firstRun = false;
+					user = Optional.of(new UserConfig(client, connection, rs.getString("id")));
 				}
 			}
 		}
+		return user;
 	}
 
 	public Optional<UserConfig> getUserForId(String uid) throws SQLException
 	{
-		PreparedStatement st = null;
-		ResultSet rs = null;
-		try
+		Optional<UserConfig> user = Optional.empty();
+		try (PreparedStatement st = connection.prepareStatement("SELECT id FROM users WHERE id = ?"))
 		{
-			st = connection.prepareStatement("SELECT id FROM users WHERE id = ?");
 			st.setString(1, uid);
-			rs = st.executeQuery();
-			boolean firstRun = true;
-			Optional<UserConfig> user = Optional.empty();
-			while (rs.next())
+			try (ResultSet rs = st.executeQuery())
 			{
-				if (!firstRun)
-					throw new IllegalStateException("Multiple users exist with uid '" + uid + "'");
-				firstRun = false;
-				user = Optional.of(new UserConfig(client, connection, rs.getString("id")));
-			}
-
-			return user;
-		}
-		finally
-		{
-			if (rs != null)
-			{
-				try
+				boolean firstRun = true;
+				while (rs.next())
 				{
-					rs.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
-			if (st != null)
-			{
-				try
-				{
-					st.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
+					if (!firstRun)
+						throw new IllegalStateException("Multiple users exist with uid '" + uid + "'");
+					firstRun = false;
+					user = Optional.of(new UserConfig(client, connection, rs.getString("id")));
 				}
 			}
 		}
+		return user;
 	}
 
 	public List<BlogConfig> getAllBlogs()

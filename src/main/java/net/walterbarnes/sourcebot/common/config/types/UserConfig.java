@@ -39,6 +39,7 @@ public class UserConfig
 	private final Connection connection;
 	private final String id;
 	private final Tumblr client;
+	private final List<BlogConfig> blogs = new ArrayList<>();
 	private String name;
 	private String email;
 	private boolean isEmailVerified;
@@ -46,6 +47,7 @@ public class UserConfig
 	private boolean hasBlogLimit;
 	private boolean isAdmin;
 	private long queryTime = 0;
+	private long blogQTime = 0;
 
 	public UserConfig(Tumblr client, Connection connection, String id)
 	{
@@ -134,64 +136,41 @@ public class UserConfig
 		return hasBlogLimit;
 	}
 
-	public List<BlogConfig> getBlogs()
-	{
-		PreparedStatement st = null;
-		ResultSet rs = null;
-		List<BlogConfig> blogs = new ArrayList<>();
-		try
-		{
-			List<String> urlArr = client.user().getBlogs().stream().map(Blog::getName).collect(Collectors.toList());
-
-			st = connection.prepareStatement("SELECT id FROM blogs WHERE user_id = ? OR url = ANY(?) OR ?");
-			st.setString(1, id);
-			st.setString(2, "{" + StringUtils.join(urlArr, ",") + "}");
-			st.setBoolean(3, isAdmin());
-			rs = st.executeQuery();
-			while (rs.next())
-			{
-				blogs.add(new BlogConfig(client, connection, rs.getString("id")));
-			}
-			return blogs;
-		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-		}
-		finally
-		{
-			if (rs != null)
-			{
-				try
-				{
-					rs.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
-			if (st != null)
-			{
-				try
-				{
-					st.close();
-				}
-				catch (SQLException e)
-				{
-					logger.log(Level.SEVERE, e.getMessage(), e);
-				}
-			}
-		}
-		return blogs;
-	}
-
-	public boolean isAdmin()
+	private boolean isAdmin()
 	{
 		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{
 			loadUserData();
 		}
 		return isAdmin;
+	}
+
+	public List<BlogConfig> getBlogs()
+	{
+		if (System.currentTimeMillis() - blogQTime > DB.getCacheTime())
+		{
+			try (PreparedStatement st = connection.prepareStatement("SELECT id FROM blogs WHERE user_id = ? OR url = ANY(?) OR ?"))
+			{
+				List<String> urlArr = client.user().getBlogs().stream().map(Blog::getName).collect(Collectors.toList());
+				st.setString(1, id);
+				st.setString(2, "{" + StringUtils.join(urlArr, ",") + "}");
+				st.setBoolean(3, isAdmin);
+				try (ResultSet rs = st.executeQuery())
+				{
+					blogs.clear();
+					while (rs.next())
+					{
+						blogs.add(new BlogConfig(client, connection, rs.getString("id")));
+					}
+					blogQTime = System.currentTimeMillis();
+				}
+			}
+			catch (SQLException e)
+			{
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				throw new RuntimeException("Database error occurred, exiting...");
+			}
+		}
+		return blogs;
 	}
 }
