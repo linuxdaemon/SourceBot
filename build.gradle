@@ -31,7 +31,7 @@ if (hasProperty("teamcity")) {
         version = "git rev-parse --abbrev-ref HEAD".execute().text.trim() + "-" + version
         println "teamcity.build.branch: " + teamcity['teamcity.build.branch']
         println "build.branch" + teamcity['build.branch']
-        println "sysProp: " + getProperty('teamcity.build.branch')
+        println "sysProp: " + getProperty('teamcity')
     }
     //noinspection GrUnresolvedAccess
     buildNum = teamcity["build.number"]
