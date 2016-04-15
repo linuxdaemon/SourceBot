@@ -18,10 +18,13 @@
 
 package net.walterbarnes.sourcebot.common.config;
 
+import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.common.config.types.UserConfig;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -169,5 +172,24 @@ public class DB
 				}
 			}
 		}
+	}
+
+	public List<BlogConfig> getAllBlogs()
+	{
+		List<BlogConfig> blogs = new ArrayList<>();
+		try (
+				PreparedStatement st = connection.prepareStatement("SELECT id FROM blogs");
+				ResultSet rs = st.executeQuery())
+		{
+			while (rs.next())
+			{
+				blogs.add(new BlogConfig(client, connection, rs.getString("id")));
+			}
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+		}
+		return blogs;
 	}
 }
