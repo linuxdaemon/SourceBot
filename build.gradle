@@ -29,9 +29,11 @@ def buildNum = '0'
 if (hasProperty("teamcity")) {
     if (!teamcity['teamcity.build.branch.is_default']) {
         version = "git rev-parse --abbrev-ref HEAD".execute().text.trim() + "-" + version
+        println "ls -la".execute().text
         println "teamcity.build.branch: " + teamcity['teamcity.build.branch']
-        println "build.branch" + teamcity['build.branch']
+        println "build.branch: " + teamcity['build.branch']
         println "sysProp: " + getProperty('teamcity')
+        println "project.ext: ${project.ext['teamcity.build.branch']}"
     }
     //noinspection GrUnresolvedAccess
     buildNum = teamcity["build.number"]
