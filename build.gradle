@@ -28,7 +28,7 @@ version '0.2'
 def buildNum = '0'
 if (hasProperty("teamcity")) {
     if (!teamcity['teamcity.build.branch.is_default']) {
-        version = teamcity['teamcity.build.branch'] + "-" + version
+        version = "git rev-parse --abbrev-ref HEAD".execute().text.trim() + "-" + version
         println teamcity
     }
     //noinspection GrUnresolvedAccess
