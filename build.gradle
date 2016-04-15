@@ -38,13 +38,12 @@ if (hasProperty("teamcity")) {
     //noinspection GrUnresolvedAccess
     buildNum = teamcity["build.number"]
     println "##teamcity[buildNumber '" + version + "." + buildNum + "']"
-}
-version = version + "." + buildNum
-task printProperties << {
     teamcity.each { key, val ->
         println "##tc-property name='${key}' value='${val}'"
     }
 }
+version = version + "." + buildNum
+
 //noinspection GroovyUnusedAssignment
 sourceCompatibility = 1.8
 //noinspection GroovyUnusedAssignment
