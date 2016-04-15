@@ -19,9 +19,9 @@
 package net.walterbarnes.sourcebot.bot;
 
 import com.google.gson.JsonObject;
-import net.walterbarnes.sourcebot.bot.command.CommandHandler;
 import net.walterbarnes.sourcebot.bot.thread.InputThread;
 import net.walterbarnes.sourcebot.common.cli.Cli;
+import net.walterbarnes.sourcebot.common.command.CommandHandler;
 import net.walterbarnes.sourcebot.common.config.Configuration;
 import net.walterbarnes.sourcebot.common.config.DB;
 import net.walterbarnes.sourcebot.common.config.types.BlogConfig;

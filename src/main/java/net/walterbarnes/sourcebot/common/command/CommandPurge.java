@@ -16,7 +16,7 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot.command;
+package net.walterbarnes.sourcebot.common.command;
 
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.bot.SourceBot;

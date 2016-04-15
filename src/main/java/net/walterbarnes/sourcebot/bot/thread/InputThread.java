@@ -19,7 +19,7 @@
 package net.walterbarnes.sourcebot.bot.thread;
 
 import net.walterbarnes.sourcebot.bot.SourceBot;
-import net.walterbarnes.sourcebot.bot.command.CommandHandler;
+import net.walterbarnes.sourcebot.common.command.CommandHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -136,7 +136,7 @@ public class UserConfig
 		return hasBlogLimit;
 	}
 
-	private boolean isAdmin()
+	public boolean isAdmin()
 	{
 		if (System.currentTimeMillis() - queryTime > DB.getCacheTime())
 		{

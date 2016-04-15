@@ -144,7 +144,7 @@ public class SearchThread implements Runnable
 
 							params.put("state", blog.getPostState());
 
-							if (!(blog.getPostComment() == null || blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
+							if (!(blog.getPostComment().isEmpty() || blog.getPostComment().equals("null")))
 							{
 								params.put("comment", blog.getPostComment());
 							}
