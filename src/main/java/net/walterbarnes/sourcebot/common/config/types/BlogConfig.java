@@ -139,7 +139,7 @@ public class BlogConfig
 		return null;
 	}
 
-	public int getPostBuffer()
+	private int getPostBuffer()
 	{
 		try
 		{
@@ -150,7 +150,7 @@ public class BlogConfig
 			}
 			configRs.beforeFirst();
 			if (configRs.next())
-			{ return configRs.getInt("post_buffer"); }
+				return configRs.getInt("post_buffer");
 		}
 		catch (SQLException e)
 		{
