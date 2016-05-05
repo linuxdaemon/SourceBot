@@ -33,13 +33,13 @@ public class CommandPurge implements ICommand
 	public void run(@Nonnull String[] args)
 	{
 		List<Post> posts;
-		switch (SourceBot.getCurrentBot().threads.get(args[0]).blog.getPostState())
+		switch (SourceBot.INSTANCE.threads.get(args[0]).blog.getPostState())
 		{
 			case "queue":
-				posts = SourceBot.getCurrentBot().client.getQueuedPosts(args[0]);
+				posts = SourceBot.INSTANCE.client.getQueuedPosts(args[0]);
 				break;
 			default:
-				posts = SourceBot.getCurrentBot().client.getDrafts(args[0]);
+				posts = SourceBot.INSTANCE.client.getDrafts(args[0]);
 				break;
 		}
 		posts.forEach(Post::delete);

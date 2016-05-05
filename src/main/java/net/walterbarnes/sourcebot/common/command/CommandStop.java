@@ -32,10 +32,10 @@ public class CommandStop implements ICommand
 	{
 		logger.info("Shutting down....");
 
-		SourceBot.getCurrentBot().running = false;
-		if (SourceBot.getCurrentBot().currentThread != null)
+		SourceBot.INSTANCE.running = false;
+		if (SourceBot.INSTANCE.currentThread != null)
 		{
-			SourceBot.getCurrentBot().currentThread.interrupt();
+			SourceBot.INSTANCE.currentThread.interrupt();
 		}
 	}
 }

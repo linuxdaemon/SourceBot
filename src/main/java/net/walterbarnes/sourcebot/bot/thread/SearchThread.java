@@ -16,7 +16,7 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot;
+package net.walterbarnes.sourcebot.bot.thread;
 
 import com.github.onyxfoxdevelopment.collections.CollectionHelper;
 import com.tumblr.jumblr.exceptions.JumblrException;
@@ -46,7 +46,7 @@ public class SearchThread implements Runnable
 	private final Tumblr client;
 	private final Map<String, SearchTerm> terms = new HashMap<>();
 
-	SearchThread(Tumblr client, BlogConfig blog)
+	public SearchThread(Tumblr client, BlogConfig blog)
 	{
 		this.client = client;
 		this.blog = blog;
@@ -176,6 +176,7 @@ public class SearchThread implements Runnable
 							{
 								try
 								{
+									// TODO implement dry run/simulation options
 									rb = post.reblog(blog.getUrl(), params);
 									if (rb != null)
 									{

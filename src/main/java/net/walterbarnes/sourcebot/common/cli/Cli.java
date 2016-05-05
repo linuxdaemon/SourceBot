@@ -66,12 +66,12 @@ public class Cli
 
 	private void setConfigDir(@Nonnull String dir)
 	{
-		SourceBot.getCurrentBot().confDir = new File(dir);
-		logger.info(String.format("Set config dir to %s", SourceBot.getCurrentBot().confDir.getAbsolutePath()));
+		SourceBot.INSTANCE.confDir = new File(dir);
+		logger.info(String.format("Set config dir to %s", SourceBot.INSTANCE.confDir.getAbsolutePath()));
 	}
 
 	private void install()
 	{
-		Install.install(SourceBot.getCurrentBot().confDir.getAbsolutePath(), SourceBot.getCurrentBot().confName);
+		Install.install(SourceBot.INSTANCE.confDir.getAbsolutePath(), SourceBot.INSTANCE.confName);
 	}
 }

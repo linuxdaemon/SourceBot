@@ -19,12 +19,12 @@
 package net.walterbarnes.sourcebot.bot;
 
 import com.google.gson.JsonObject;
+import net.walterbarnes.sourcebot.bot.thread.BotThread;
 import net.walterbarnes.sourcebot.bot.thread.InputThread;
+import net.walterbarnes.sourcebot.bot.thread.SearchThread;
 import net.walterbarnes.sourcebot.common.cli.Cli;
 import net.walterbarnes.sourcebot.common.command.CommandHandler;
 import net.walterbarnes.sourcebot.common.config.Configuration;
-import net.walterbarnes.sourcebot.common.config.DB;
-import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.common.crash.CrashReport;
 import net.walterbarnes.sourcebot.common.reference.Constants;
 import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
@@ -40,7 +40,7 @@ public class SourceBot
 	/**
 	 * Static link to current SourceBot instance
 	 */
-	private static final SourceBot currentBot = new SourceBot();
+	public static final SourceBot INSTANCE = new SourceBot();
 
 	/**
 	 * Default config file name, in the future, this may be overridden via command line arguments
@@ -68,9 +68,9 @@ public class SourceBot
 			LogHelper.init();
 
 			// Start new user command handler
-			currentBot.commandHandler = new CommandHandler();
+			INSTANCE.commandHandler = new CommandHandler();
 
-			Thread t = new Thread(currentBot.inputThread, "Console Input Handler");
+			Thread t = new Thread(INSTANCE.inputThread, "Console Input Handler");
 			t.setDaemon(true);
 			t.start();
 
@@ -78,29 +78,29 @@ public class SourceBot
 			new Cli(args).parse();
 
 			// Check existence of config directory
-			if (!currentBot.confDir.exists())
+			if (!INSTANCE.confDir.exists())
 			{
 				// Attempt to create the directory
-				if (!currentBot.confDir.mkdirs())
+				if (!INSTANCE.confDir.mkdirs())
 				{
 					throw new RuntimeException("Unable to create config dir");
 				}
 			}
 
 			// Create config instance
-			currentBot.conf = new Configuration(currentBot.confDir.getAbsolutePath(), currentBot.confName);
+			INSTANCE.conf = new Configuration(INSTANCE.confDir.getAbsolutePath(), INSTANCE.confName);
 
-			// If the config file doesn't exists, run the install process
-			if (!currentBot.conf.exists())
+			// If the config file doesn't exist, run the install process
+			if (!INSTANCE.conf.exists())
 			{
-				Install.install(currentBot.confDir.getAbsolutePath(), currentBot.confName);
+				Install.install(INSTANCE.confDir.getAbsolutePath(), INSTANCE.confName);
 				System.exit(0);
 			}
 
 			// Load/read config
-			currentBot.conf.init();
+			INSTANCE.conf.init();
 
-			Constants.load(currentBot.conf);
+			Constants.load(INSTANCE.conf);
 
 			//ConfigServer cs = new ConfigServer(8087);
 			//cs.addPage("/connect", new ConnectHandler(Constants.getConsumerKey(), Constants.getConsumerSecret()));
@@ -111,7 +111,7 @@ public class SourceBot
 			//cs.start();
 
 			// Run main thread
-			currentBot.run();
+			INSTANCE.run();
 		}
 		catch (Throwable throwable)
 		{
@@ -120,9 +120,9 @@ public class SourceBot
 		finally
 		{
 			// Shutdown sequence
-			if (currentBot.currentThread != null)
+			if (INSTANCE.currentThread != null)
 			{
-				currentBot.currentThread.interrupt();
+				INSTANCE.currentThread.interrupt();
 			}
 		}
 	}
@@ -140,63 +140,8 @@ public class SourceBot
 		final String dbName = dbCat.getString("dbName", "");
 		if (conf.hasChanged()) conf.save();
 
-		Thread botThread = new Thread()
-		{
-			public void run()
-			{
-				try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
-				{
-					db.setDriver("org.postgresql.Driver");
-					db.setScheme("jdbc:postgresql");
-					db.connect();
-					while (running)
-					{
-						try
-						{
-							for (BlogConfig blog : db.getAllBlogs())
-							{
-								if (!running)
-									break;
-								String url = blog.getUrl();
-								if (!threads.containsKey(url))
-								{
-									SearchThread st = new SearchThread(client, blog);
-									threads.put(url, st);
-								}
-								if (blog.isActive() && blog.isAdmActive())
-								{
-									logger.info("Running thread for " + url);
-									long start = System.currentTimeMillis();
-									currentThread = new Thread(threads.get(url));
-									currentThread.start();
-									currentThread.join();
-									logger.fine(String.format("Took %d ms", System.currentTimeMillis() - start));
-								}
-							}
-						}
-						catch (InterruptedException ignored)
-						{
-							Thread.currentThread().interrupt();
-						}
-					}
-				}
-				catch (Throwable throwable)
-				{
-					CrashReport.displayCrashReport(new CrashReport("Error in search thread", throwable));
-				}
-			}
-		};
-		botThread.start();
-	}
-
-	/**
-	 * Gets the current instance of the bot, or creates one if none is set
-	 *
-	 * @return the bot instance
-	 */
-	public static SourceBot getCurrentBot()
-	{
-		return currentBot;
+		BotThread bt = new BotThread(client, dbHost, dbPort, dbName, dbUser, dbPass);
+		bt.start();
 	}
 
 	/**

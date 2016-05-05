@@ -32,7 +32,7 @@ public class InputThread implements Runnable
 	public void run()
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8").newDecoder()));
-		CommandHandler ch = SourceBot.getCurrentBot().getCommandHandler();
+		CommandHandler ch = SourceBot.INSTANCE.getCommandHandler();
 		ch.init();
 		String input;
 		do
