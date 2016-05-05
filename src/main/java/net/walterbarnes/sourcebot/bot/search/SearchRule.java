@@ -24,9 +24,11 @@ import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
 import net.walterbarnes.sourcebot.common.tumblr.TagTerm;
 
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class SearchRule implements ISearchRule
 {
+	private static final Logger logger = Logger.getLogger(SearchRule.class.getName());
 	private final int id;
 	private final String blogId;
 	private final SearchType type;
@@ -67,6 +69,7 @@ public class SearchRule implements ISearchRule
 	@Override
 	public Optional<SearchTerm> getSearchTerm()
 	{
+		logger.info("Term type: " + type.toString());
 		if (type == SearchType.TAG)
 		{
 			return Optional.of(new TagTerm(getTerm()).setBlog(blog).setClient(blog.getClient()));

@@ -79,11 +79,19 @@ public class DB implements AutoCloseable
 		return this;
 	}
 
-	public void connect() throws SQLException
+	public void connect()
 	{
 		if (driver == null)
 			throw new IllegalStateException("Driver and scheme must be configured before a connection can be made");
-		connection = DriverManager.getConnection(String.format("%s://%s:%s/%s", scheme, host, port, database), user, pass);
+		try
+		{
+			connection = DriverManager.getConnection(String.format("%s://%s:%s/%s", scheme, host, port, database), user, pass);
+		}
+		catch (SQLException e)
+		{
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database Error Occurred, exiting...");
+		}
 	}
 
 	public Optional<UserConfig> getUserForName(String name) throws SQLException
@@ -143,6 +151,7 @@ public class DB implements AutoCloseable
 		catch (SQLException e)
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException("Database Error Occurred, exiting...");
 		}
 		return blogs;
 	}
@@ -150,6 +159,7 @@ public class DB implements AutoCloseable
 	@Override
 	public void close() throws SQLException
 	{
-		connection.close();
+		if (connection != null)
+			connection.close();
 	}
 }

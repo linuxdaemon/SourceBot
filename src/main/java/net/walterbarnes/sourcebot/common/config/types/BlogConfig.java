@@ -62,7 +62,7 @@ public class BlogConfig
 		this.client = client;
 		this.connection = connection;
 
-		try (PreparedStatement getUrl = connection.prepareStatement("SELECT url FROM blogs WHERE id = ?"))
+		try (PreparedStatement getUrl = connection.prepareStatement("SELECT url FROM blogs WHERE id = ?::UUID"))
 		{
 			getUrl.setString(1, id);
 			try (ResultSet rs = getUrl.executeQuery())
@@ -99,8 +99,11 @@ public class BlogConfig
 			logger.warning("Bot is not admin on '" + url + "', not running thread");
 			return true;
 		}
-		return (getPostState().equals("draft") && client.getDrafts(url).size() < getPostBuffer()) ||
-				(getPostState().equals("queue") && client.getQueuedPosts(url).size() < getPostBuffer());
+		if (getPostState().equals("draft"))
+		{
+			return client.getDrafts(url).size() >= getPostBuffer();
+		}
+		return client.getQueuedPosts(url).size() >= getPostBuffer();
 	}
 
 	public String getPostState()
@@ -123,7 +126,7 @@ public class BlogConfig
 
 	private void loadConfig()
 	{
-		try (PreparedStatement st = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?"))
+		try (PreparedStatement st = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID"))
 		{
 			st.setString(1, id);
 			try (ResultSet rs = st.executeQuery())
@@ -158,6 +161,20 @@ public class BlogConfig
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
+	}
+
+	public int getBufferSize()
+	{
+		if (getPostState().equals("draft"))
+		{
+			return client.getDrafts(url).size();
+		}
+		if (!client.blogInfo(url).isAdmin())
+		{
+			logger.warning("Bot is not admin on '" + url + "', not running thread");
+			return 0;
+		}
+		return client.getQueuedPosts(url).size();
 	}
 
 	public boolean addStat(String type, String tag, int time, int searched, int selected)
@@ -285,7 +302,7 @@ public class BlogConfig
 		if (System.currentTimeMillis() - rulesQTime > DB.getCacheTime())
 		{
 			Collection<SearchRule> out = new ArrayList<>();
-			try (PreparedStatement getRules = connection.prepareStatement("SELECT 'include' AS action,* FROM search_inclusions WHERE blog_id = ? UNION ALL SELECT 'exclude' AS action,id,blog_id,type,term,NULL,NULL,NULL,NULL,active,modified FROM search_exclusions WHERE blog_id = ? ORDER BY term"))
+			try (PreparedStatement getRules = connection.prepareStatement("SELECT 'include' AS action,* FROM search_inclusions WHERE blog_id = ?::UUID UNION ALL SELECT 'exclude' AS action,id,blog_id,type,term,NULL,NULL,NULL,NULL,active,modified FROM search_exclusions WHERE blog_id = ?::UUID ORDER BY term"))
 			{
 				getRules.setString(1, id);
 				getRules.setString(2, id);

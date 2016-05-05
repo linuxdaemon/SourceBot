@@ -30,17 +30,19 @@ public class PostUtil
 		if (post instanceof TextPost)
 		{
 			TextPost p = (TextPost) post;
-			if (p.getTitle().contains(s) || p.getBody().contains(s)) found = true;
+			if ((p.getTitle() != null && p.getTitle().contains(s)) || (p.getBody() != null && p.getBody().contains(s)))
+				found = true;
 		}
 		else if (post instanceof PhotoPost)
 		{
 			PhotoPost p = (PhotoPost) post;
-			if (p.getCaption().contains(s)) found = true;
+			if (p.getCaption() != null && p.getCaption().contains(s)) found = true;
 		}
 		else if (post instanceof QuotePost)
 		{
 			QuotePost p = (QuotePost) post;
-			if (p.getSource().contains(s) || p.getText().contains(s)) found = true;
+			if ((p.getSource() != null && p.getSource().contains(s)) || (p.getText() != null && p.getText().contains(s)))
+				found = true;
 		}
 		else if (post instanceof LinkPost)
 		{

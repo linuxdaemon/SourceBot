@@ -44,7 +44,7 @@ public class SearchThread implements Runnable
 	private static final Logger logger = Logger.getLogger(SearchThread.class.getName());
 	public final BlogConfig blog;
 	private final Tumblr client;
-	private final Map<String, Optional<SearchTerm>> terms = new HashMap<>();
+	private final Map<String, SearchTerm> terms = new HashMap<>();
 
 	SearchThread(Tumblr client, BlogConfig blog)
 	{
@@ -60,8 +60,8 @@ public class SearchThread implements Runnable
 			// Check the blog's configured posting state and check if we need to post some more posts
 			if (!blog.isPostBufFull())
 			{
-				logger.info(String.format("[%s] %d posts in queue", blog.getUrl(), client.getQueuedPosts(blog.getUrl()).size()));
-				logger.info("Adding posts to queue");
+				logger.info(String.format("[%s] %d posts in buffer", blog.getUrl(), blog.getBufferSize()));
+				logger.info("Adding posts to buffer");
 
 				// A map of all the posts we pull from the tags/blogs, linked with their search terms
 				Map<Post, String> postMap = new HashMap<>();
@@ -93,12 +93,21 @@ public class SearchThread implements Runnable
 				// Load all inclusions in to the terms map
 
 				inclusions.stream()
-						.filter(rule -> !terms.containsKey(rule.getFullTerm()) && rule.getType() == SearchRule.SearchType.BLOG)
-						.forEach(rule -> terms.put(rule.getFullTerm(), rule.getSearchTerm()));
+						.filter(rule -> !terms.containsKey(rule.getFullTerm()))
+						.forEach(rule -> {
+							Optional<SearchTerm> term = rule.getSearchTerm();
+							if (term.isPresent())
+							{
+								terms.put(rule.getFullTerm(), term.get());
+							}
+						});
+
+				logger.info(String.format("%d Search inclusions present", inclusions.size()));
+				logger.info(String.format("%d Search terms loaded", terms.size()));
 
 				for (SearchInclusion rule : inclusions)
 				{
-					Optional<SearchTerm> optT = terms.get(rule.getFullTerm());
+					Optional<SearchTerm> optT = Optional.ofNullable(terms.get(rule.getFullTerm()));
 					if (optT.isPresent())
 					{
 						logger.info(String.format("Getting posts from %s: %s", rule.getType().getName(), rule.getTerm()));
@@ -190,7 +199,7 @@ public class SearchThread implements Runnable
 								}
 							}
 							String val = postMap.get(post);
-							terms.get(val).ifPresent(t -> t.getCache().remove(post.getId()));
+							Optional.ofNullable(terms.get(val)).ifPresent(t -> t.getCache().remove(post.getId()));
 							blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 						}
 					}

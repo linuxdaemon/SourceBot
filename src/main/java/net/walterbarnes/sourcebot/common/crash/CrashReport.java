@@ -138,9 +138,12 @@ public class CrashReport
 			{
 				if (file.getParentFile() != null)
 				{
-					if (!file.exists() && !file.getParentFile().mkdirs())
+					if (!file.exists())
 					{
-						throw new IOException("Unable to create crash-reports directory");
+						if (!file.getParentFile().exists() && !file.getParentFile().mkdirs())
+						{
+							throw new IOException("Unable to create crash-reports directory");
+						}
 					}
 				}
 

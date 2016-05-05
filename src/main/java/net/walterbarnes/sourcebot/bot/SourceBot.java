@@ -31,10 +31,8 @@ import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.common.util.LogHelper;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SourceBot
@@ -135,68 +133,60 @@ public class SourceBot
 
 		Configuration dbCat = conf.getCategory("db", new JsonObject());
 
-		String dbHost = dbCat.getString("host", "");
-		String dbPort = dbCat.getString("port", "");
-		String dbUser = dbCat.getString("user", "");
-		String dbPass = dbCat.getString("pass", "");
-		String dbName = dbCat.getString("dbName", "");
+		final String dbHost = dbCat.getString("host", "");
+		final String dbPort = dbCat.getString("port", "");
+		final String dbUser = dbCat.getString("user", "");
+		final String dbPass = dbCat.getString("pass", "");
+		final String dbName = dbCat.getString("dbName", "");
 		if (conf.hasChanged()) conf.save();
 
-		try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
+		Thread botThread = new Thread()
 		{
-			db.setDriver("org.postgresql.Driver");
-			db.setScheme("jdbc:postgresql");
-
-			Thread botThread = new Thread()
+			public void run()
 			{
-				public void run()
+				try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
 				{
-					try
+					db.setDriver("org.postgresql.Driver");
+					db.setScheme("jdbc:postgresql");
+					db.connect();
+					while (running)
 					{
-						while (running)
+						try
 						{
-							try
+							for (BlogConfig blog : db.getAllBlogs())
 							{
-								for (BlogConfig blog : db.getAllBlogs())
+								if (!running)
+									break;
+								String url = blog.getUrl();
+								if (!threads.containsKey(url))
 								{
-									if (!running)
-										break;
-									String url = blog.getUrl();
-									if (!threads.containsKey(url))
-									{
-										SearchThread st = new SearchThread(client, blog);
-										threads.put(url, st);
-									}
-									if (blog.isActive() && blog.isAdmActive())
-									{
-										logger.info("Running thread for " + url);
-										long start = System.currentTimeMillis();
-										currentThread = new Thread(threads.get(url));
-										currentThread.start();
-										currentThread.join();
-										logger.fine(String.format("Took %d ms", System.currentTimeMillis() - start));
-									}
+									SearchThread st = new SearchThread(client, blog);
+									threads.put(url, st);
+								}
+								if (blog.isActive() && blog.isAdmActive())
+								{
+									logger.info("Running thread for " + url);
+									long start = System.currentTimeMillis();
+									currentThread = new Thread(threads.get(url));
+									currentThread.start();
+									currentThread.join();
+									logger.fine(String.format("Took %d ms", System.currentTimeMillis() - start));
 								}
 							}
-							catch (InterruptedException ignored)
-							{
-								Thread.currentThread().interrupt();
-							}
+						}
+						catch (InterruptedException ignored)
+						{
+							Thread.currentThread().interrupt();
 						}
 					}
-					catch (Throwable throwable)
-					{
-						CrashReport.displayCrashReport(new CrashReport("Error in search thread", throwable));
-					}
 				}
-			};
-			botThread.start();
-		}
-		catch (SQLException e)
-		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new RuntimeException("Database Error Occurred, exiting...");
-		}
+				catch (Throwable throwable)
+				{
+					CrashReport.displayCrashReport(new CrashReport("Error in search thread", throwable));
+				}
+			}
+		};
+		botThread.start();
 	}
 
 	/**
