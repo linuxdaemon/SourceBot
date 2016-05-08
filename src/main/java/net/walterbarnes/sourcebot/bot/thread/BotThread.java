@@ -35,9 +35,10 @@ public class BotThread extends Thread
 	private final String dbName;
 	private final String dbUser;
 	private final String dbPass;
-	private volatile boolean running;
+	private boolean simulate;
+	private volatile boolean running = true;
 
-	public BotThread(Tumblr client, String dbHost, String dbPort, String dbName, String dbUser, String dbPass)
+	public BotThread(Tumblr client, String dbHost, String dbPort, String dbName, String dbUser, String dbPass, boolean simulate)
 	{
 		this.client = client;
 		this.dbHost = dbHost;
@@ -45,6 +46,7 @@ public class BotThread extends Thread
 		this.dbName = dbName;
 		this.dbUser = dbUser;
 		this.dbPass = dbPass;
+		this.simulate = simulate;
 	}
 
 	@Override
@@ -74,7 +76,7 @@ public class BotThread extends Thread
 						{
 							logger.info("Running thread for " + url);
 							long start = System.currentTimeMillis();
-							sb.currentThread = new Thread(sb.threads.get(url));
+							sb.currentThread = new Thread(sb.threads.get(url).setSimulate(simulate));
 							sb.currentThread.start();
 							sb.currentThread.join();
 							logger.fine(String.format("Took %d ms", System.currentTimeMillis() - start));

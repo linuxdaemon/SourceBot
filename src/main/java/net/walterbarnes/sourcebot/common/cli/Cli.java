@@ -20,6 +20,7 @@ package net.walterbarnes.sourcebot.common.cli;
 
 import net.walterbarnes.sourcebot.bot.Install;
 import net.walterbarnes.sourcebot.bot.SourceBot;
+import net.walterbarnes.sourcebot.common.reference.Constants;
 import org.apache.commons.cli.*;
 
 import javax.annotation.Nonnull;
@@ -38,6 +39,7 @@ public class Cli
 
 		options.addOption(null, "install", false, "Initial install");
 		options.addOption("c", "config", true, "Path to config file (Default: ~/.sourcebot)");
+		options.addOption(null, "simulate", false, "Simulate threads");
 	}
 
 	public void parse()
@@ -48,6 +50,7 @@ public class Cli
 		try
 		{
 			cmd = parser.parse(options, args);
+			logger.info(cmd.getArgList().toString());
 
 			if (cmd.hasOption('c'))
 			{
@@ -56,6 +59,10 @@ public class Cli
 			if (cmd.hasOption("install"))
 			{
 				install();
+			}
+			if (cmd.hasOption("simulate"))
+			{
+				Constants.simulate = true;
 			}
 		}
 		catch (ParseException e)

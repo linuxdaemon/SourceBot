@@ -111,7 +111,7 @@ public class SourceBot
 			//cs.start();
 
 			// Run main thread
-			INSTANCE.run();
+			INSTANCE.run(Constants.simulate);
 		}
 		catch (Throwable throwable)
 		{
@@ -127,8 +127,9 @@ public class SourceBot
 		}
 	}
 
-	private void run()
+	private void run(boolean simulate)
 	{
+		logger.info(Boolean.toString(simulate));
 		this.client = new Tumblr(Constants.getConsumerKey(), Constants.getConsumerSecret(), Constants.getToken(), Constants.getTokenSecret());
 
 		Configuration dbCat = conf.getCategory("db", new JsonObject());
@@ -139,8 +140,8 @@ public class SourceBot
 		final String dbPass = dbCat.getString("pass", "");
 		final String dbName = dbCat.getString("dbName", "");
 		if (conf.hasChanged()) conf.save();
-
-		BotThread bt = new BotThread(client, dbHost, dbPort, dbName, dbUser, dbPass);
+		if (simulate) logger.info("Simulating search");
+		BotThread bt = new BotThread(client, dbHost, dbPort, dbName, dbUser, dbPass, simulate);
 		bt.start();
 	}
 

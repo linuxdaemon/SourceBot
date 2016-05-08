@@ -45,6 +45,7 @@ public class SearchThread implements Runnable
 	public final BlogConfig blog;
 	private final Tumblr client;
 	private final Map<String, SearchTerm> terms = new HashMap<>();
+	private boolean simulate;
 
 	public SearchThread(Tumblr client, BlogConfig blog)
 	{
@@ -172,36 +173,43 @@ public class SearchThread implements Runnable
 							Post rb = null;
 							boolean rbd = false;
 							int failCount = 0;
-							while (!rbd)
+							if (!simulate)
 							{
-								try
+								while (!rbd)
 								{
-									// TODO implement dry run/simulation options
-									rb = post.reblog(blog.getUrl(), params);
-									if (rb != null)
+									try
 									{
-										rbd = true;
-										hasPosted = true;
+										// TODO implement dry run/simulation options
+										rb = post.reblog(blog.getUrl(), params);
+										if (rb != null)
+										{
+											rbd = true;
+											hasPosted = true;
+										}
+										else
+										{
+											logger.warning("Posting failed.");
+											failCount++;
+										}
 									}
-									else
+									catch (JumblrException e)
 									{
-										logger.warning("Posting failed.");
+										rbd = false;
+										hasPosted = false;
 										failCount++;
+										logger.log(Level.SEVERE, e.getMessage(), e);
+										if (failCount > 10) break loop;
+										Thread.sleep(500);
 									}
 								}
-								catch (JumblrException e)
-								{
-									rbd = false;
-									hasPosted = false;
-									failCount++;
-									logger.log(Level.SEVERE, e.getMessage(), e);
-									if (failCount > 10) break loop;
-									Thread.sleep(500);
-								}
+								String val = postMap.get(post);
+								Optional.ofNullable(terms.get(val)).ifPresent(t -> t.getCache().remove(post.getId()));
+								blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
 							}
-							String val = postMap.get(post);
-							Optional.ofNullable(terms.get(val)).ifPresent(t -> t.getCache().remove(post.getId()));
-							blog.addPost(val.split(":")[0], post.getId(), rb.getId(), val.split(":")[1], post.getBlogName());
+							else
+							{
+								logger.info(String.format("Post ID: %d%nPost Title: %s%nPosting Blog: %s%n", post.getId(), post.getSlug(), post.getBlogName()));
+							}
 						}
 					}
 				}
@@ -223,5 +231,11 @@ public class SearchThread implements Runnable
 			default:
 				return new ArrayList<>(CollectionHelper.cutMaxLen(CollectionHelper.sortByCompare(posts, PostComparator.Timestamp.class, true), n));
 		}
+	}
+	
+	public SearchThread setSimulate(boolean simulate)
+	{
+		this.simulate = simulate;
+		return this;
 	}
 }

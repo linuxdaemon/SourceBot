@@ -34,6 +34,7 @@ public final class Constants
 	private static String consumerKey, consumerSecret;
 	private static String token, tokenSecret;
 	private static String webRoot;
+	public static boolean simulate = false;
 
 	public static void load(Configuration conf)
 	{

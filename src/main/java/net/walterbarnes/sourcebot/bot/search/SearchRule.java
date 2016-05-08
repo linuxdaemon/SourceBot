@@ -69,7 +69,7 @@ public class SearchRule implements ISearchRule
 	@Override
 	public Optional<SearchTerm> getSearchTerm()
 	{
-		logger.info("Term type: " + type.toString());
+		//logger.info("Term type: " + type.toString());
 		if (type == SearchType.TAG)
 		{
 			return Optional.of(new TagTerm(getTerm()).setBlog(blog).setClient(blog.getClient()));
