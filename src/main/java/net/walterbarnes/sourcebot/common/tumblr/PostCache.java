@@ -57,7 +57,13 @@ public class PostCache implements Iterable<Post>
 
 	public void validate()
 	{
-		posts.keySet().stream().filter(key -> System.currentTimeMillis() - posts.get(key) > cacheLife).forEachOrdered(posts::remove);
+		for (Post key : posts.keySet())
+		{
+			if (System.currentTimeMillis() - posts.get(key) < cacheLife)
+			{
+				posts.remove(key);
+			}
+		}
 	}
 
 	@SuppressWarnings ("unused")
