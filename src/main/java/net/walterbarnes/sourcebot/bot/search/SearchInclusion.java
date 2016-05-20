@@ -19,9 +19,9 @@
 package net.walterbarnes.sourcebot.bot.search;
 
 import com.tumblr.jumblr.types.Post;
-import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
-import net.walterbarnes.sourcebot.common.tumblr.PostUtil;
-import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.bot.tumblr.PostUtil;
+import net.walterbarnes.sourcebot.bot.tumblr.SearchTerm;
 
 import java.util.Arrays;
 import java.util.Collection;

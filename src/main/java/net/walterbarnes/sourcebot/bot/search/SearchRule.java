@@ -18,10 +18,10 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
-import net.walterbarnes.sourcebot.common.tumblr.BlogTerm;
-import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
-import net.walterbarnes.sourcebot.common.tumblr.TagTerm;
+import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.bot.tumblr.BlogTerm;
+import net.walterbarnes.sourcebot.bot.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.bot.tumblr.TagTerm;
 
 import java.util.Optional;
 import java.util.logging.Logger;

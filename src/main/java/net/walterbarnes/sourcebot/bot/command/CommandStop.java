@@ -16,20 +16,26 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot.search;
+package net.walterbarnes.sourcebot.bot.command;
 
-import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.bot.SourceBot;
 
-public class SearchExclusion extends SearchRule
+import javax.annotation.Nullable;
+import java.util.logging.Logger;
+
+public class CommandStop implements ICommand
 {
-	public SearchExclusion(BlogConfig blog, int id, String blogId, String type, String term, boolean active, long modified)
-	{
-		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
-	}
+	private static final Logger logger = Logger.getLogger(CommandStop.class.getName());
 
 	@Override
-	public RuleAction getAction()
+	public void run(@Nullable String[] args)
 	{
-		return RuleAction.EXCLUDE;
+		logger.info("Shutting down....");
+
+		SourceBot.INSTANCE.running = false;
+		if (SourceBot.INSTANCE.currentThread != null)
+		{
+			SourceBot.INSTANCE.currentThread.interrupt();
+		}
 	}
 }

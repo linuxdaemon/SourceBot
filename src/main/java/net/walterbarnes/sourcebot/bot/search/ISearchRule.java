@@ -18,7 +18,7 @@
 
 package net.walterbarnes.sourcebot.bot.search;
 
-import net.walterbarnes.sourcebot.common.tumblr.SearchTerm;
+import net.walterbarnes.sourcebot.bot.tumblr.SearchTerm;
 
 import java.util.Optional;
 

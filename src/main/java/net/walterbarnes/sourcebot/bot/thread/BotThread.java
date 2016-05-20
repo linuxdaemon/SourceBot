@@ -19,10 +19,10 @@
 package net.walterbarnes.sourcebot.bot.thread;
 
 import net.walterbarnes.sourcebot.bot.SourceBot;
-import net.walterbarnes.sourcebot.common.config.DB;
-import net.walterbarnes.sourcebot.common.config.types.BlogConfig;
-import net.walterbarnes.sourcebot.common.crash.CrashReport;
-import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.config.DB;
+import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.bot.crash.CrashReport;
+import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
 
 import java.util.logging.Logger;
 

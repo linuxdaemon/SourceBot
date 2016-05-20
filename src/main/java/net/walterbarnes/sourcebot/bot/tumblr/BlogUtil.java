@@ -16,20 +16,29 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot.search;
+package net.walterbarnes.sourcebot.bot.tumblr;
 
-import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import com.tumblr.jumblr.types.Post;
 
-public class SearchExclusion extends SearchRule
+import java.util.List;
+
+public class BlogUtil
 {
-	public SearchExclusion(BlogConfig blog, int id, String blogId, String type, String term, boolean active, long modified)
+	public static boolean olderThan(Tumblr client, String url, long time)
 	{
-		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
-	}
-
-	@Override
-	public RuleAction getAction()
-	{
-		return RuleAction.EXCLUDE;
+		List<Post> posts;
+		int offset = 0;
+		while ((posts = client.blogPosts(url, offset + client.blogInfo(url).getPostCount() - 1)).size() > 0)
+		{
+			offset += posts.size();
+			for (Post post : posts)
+			{
+				if (System.currentTimeMillis() / 1000 - post.getTimestamp() > time)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }

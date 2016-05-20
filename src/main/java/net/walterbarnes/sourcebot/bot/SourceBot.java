@@ -18,17 +18,16 @@
 
 package net.walterbarnes.sourcebot.bot;
 
-import com.google.gson.JsonObject;
+import net.walterbarnes.sourcebot.bot.cli.Cli;
+import net.walterbarnes.sourcebot.bot.command.CommandHandler;
+import net.walterbarnes.sourcebot.bot.config.Configuration;
+import net.walterbarnes.sourcebot.bot.crash.CrashReport;
+import net.walterbarnes.sourcebot.bot.reference.Constants;
 import net.walterbarnes.sourcebot.bot.thread.BotThread;
 import net.walterbarnes.sourcebot.bot.thread.InputThread;
 import net.walterbarnes.sourcebot.bot.thread.SearchThread;
-import net.walterbarnes.sourcebot.common.cli.Cli;
-import net.walterbarnes.sourcebot.common.command.CommandHandler;
-import net.walterbarnes.sourcebot.common.config.Configuration;
-import net.walterbarnes.sourcebot.common.crash.CrashReport;
-import net.walterbarnes.sourcebot.common.reference.Constants;
-import net.walterbarnes.sourcebot.common.tumblr.Tumblr;
-import net.walterbarnes.sourcebot.common.util.LogHelper;
+import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.io.File;
 import java.util.HashMap;
@@ -77,38 +76,8 @@ public class SourceBot
 			// Parse and handle command line arguments
 			new Cli(args).parse();
 
-			// Check existence of config directory
-			if (!INSTANCE.confDir.exists())
-			{
-				// Attempt to create the directory
-				if (!INSTANCE.confDir.mkdirs())
-				{
-					throw new RuntimeException("Unable to create config dir");
-				}
-			}
-
 			// Create config instance
 			INSTANCE.conf = new Configuration(INSTANCE.confDir.getAbsolutePath(), INSTANCE.confName);
-
-			// If the config file doesn't exist, run the install process
-			if (!INSTANCE.conf.exists())
-			{
-				Install.install(INSTANCE.confDir.getAbsolutePath(), INSTANCE.confName);
-				System.exit(0);
-			}
-
-			// Load/read config
-			INSTANCE.conf.init();
-
-			Constants.load(INSTANCE.conf);
-
-			//ConfigServer cs = new ConfigServer(8087);
-			//cs.addPage("/connect", new ConnectHandler(Constants.getConsumerKey(), Constants.getConsumerSecret()));
-			//cs.addPage("/callback", new CallbackHandler());
-			//cs.addPage("/rules", new RuleManagerHandler());
-			//cs.addPage("/blogs", new BlogManagerHandler());
-			//cs.addPage("/", new IndexHandler());
-			//cs.start();
 
 			// Run main thread
 			INSTANCE.run(Constants.simulate);
@@ -130,18 +99,10 @@ public class SourceBot
 	private void run(boolean simulate)
 	{
 		logger.info(Boolean.toString(simulate));
-		this.client = new Tumblr(Constants.getConsumerKey(), Constants.getConsumerSecret(), Constants.getToken(), Constants.getTokenSecret());
+		this.client = new Tumblr(conf.consumerKey, conf.consumerSecret, conf.token, conf.tokenSecret);
 
-		Configuration dbCat = conf.getCategory("db", new JsonObject());
-
-		final String dbHost = dbCat.getString("host", "");
-		final String dbPort = dbCat.getString("port", "");
-		final String dbUser = dbCat.getString("user", "");
-		final String dbPass = dbCat.getString("pass", "");
-		final String dbName = dbCat.getString("dbName", "");
-		if (conf.hasChanged()) conf.save();
 		if (simulate) logger.info("Simulating search");
-		BotThread bt = new BotThread(client, dbHost, dbPort, dbName, dbUser, dbPass, simulate);
+		BotThread bt = new BotThread(client, conf.dbHost, conf.dbPort, conf.dbName, conf.dbUser, conf.dbPass, simulate);
 		bt.start();
 	}
 

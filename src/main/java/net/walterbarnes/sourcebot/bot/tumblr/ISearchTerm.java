@@ -16,20 +16,24 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot.search;
+package net.walterbarnes.sourcebot.bot.tumblr;
 
-import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import com.tumblr.jumblr.types.Post;
+import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
 
-public class SearchExclusion extends SearchRule
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+
+public interface ISearchTerm
 {
-	public SearchExclusion(BlogConfig blog, int id, String blogId, String type, String term, boolean active, long modified)
-	{
-		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
-	}
+	PostCache getCache();
 
-	@Override
-	public RuleAction getAction()
-	{
-		return RuleAction.EXCLUDE;
-	}
+	@SuppressWarnings ("unused")
+	String getSearchTerm();
+
+	@SuppressWarnings ("Duplicates")
+	Map<Post, String> getPosts(List<String> blogBlacklist, List<String> tagBlacklist, SearchInclusion rule) throws SQLException;
+
+	List<Post> getPostSet();
 }

@@ -16,20 +16,9 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot.search;
+package net.walterbarnes.sourcebot.bot.command;
 
-import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
-
-public class SearchExclusion extends SearchRule
+interface ICommand
 {
-	public SearchExclusion(BlogConfig blog, int id, String blogId, String type, String term, boolean active, long modified)
-	{
-		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
-	}
-
-	@Override
-	public RuleAction getAction()
-	{
-		return RuleAction.EXCLUDE;
-	}
+	void run(String... args);
 }

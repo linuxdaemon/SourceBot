@@ -16,20 +16,32 @@
  * along with SourceBot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.walterbarnes.sourcebot.bot.search;
+package net.walterbarnes.sourcebot.bot.command;
 
-import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import com.tumblr.jumblr.types.Post;
+import net.walterbarnes.sourcebot.bot.SourceBot;
 
-public class SearchExclusion extends SearchRule
+import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.logging.Logger;
+
+public class CommandPurge implements ICommand
 {
-	public SearchExclusion(BlogConfig blog, int id, String blogId, String type, String term, boolean active, long modified)
-	{
-		super(blog, id, blogId, SearchType.getType(type), term, active, modified);
-	}
+	private static final Logger logger = Logger.getLogger(CommandPurge.class.getName());
 
 	@Override
-	public RuleAction getAction()
+	public void run(@Nonnull String[] args)
 	{
-		return RuleAction.EXCLUDE;
+		List<Post> posts;
+		switch (SourceBot.INSTANCE.threads.get(args[0]).blog.getPostState())
+		{
+			case "queue":
+				posts = SourceBot.INSTANCE.client.getQueuedPosts(args[0]);
+				break;
+			default:
+				posts = SourceBot.INSTANCE.client.getDrafts(args[0]);
+				break;
+		}
+		posts.forEach(Post::delete);
 	}
 }
