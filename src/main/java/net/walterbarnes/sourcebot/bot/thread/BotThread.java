@@ -54,9 +54,7 @@ public class BotThread extends Thread
 	{
 		try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
 		{
-			db.setDriver("org.postgresql.Driver");
-			db.setScheme("jdbc:postgresql");
-			db.connect();
+			db.setDriver("org.postgresql.Driver").setScheme("jdbc:postgresql").connect();
 			SourceBot sb = SourceBot.INSTANCE;
 			while (running)
 			{

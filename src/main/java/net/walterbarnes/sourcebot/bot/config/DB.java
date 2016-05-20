@@ -81,7 +81,7 @@ public class DB implements AutoCloseable
 
 	public void connect()
 	{
-		if (driver == null)
+		if (driver == null || scheme == null)
 			throw new IllegalStateException("Driver and scheme must be configured before a connection can be made");
 		try
 		{
