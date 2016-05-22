@@ -21,6 +21,7 @@ package net.walterbarnes.sourcebot.bot.thread;
 import com.github.onyxfoxdevelopment.collections.CollectionHelper;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
+import net.walterbarnes.sourcebot.bot.SourceBot;
 import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.bot.search.PostComparator;
 import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
@@ -58,9 +59,13 @@ public class SearchThread implements Runnable
 	{
 		try
 		{
+			SourceBot.INSTANCE.botStatus.setCurrentBlog("None");
+			SourceBot.INSTANCE.botStatus.setPostCount(blog.getUrl(), blog.getPostBufSize());
 			// Check the blog's configured posting state and check if we need to post some more posts
 			if (!blog.isPostBufFull())
 			{
+				SourceBot.INSTANCE.botStatus.setStage("Searching for posts");
+				SourceBot.INSTANCE.botStatus.setCurrentBlog(blog.getUrl());
 				logger.info(String.format("[%s] %d posts in buffer", blog.getUrl(), blog.getBufferSize()));
 				logger.info("Adding posts to buffer");
 

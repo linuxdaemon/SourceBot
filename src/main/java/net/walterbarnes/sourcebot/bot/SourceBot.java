@@ -30,6 +30,9 @@ import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
 import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -46,6 +49,7 @@ public class SourceBot
 	 */
 	public final String confName = "SourceBot.json";
 	public final Map<String, SearchThread> threads = new HashMap<>();
+	public final BotStatus botStatus = new BotStatus();
 	private final Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private final InputThread inputThread = new InputThread();
 	public volatile boolean running = true;
@@ -63,6 +67,8 @@ public class SourceBot
 	{
 		try
 		{
+			INSTANCE.botStatus.setStage("Starting up");
+			INSTANCE.writePidToFile();
 			// Initialize and configure the root logger
 			LogHelper.init();
 
@@ -76,6 +82,7 @@ public class SourceBot
 			// Parse and handle command line arguments
 			new Cli(args).parse();
 
+			INSTANCE.botStatus.setStage("Loading configs");
 			// Create config instance
 			INSTANCE.conf = new Configuration(INSTANCE.confDir.getAbsolutePath(), INSTANCE.confName);
 
@@ -96,13 +103,28 @@ public class SourceBot
 		}
 	}
 
-	private void run(boolean simulate)
+	private void writePidToFile() throws IOException
 	{
-		logger.info(Boolean.toString(simulate));
+		String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+		File f = new File(confDir, "bot.pid");
+		f.createNewFile();
+		FileWriter fw = new FileWriter(f);
+		fw.write(pid);
+		fw.close();
+	}
+
+	private void run(boolean simulate) throws IOException
+	{
+		botStatus.setStage("Running search thread" + (simulate ? " (simulation)" : ""));
+		//logger.info(Boolean.toString(simulate));
 		this.client = new Tumblr(conf.consumerKey, conf.consumerSecret, conf.token, conf.tokenSecret);
 
+		botStatus.setSimulate(simulate);
 		if (simulate) logger.info("Simulating search");
+		logger.info("creating thread");
 		BotThread bt = new BotThread(client, conf.dbHost, conf.dbPort, conf.dbName, conf.dbUser, conf.dbPass, simulate);
+		logger.info("created");
+		logger.info("starting thread");
 		bt.start();
 	}
 

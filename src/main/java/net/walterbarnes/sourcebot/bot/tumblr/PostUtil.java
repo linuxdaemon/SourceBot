@@ -47,12 +47,14 @@ public class PostUtil
 		else if (post instanceof LinkPost)
 		{
 			LinkPost p = (LinkPost) post;
-			if (p.getTitle().contains(s) || p.getDescription().contains(s)) found = true;
+			if ((p.getTitle() != null && p.getTitle().contains(s)) || (p.getDescription() != null && p.getDescription().contains(s)))
+				found = true;
 		}
 		else if (post instanceof ChatPost)
 		{
 			ChatPost p = (ChatPost) post;
-			if (p.getTitle().contains(s) || p.getBody().contains(s)) found = true;
+			if ((p.getTitle() != null && p.getTitle().contains(s)) || (p.getBody() != null && p.getBody().contains(s)))
+				found = true;
 			for (Dialogue line : p.getDialogue())
 			{
 				if (line.getPhrase().contains(s) || line.getLabel().contains(s) || line.getName().contains(s))

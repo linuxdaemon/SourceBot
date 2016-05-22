@@ -57,9 +57,9 @@ public class Configuration
 		JsonObject tmblrConf = json.getAsJsonObject("tumblr");
 
 		consumerKey = tmblrConf.get("consumerKey").getAsString();
-		consumerSecret = tmblrConf.get("consumerKey").getAsString();
-		token = tmblrConf.get("consumerKey").getAsString();
-		tokenSecret = tmblrConf.get("consumerKey").getAsString();
+		consumerSecret = tmblrConf.get("consumerSecret").getAsString();
+		token = tmblrConf.get("token").getAsString();
+		tokenSecret = tmblrConf.get("tokenSecret").getAsString();
 	}
 }
 

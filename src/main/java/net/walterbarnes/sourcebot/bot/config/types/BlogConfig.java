@@ -128,6 +128,7 @@ public class BlogConfig
 	{
 		try (PreparedStatement st = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID"))
 		{
+			logger.info("Loading config for" + url);
 			st.setString(1, id);
 			try (ResultSet rs = st.executeQuery())
 			{
@@ -161,6 +162,20 @@ public class BlogConfig
 		{
 			logger.log(Level.SEVERE, e.getMessage(), e);
 		}
+	}
+
+	public String getPostBufSize()
+	{
+		if (getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
+		{
+			logger.warning("Bot is not admin on '" + url + "', not running thread");
+			return "error";
+		}
+		if (getPostState().equals("draft"))
+		{
+			return String.valueOf(client.getDrafts(url).size());
+		}
+		return String.valueOf(client.getQueuedPosts(url).size());
 	}
 
 	public int getBufferSize()

@@ -24,6 +24,7 @@ import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.bot.crash.CrashReport;
 import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 public class BotThread extends Thread
@@ -52,6 +53,7 @@ public class BotThread extends Thread
 	@Override
 	public void run()
 	{
+		logger.info("thread started");
 		try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
 		{
 			db.setDriver("org.postgresql.Driver").setScheme("jdbc:postgresql").connect();
@@ -60,7 +62,13 @@ public class BotThread extends Thread
 			{
 				try
 				{
-					for (BlogConfig blog : db.getAllBlogs())
+					logger.info("getting blogs");
+					List<BlogConfig> blogs = db.getAllBlogs();
+					logger.info("done");
+					logger.info("getting # of active blogs");
+					sb.botStatus.setActiveBlogs((int) blogs.stream().filter(BlogConfig::isActive).count());
+					logger.info("done");
+					for (BlogConfig blog : blogs)
 					{
 						if (!running)
 							break;

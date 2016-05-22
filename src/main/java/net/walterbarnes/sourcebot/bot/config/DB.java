@@ -24,7 +24,7 @@ import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -136,9 +136,9 @@ public class DB implements AutoCloseable
 		return user;
 	}
 
-	public Iterable<BlogConfig> getAllBlogs()
+	public List<BlogConfig> getAllBlogs()
 	{
-		Collection<BlogConfig> blogs = new ArrayList<>();
+		List<BlogConfig> blogs = new ArrayList<>();
 		try (
 				PreparedStatement st = connection.prepareStatement("SELECT id FROM blogs");
 				ResultSet rs = st.executeQuery())
