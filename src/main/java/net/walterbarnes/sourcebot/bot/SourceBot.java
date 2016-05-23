@@ -116,7 +116,6 @@ public class SourceBot
 	private void run(boolean simulate) throws IOException
 	{
 		botStatus.setStage("Running search thread" + (simulate ? " (simulation)" : ""));
-		//logger.info(Boolean.toString(simulate));
 		this.client = new Tumblr(conf.consumerKey, conf.consumerSecret, conf.token, conf.tokenSecret);
 
 		botStatus.setSimulate(simulate);
