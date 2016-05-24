@@ -23,12 +23,9 @@ import net.walterbarnes.sourcebot.bot.SourceBot;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class CommandPurge implements ICommand
 {
-	private static final Logger logger = Logger.getLogger(CommandPurge.class.getName());
-
 	@Override
 	public void run(@Nonnull String[] args)
 	{

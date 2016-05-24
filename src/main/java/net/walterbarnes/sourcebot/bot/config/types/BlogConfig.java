@@ -23,20 +23,17 @@ import net.walterbarnes.sourcebot.bot.search.SearchExclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchRule;
 import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import javax.annotation.Nonnull;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @SuppressWarnings ("UnusedReturnValue")
 public class BlogConfig
 {
-	private static final Logger logger = Logger.getLogger(BlogConfig.class.getName());
-
 	private final Tumblr client;
 	private final Collection<SearchRule> rules = new ArrayList<>();
 	private final Connection connection;
@@ -96,7 +93,7 @@ public class BlogConfig
 	{
 		if (getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
 		{
-			logger.warning("Bot is not admin on '" + url + "', not running thread");
+			LogHelper.warn("Bot is not admin on '" + url + "', not running thread");
 			return true;
 		}
 		if (getPostState().equals("draft"))
@@ -128,7 +125,7 @@ public class BlogConfig
 	{
 		try (PreparedStatement st = connection.prepareStatement("SELECT * FROM blogs WHERE id = ?::UUID"))
 		{
-			logger.info("Loading config for" + url);
+			LogHelper.info("Loading config for" + url);
 			st.setString(1, id);
 			try (ResultSet rs = st.executeQuery())
 			{
@@ -160,7 +157,7 @@ public class BlogConfig
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 		}
 	}
 
@@ -168,7 +165,7 @@ public class BlogConfig
 	{
 		if (getPostState().equals("queue") && !client.blogInfo(url).isAdmin())
 		{
-			logger.warning("Bot is not admin on '" + url + "', not running thread");
+			LogHelper.warn("Bot is not admin on '" + url + "', not running thread");
 			return "error";
 		}
 		if (getPostState().equals("draft"))
@@ -186,7 +183,7 @@ public class BlogConfig
 		}
 		if (!client.blogInfo(url).isAdmin())
 		{
-			logger.warning("Bot is not admin on '" + url + "', not running thread");
+			LogHelper.warn("Bot is not admin on '" + url + "', not running thread");
 			return 0;
 		}
 		return client.getQueuedPosts(url).size();
@@ -206,7 +203,7 @@ public class BlogConfig
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Database error occurred, exiting...");
 		}
 	}
@@ -225,7 +222,7 @@ public class BlogConfig
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Database error occurred, exiting...");
 		}
 	}
@@ -243,7 +240,7 @@ public class BlogConfig
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Database error occurred, exiting...");
 		}
 		return out;
@@ -355,7 +352,7 @@ public class BlogConfig
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				LogHelper.error(e);
 				throw new RuntimeException("Database error occurred, exiting...");
 			}
 		}

@@ -23,13 +23,12 @@ import net.walterbarnes.sourcebot.bot.config.DB;
 import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.bot.crash.CrashReport;
 import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 public class BotThread extends Thread
 {
-	private static final Logger logger = Logger.getLogger(BotThread.class.getName());
 	private final Tumblr client;
 	private final String dbHost;
 	private final String dbPort;
@@ -53,7 +52,7 @@ public class BotThread extends Thread
 	@Override
 	public void run()
 	{
-		logger.info("thread started");
+		LogHelper.info("thread started");
 		try (DB db = new DB(client, dbHost, Integer.parseInt(dbPort), dbName, dbUser, dbPass))
 		{
 			db.setDriver("org.postgresql.Driver").setScheme("jdbc:postgresql").connect();
@@ -62,12 +61,12 @@ public class BotThread extends Thread
 			{
 				try
 				{
-					logger.info("getting blogs");
+					LogHelper.info("getting blogs");
 					List<BlogConfig> blogs = db.getAllBlogs();
-					logger.info("done");
-					logger.info("getting # of active blogs");
+					LogHelper.info("done");
+					LogHelper.info("getting # of active blogs");
 					sb.botStatus.setActiveBlogs((int) blogs.stream().filter(BlogConfig::isActive).count());
-					logger.info("done");
+					LogHelper.info("done");
 					for (BlogConfig blog : blogs)
 					{
 						if (!running)
@@ -80,12 +79,12 @@ public class BotThread extends Thread
 						}
 						if (blog.isActive() && blog.isAdmActive())
 						{
-							logger.info("Running thread for " + url);
+							LogHelper.info("Running thread for " + url);
 							long start = System.currentTimeMillis();
 							sb.currentThread = new Thread(sb.threads.get(url).setSimulate(simulate));
 							sb.currentThread.start();
 							sb.currentThread.join();
-							logger.fine(String.format("Took %d ms", System.currentTimeMillis() - start));
+							LogHelper.debug(String.format("Took %d ms", System.currentTimeMillis() - start));
 						}
 					}
 				}

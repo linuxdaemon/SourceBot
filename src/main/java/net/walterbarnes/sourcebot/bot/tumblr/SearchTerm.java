@@ -22,17 +22,16 @@ import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.bot.search.SearchInclusion;
 import net.walterbarnes.sourcebot.bot.search.SearchRule;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 public abstract class SearchTerm implements ISearchTerm
 {
-	private static final Logger logger = Logger.getLogger(SearchTerm.class.getName());
 	private final PostCache cache = new PostCache(TimeUnit.HOURS.toSeconds(2));
 	private final String term;
 	private final SearchRule.SearchType type;
@@ -85,7 +84,7 @@ public abstract class SearchTerm implements ISearchTerm
 			out.put(p, rule.getFullTerm());
 		}
 
-		logger.info(String.format("Searching %s %s", getType(), getTerm()));
+		LogHelper.info(String.format("Searching %s %s", getType(), getTerm()));
 		while (out.size() < postNum)
 		{
 			List<Post> posts = getPostSet();
@@ -95,7 +94,7 @@ public abstract class SearchTerm implements ISearchTerm
 		}
 		long end = System.currentTimeMillis() - start;
 
-		logger.info(String.format("Searched %s %s, selected %d posts out of %d searched (%f%%), took %d ms", getType(), getTerm(),
+		LogHelper.info(String.format("Searched %s %s, selected %d posts out of %d searched (%f%%), took %d ms", getType(), getTerm(),
 				out.size(), searched, ((double) (((float) out.size()) / ((float) searched)) * 100), end));
 
 		getBlog().addStat(rule.getType().toString(), getTerm(), (int) end, searched, out.size());

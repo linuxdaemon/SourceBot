@@ -21,18 +21,16 @@ package net.walterbarnes.sourcebot.bot.config;
 import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
 import net.walterbarnes.sourcebot.bot.config.types.UserConfig;
 import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DB implements AutoCloseable
 {
-	private static final Logger logger = Logger.getLogger(DB.class.getName());
 	private static final long cacheTime = TimeUnit.MINUTES.toMillis(10);
 	private final String host;
 	private final int port;
@@ -67,7 +65,7 @@ public class DB implements AutoCloseable
 		}
 		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Unable to start JDBC driver, exiting...");
 		}
 		return this;
@@ -89,7 +87,7 @@ public class DB implements AutoCloseable
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Database Error Occurred, exiting...");
 		}
 	}
@@ -150,7 +148,7 @@ public class DB implements AutoCloseable
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Database Error Occurred, exiting...");
 		}
 		return blogs;

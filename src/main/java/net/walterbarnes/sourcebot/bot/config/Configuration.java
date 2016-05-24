@@ -25,11 +25,9 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.logging.Logger;
 
 public class Configuration
 {
-	private static final Logger logger = Logger.getLogger(Configuration.class.getName());
 	public final String dbHost;
 	public final String dbPort;
 	public final String dbUser;

@@ -19,18 +19,16 @@
 package net.walterbarnes.sourcebot.bot.command;
 
 import net.walterbarnes.sourcebot.bot.SourceBot;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import javax.annotation.Nullable;
-import java.util.logging.Logger;
 
 public class CommandStop implements ICommand
 {
-	private static final Logger logger = Logger.getLogger(CommandStop.class.getName());
-
 	@Override
 	public void run(@Nullable String[] args)
 	{
-		logger.info("Shutting down....");
+		LogHelper.info("Shutting down....");
 
 		SourceBot.INSTANCE.running = false;
 		if (SourceBot.INSTANCE.currentThread != null)

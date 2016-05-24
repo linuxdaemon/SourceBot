@@ -18,45 +18,83 @@
 
 package net.walterbarnes.sourcebot.bot.util;
 
-import java.io.File;
-import java.io.IOException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 public class LogHelper
 {
 	private static final String logFileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date()) +
 			"-SourceBot.log";
 	private static final String logsDir = "logs";
-	private static final Logger logger = Logger.getLogger(LogHelper.class.getName());
+	private static final Logger logger = LogManager.getLogger("net.walterbarnes.sourcebot.bot");
 
 	public static void init()
 	{
-		try
-		{
-			File dir = new File(logsDir);
-			if (!(dir.exists() && dir.isDirectory()))
-			{
-				if (!dir.mkdirs())
-				{
-					throw new RuntimeException("Unable to create log dir");
-				}
-			}
-			FileHandler fileTxt = new FileHandler("logs/" + logFileName);
-			SimpleFormatter formatterTxt = new SimpleFormatter();
-			logger.setLevel(Level.ALL);
+//		try
+//		{
+//			File dir = new File(logsDir);
+//			if (!(dir.exists() && dir.isDirectory()))
+//			{
+//				if (!dir.mkdirs())
+//				{
+//					throw new RuntimeException("Unable to create log dir");
+//				}
+//			}
+//			FileHandler fileTxt = new FileHandler("logs/" + logFileName);
+//			SimpleFormatter formatterTxt = new SimpleFormatter();
+//			logger.setLevel(Level.ALL);
+//
+//			fileTxt.setFormatter(formatterTxt);
+//			logger.addHandler(fileTxt);
+//		}
+//		catch (IOException e)
+//		{
+//			e.printStackTrace();
+//			throw new RuntimeException("Unable to start logger");
+//		}
+	}
 
-			fileTxt.setFormatter(formatterTxt);
-			logger.addHandler(fileTxt);
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			throw new RuntimeException("Unable to start logger");
-		}
+	public static void log(Object msg, String level)
+	{
+		log(msg, Level.getLevel(level));
+	}
+
+	private static void log(Object msg, Level level)
+	{
+		logger.log(level, msg);
+	}
+
+	public static void info(Object msg)
+	{
+		log(msg, Level.INFO);
+	}
+
+	public static void debug(Object msg)
+	{
+		log(msg, Level.DEBUG);
+	}
+
+	public static void fatal(Object msg)
+	{
+		log(msg, Level.FATAL);
+	}
+
+	public static void error(Object msg)
+	{
+		log(msg, Level.ERROR);
+	}
+
+	public static void warn(Object msg)
+	{
+		log(msg, Level.WARN);
+	}
+
+	public static void trace(Object msg)
+	{
+		log(msg, Level.TRACE);
 	}
 }

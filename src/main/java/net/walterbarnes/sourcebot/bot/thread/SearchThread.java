@@ -31,18 +31,16 @@ import net.walterbarnes.sourcebot.bot.tumblr.BlogUtil;
 import net.walterbarnes.sourcebot.bot.tumblr.ISearchTerm;
 import net.walterbarnes.sourcebot.bot.tumblr.SearchTerm;
 import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @SuppressWarnings ("SameParameterValue")
 public class SearchThread implements Runnable
 {
-	private static final Logger logger = Logger.getLogger(SearchThread.class.getName());
 	public final BlogConfig blog;
 	private final Tumblr client;
 	private final Map<String, SearchTerm> terms = new HashMap<>();
@@ -66,8 +64,8 @@ public class SearchThread implements Runnable
 			{
 				SourceBot.INSTANCE.botStatus.setStage("Searching for posts");
 				SourceBot.INSTANCE.botStatus.setCurrentBlog(blog.getUrl());
-				logger.info(String.format("[%s] %d posts in buffer", blog.getUrl(), blog.getBufferSize()));
-				logger.info("Adding posts to buffer");
+				LogHelper.info(String.format("[%s] %d posts in buffer", blog.getUrl(), blog.getBufferSize()));
+				LogHelper.info("Adding posts to buffer");
 
 				// A map of all the posts we pull from the tags/blogs, linked with their search terms
 				Map<Post, String> postMap = new HashMap<>();
@@ -76,7 +74,7 @@ public class SearchThread implements Runnable
 				List<SearchRule> rules = blog.getSearchRules().stream().filter(SearchRule::isActive)
 						.collect(Collectors.toList());
 
-				logger.info(String.format("%d search rules loaded.", rules.size()));
+				LogHelper.info(String.format("%d search rules loaded.", rules.size()));
 
 				List<SearchExclusion> exclusions = rules.stream()
 						.filter(rule -> rule.getAction() == SearchRule.RuleAction.EXCLUDE)
@@ -108,15 +106,15 @@ public class SearchThread implements Runnable
 							}
 						});
 
-				logger.info(String.format("%d Search inclusions present", inclusions.size()));
-				logger.info(String.format("%d Search terms loaded", terms.size()));
+				LogHelper.info(String.format("%d Search inclusions present", inclusions.size()));
+				LogHelper.info(String.format("%d Search terms loaded", terms.size()));
 
 				for (SearchInclusion rule : inclusions)
 				{
 					Optional<SearchTerm> optT = Optional.ofNullable(terms.get(rule.getFullTerm()));
 					if (optT.isPresent())
 					{
-						logger.info(String.format("Getting posts from %s: %s", rule.getType().getName(), rule.getTerm()));
+						LogHelper.info(String.format("Getting posts from %s: %s", rule.getType().getName(), rule.getTerm()));
 
 						ISearchTerm t = optT.get();
 						Map<Post, String> p = t.getPosts(blogBlacklist, tagBlacklist, rule);
@@ -133,14 +131,14 @@ public class SearchThread implements Runnable
 					loop:
 					while (!hasPosted)
 					{
-						logger.info("Selecting post");
+						LogHelper.info("Selecting post");
 						Collection<Post> p = CollectionHelper.randomElement(posts, 1, true);
 
 						for (Post post : p)
 						{
 							if (blog.getPosts().contains(post.getId()))
 							{
-								logger.info("Post already used, getting new post");
+								LogHelper.info("Post already used, getting new post");
 								hasPosted = false;
 								continue;
 							}
@@ -151,7 +149,7 @@ public class SearchThread implements Runnable
 									|| client.blogInfo(post.getBlogName()).getTitle().equals("Без названия")
 									|| !BlogUtil.olderThan(client, post.getBlogName(), TimeUnit.DAYS.toSeconds(60))))
 							{
-								logger.info("Post may be spam, getting new post");
+								LogHelper.info("Post may be spam, getting new post");
 								continue;
 							}
 
@@ -174,7 +172,7 @@ public class SearchThread implements Runnable
 							if (blog.getPreserveTags()) rbTags.addAll(post.getTags());
 
 							params.put("tags", rbTags.size() == 0 ? "" : StringUtils.join(rbTags, ","));
-							logger.info("Attempting to reblog post...");
+							LogHelper.info("Attempting to reblog post...");
 							Post rb = null;
 							boolean rbd = false;
 							int failCount = 0;
@@ -193,7 +191,7 @@ public class SearchThread implements Runnable
 										}
 										else
 										{
-											logger.warning("Posting failed.");
+											LogHelper.warn("Posting failed.");
 											failCount++;
 										}
 									}
@@ -202,7 +200,7 @@ public class SearchThread implements Runnable
 										rbd = false;
 										hasPosted = false;
 										failCount++;
-										logger.log(Level.SEVERE, e.getMessage(), e);
+										LogHelper.error(e);
 										if (failCount > 10) break loop;
 										Thread.sleep(500);
 									}
@@ -213,7 +211,7 @@ public class SearchThread implements Runnable
 							}
 							else
 							{
-								logger.info(String.format("Post ID: %d%nPost Title: %s%nPosting Blog: %s%n", post.getId(), post.getSlug(), post.getBlogName()));
+								LogHelper.info(String.format("Post ID: %d%nPost Title: %s%nPosting Blog: %s%n", post.getId(), post.getSlug(), post.getBlogName()));
 							}
 						}
 					}
@@ -223,7 +221,7 @@ public class SearchThread implements Runnable
 		catch (InterruptedException ignored) {}
 		// Make sure Runtime exceptions aren't swallowed
 		catch (RuntimeException e) { throw new RuntimeException(e); }
-		catch (Exception e) { logger.log(Level.SEVERE, e.getMessage(), e); }
+		catch (Exception e) { LogHelper.error(e); }
 	}
 
 	private Collection<Post> selectPosts(Collection<Post> posts, String method, int n) throws InstantiationException, IllegalAccessException

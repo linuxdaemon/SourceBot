@@ -18,15 +18,14 @@
 
 package net.walterbarnes.sourcebot.bot.reference;
 
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class Constants
 {
-	private static final Logger logger = Logger.getLogger(Constants.class.getName());
 	private static final String version;
 	public static boolean simulate = false;
 
@@ -42,7 +41,7 @@ public final class Constants
 			}
 			catch (IOException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				LogHelper.error(e);
 			}
 		}
 		try
@@ -54,7 +53,7 @@ public final class Constants
 		}
 		catch (IOException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 		}
 
 		version = properties.getProperty("sbbuild.version.number", "missing");

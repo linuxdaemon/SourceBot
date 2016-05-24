@@ -21,6 +21,7 @@ package net.walterbarnes.sourcebot.bot.config.types;
 import com.tumblr.jumblr.types.Blog;
 import net.walterbarnes.sourcebot.bot.config.DB;
 import net.walterbarnes.sourcebot.bot.tumblr.Tumblr;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -29,13 +30,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class UserConfig
 {
-	private static final Logger logger = Logger.getLogger(UserConfig.class.getName());
 	private final Connection connection;
 	private final String id;
 	private final Tumblr client;
@@ -95,7 +93,7 @@ public class UserConfig
 		}
 		catch (SQLException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 			throw new RuntimeException("Database error occurred, exiting...");
 		}
 	}
@@ -167,7 +165,7 @@ public class UserConfig
 			}
 			catch (SQLException e)
 			{
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				LogHelper.error(e);
 				throw new RuntimeException("Database error occurred, exiting...");
 			}
 		}

@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class SourceBot
 {
@@ -50,7 +49,6 @@ public class SourceBot
 	public final String confName = "SourceBot.json";
 	public final Map<String, SearchThread> threads = new HashMap<>();
 	public final BotStatus botStatus = new BotStatus();
-	private final Logger logger = Logger.getLogger(SourceBot.class.getName());
 	private final InputThread inputThread = new InputThread();
 	public volatile boolean running = true;
 	public Thread currentThread;
@@ -119,11 +117,11 @@ public class SourceBot
 		this.client = new Tumblr(conf.consumerKey, conf.consumerSecret, conf.token, conf.tokenSecret);
 
 		botStatus.setSimulate(simulate);
-		if (simulate) logger.info("Simulating search");
-		logger.info("creating thread");
+		if (simulate) LogHelper.info("Simulating search");
+		LogHelper.info("creating thread");
 		BotThread bt = new BotThread(client, conf.dbHost, conf.dbPort, conf.dbName, conf.dbUser, conf.dbPass, simulate);
-		logger.info("created");
-		logger.info("starting thread");
+		LogHelper.info("created");
+		LogHelper.info("starting thread");
 		bt.start();
 	}
 

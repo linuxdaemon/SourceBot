@@ -20,15 +20,14 @@ package net.walterbarnes.sourcebot.bot.cli;
 
 import net.walterbarnes.sourcebot.bot.SourceBot;
 import net.walterbarnes.sourcebot.bot.reference.Constants;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 import org.apache.commons.cli.*;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.logging.Logger;
 
 public class Cli
 {
-	private static final Logger logger = Logger.getLogger(Cli.class.getName());
 	private final Options options = new Options();
 	private String[] args = null;
 
@@ -48,7 +47,7 @@ public class Cli
 		try
 		{
 			cmd = parser.parse(options, args);
-			logger.info(cmd.getArgList().toString());
+			LogHelper.info(cmd.getArgList().toString());
 
 			if (cmd.hasOption('c'))
 			{
@@ -68,6 +67,6 @@ public class Cli
 	private void setConfigDir(@Nonnull String dir)
 	{
 		SourceBot.INSTANCE.confDir = new File(dir);
-		logger.info(String.format("Set config dir to %s", SourceBot.INSTANCE.confDir.getAbsolutePath()));
+		LogHelper.info(String.format("Set config dir to %s", SourceBot.INSTANCE.confDir.getAbsolutePath()));
 	}
 }

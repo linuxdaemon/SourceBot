@@ -21,18 +21,15 @@ package net.walterbarnes.sourcebot.bot.tumblr;
 import com.tumblr.jumblr.exceptions.JumblrException;
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.bot.search.SearchRule;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class TagTerm extends SearchTerm
 {
-	private static final Logger logger = Logger.getLogger(TagTerm.class.getName());
-
 	public TagTerm(String term)
 	{
 		super(term, SearchRule.SearchType.TAG);
@@ -51,7 +48,7 @@ public class TagTerm extends SearchTerm
 		}
 		catch (JumblrException e)
 		{
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			LogHelper.error(e);
 		}
 		searched += posts.size();
 		posts.stream().forEach(post -> {

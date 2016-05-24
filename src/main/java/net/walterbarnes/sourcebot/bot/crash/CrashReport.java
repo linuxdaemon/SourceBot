@@ -19,6 +19,7 @@
 package net.walterbarnes.sourcebot.bot.crash;
 
 import net.walterbarnes.sourcebot.bot.reference.Constants;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -28,13 +29,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @SuppressWarnings ({"WeakerAccess", "SameParameterValue"})
 public class CrashReport
 {
-	private static final Logger logger = Logger.getLogger(CrashReport.class.getName());
 	/**
 	 * Description of the crash report.
 	 */
@@ -158,7 +156,7 @@ public class CrashReport
 			}
 			catch (Throwable throwable)
 			{
-				logger.log(Level.SEVERE, "Could not save crash report to " + file, throwable);
+				LogHelper.error(throwable);
 				return false;
 			}
 			finally
@@ -171,7 +169,7 @@ public class CrashReport
 					}
 					catch (IOException e)
 					{
-						logger.log(Level.SEVERE, e.getMessage(), e);
+						LogHelper.error(e);
 					}
 				}
 			}

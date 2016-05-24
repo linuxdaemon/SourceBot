@@ -26,13 +26,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 @SuppressWarnings ({"WeakerAccess", "unused"})
 public class Tumblr extends JumblrClient
 {
-	private static final Logger logger = Logger.getLogger(Tumblr.class.getName());
-
 	public Tumblr(String consumerKey, String consumerSecret, String token, String tokenSecret)
 	{
 		super(consumerKey, consumerSecret);
