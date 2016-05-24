@@ -59,12 +59,17 @@ public class SearchThread implements Runnable
 		{
 			SourceBot.INSTANCE.botStatus.setCurrentBlog("None");
 			SourceBot.INSTANCE.botStatus.setPostCount(blog.getUrl(), blog.getPostBufSize());
+			LogHelper.info("Checking buffer for blog '" + blog.getUrl() + "'");
+			if (blog.isPostBufFull())
+			{
+				LogHelper.info("Post buffer full, jumping to next blog");
+			}
 			// Check the blog's configured posting state and check if we need to post some more posts
-			if (!blog.isPostBufFull())
+			else
 			{
 				SourceBot.INSTANCE.botStatus.setStage("Searching for posts");
 				SourceBot.INSTANCE.botStatus.setCurrentBlog(blog.getUrl());
-				LogHelper.info(String.format("[%s] %d posts in buffer", blog.getUrl(), blog.getBufferSize()));
+				LogHelper.info(String.format("%d posts in buffer", blog.getBufferSize()));
 				LogHelper.info("Adding posts to buffer");
 
 				// A map of all the posts we pull from the tags/blogs, linked with their search terms

@@ -40,6 +40,7 @@ public class BotThread extends Thread
 
 	public BotThread(Tumblr client, String dbHost, String dbPort, String dbName, String dbUser, String dbPass, boolean simulate)
 	{
+		super("BotThread");
 		this.client = client;
 		this.dbHost = dbHost;
 		this.dbPort = dbPort;
@@ -82,6 +83,7 @@ public class BotThread extends Thread
 							LogHelper.info("Running thread for " + url);
 							long start = System.currentTimeMillis();
 							sb.currentThread = new Thread(sb.threads.get(url).setSimulate(simulate));
+							sb.currentThread.setName("SearchThread");
 							sb.currentThread.start();
 							sb.currentThread.join();
 							LogHelper.debug(String.format("Took %d ms", System.currentTimeMillis() - start));
