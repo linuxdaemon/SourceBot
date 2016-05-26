@@ -246,6 +246,20 @@ public class BlogConfig
 		return out;
 	}
 
+	public boolean removeSeenPost(long rb_id)
+	{
+		try (PreparedStatement deletePost = connection.prepareStatement("DELETE FROM seen_posts WHERE rb_id = ?"))
+		{
+			deletePost.setLong(1, rb_id);
+			return deletePost.execute();
+		}
+		catch (SQLException e)
+		{
+			LogHelper.error(e);
+			throw new RuntimeException("Database error occurred, exiting...");
+		}
+	}
+
 	public String[] getPostType()
 	{
 		if (System.currentTimeMillis() - configQTime > DB.getCacheTime())

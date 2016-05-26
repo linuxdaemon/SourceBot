@@ -20,6 +20,8 @@ package net.walterbarnes.sourcebot.bot.command;
 
 import com.tumblr.jumblr.types.Post;
 import net.walterbarnes.sourcebot.bot.SourceBot;
+import net.walterbarnes.sourcebot.bot.config.types.BlogConfig;
+import net.walterbarnes.sourcebot.bot.util.LogHelper;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -30,7 +32,8 @@ public class CommandPurge implements ICommand
 	public void run(@Nonnull String[] args)
 	{
 		List<Post> posts;
-		switch (SourceBot.INSTANCE.threads.get(args[0]).blog.getPostState())
+		BlogConfig blog = SourceBot.INSTANCE.threads.get(args[0]).blog;
+		switch (blog.getPostState())
 		{
 			case "queue":
 				posts = SourceBot.INSTANCE.client.getQueuedPosts(args[0]);
@@ -39,6 +42,12 @@ public class CommandPurge implements ICommand
 				posts = SourceBot.INSTANCE.client.getDrafts(args[0]);
 				break;
 		}
-		posts.forEach(Post::delete);
+		posts.stream().filter(p -> p.getTags().contains("bot")).forEach(p -> {
+			LogHelper.info("Removing post: " + p.getSlug());
+			LogHelper.info(p.getSourceUrl());
+			LogHelper.info(p.getNoteCount());
+			blog.removeSeenPost(p.getId());
+			p.delete();
+		});
 	}
 }
