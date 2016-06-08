@@ -53,6 +53,7 @@ public class SourceBot
 	public volatile boolean running = true;
 	public Thread currentThread;
 	public Tumblr client;
+
 	/**
 	 * Default configuration directory, can be overridden via command-line arguments
 	 */

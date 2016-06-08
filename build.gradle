@@ -21,7 +21,7 @@ apply plugin: 'maven'
 apply plugin: 'application'
 
 group 'net.walterbarnes'
-mainClassName = group + ".sourcebot.SourceBot"
+mainClassName = group + ".sourcebot.bot.SourceBot"
 version '0.2'
 
 // If TeamCity is running this build, lets set the version info
